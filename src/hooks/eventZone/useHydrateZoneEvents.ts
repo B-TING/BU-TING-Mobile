@@ -5,14 +5,17 @@ import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
 import {
   mapActiveZoneEvents,
   mapCurrentZoneEventRound,
+  mapParticipationToRecord,
   mapZoneEventDetail,
 } from '../../services/eventZone/zoneEventMapper';
 import {
   fetchActiveZoneEvents,
   fetchCurrentZoneEventRound,
+  fetchMyZoneEventParticipations,
   fetchZoneEventDetail,
 } from '../../services/eventZone/zoneEventService';
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
+import { useEventParticipationStore } from '../../stores/useEventParticipationStore';
 import { useZoneEventStore } from '../../stores/useZoneEventStore';
 
 const STALE_MS = 15_000;
@@ -122,4 +125,33 @@ export function useHydrateZoneEventDetail(eventId: string | undefined) {
   }, [accessToken, eventId, upsert]);
 
   return { loading };
+}
+
+/** 상세 화면: GET /zone-events/{eventId}/participations/me */
+export function useHydrateMyEventParticipations(eventId: string | undefined) {
+  const accessToken = useAuthStore(selectReusableAccessToken);
+  const upsertRecords = useEventParticipationStore(s => s.upsertRecords);
+
+  useEffect(() => {
+    if (!eventId || !accessToken) {
+      return;
+    }
+    let cancelled = false;
+    fetchMyZoneEventParticipations(accessToken, eventId)
+      .then(list => {
+        if (cancelled) {
+          return;
+        }
+        const mapped = list
+          .map(mapParticipationToRecord)
+          .filter((item): item is NonNullable<typeof item> => item != null);
+        if (mapped.length > 0) {
+          upsertRecords(mapped);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, eventId, upsertRecords]);
 }

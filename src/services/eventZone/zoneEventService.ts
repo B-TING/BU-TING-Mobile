@@ -2,6 +2,8 @@ import { API_BASE_URL, ZONE_EVENT_ENDPOINTS } from '../../constants/api/apiConfi
 import type { EventZoneId } from '../../types/eventZone';
 import type {
   ZoneEventDetailResponse,
+  ZoneEventHistoryPageResponse,
+  ZoneEventHistoryQuery,
   ZoneEventParticipationJoinRequest,
   ZoneEventParticipationResponse,
   ZoneEventParticipationSubmitRequest,
@@ -196,3 +198,42 @@ export async function submitZoneEventParticipation(
   }
   return data;
 }
+
+function toQuery(params: Record<string, string | number | undefined | null>): string {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+    search.set(key, String(value));
+  });
+  const qs = search.toString();
+  return qs ? `?${qs}` : '';
+}
+
+/** GET /api/v1/users/me/zone-event-participations — 로그인 필요 */
+export async function fetchMyZoneEventHistory(
+  accessToken: string,
+  query: ZoneEventHistoryQuery = {},
+): Promise<ZoneEventHistoryPageResponse> {
+  const data = await apiGet<ZoneEventHistoryPageResponse>(
+    url(
+      `${ZONE_EVENT_ENDPOINTS.myHistory}${toQuery({
+        zone: query.zone,
+        type: query.type,
+        status: query.status,
+        from: query.from,
+        to: query.to,
+        cursor: query.cursor,
+        size: query.size,
+      })}`,
+    ),
+    auth(accessToken),
+  );
+  return {
+    items: Array.isArray(data?.items) ? data.items : [],
+    nextCursor: data?.nextCursor ?? null,
+    hasNext: Boolean(data?.hasNext),
+  };
+}
+

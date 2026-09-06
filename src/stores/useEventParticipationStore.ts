@@ -28,6 +28,8 @@ type EventParticipationState = {
     status: EventParticipationStatus,
   ) => void;
   getByEventId: (eventId: string) => EventParticipationRecord | undefined;
+  replaceRecords: (records: EventParticipationRecord[]) => void;
+  upsertRecords: (records: EventParticipationRecord[]) => void;
   /** imperative only — React 셀렉터로 쓰지 말 것 (정렬 복사본) */
   listAll: () => EventParticipationRecord[];
   /** imperative only — React 셀렉터로 쓰지 말 것 */
@@ -130,6 +132,25 @@ export const useEventParticipationStore = create<EventParticipationState>()(
     },
     getByEventId: eventId =>
       get().records.find(item => item.eventId === eventId),
+    replaceRecords: records => set({ records }),
+    upsertRecords: records =>
+      set(state => {
+        if (records.length === 0) {
+          return state;
+        }
+        const next = [...state.records];
+        records.forEach(record => {
+          const index = next.findIndex(
+            item => item.id === record.id || item.eventId === record.eventId,
+          );
+          if (index < 0) {
+            next.unshift(record);
+            return;
+          }
+          next[index] = { ...next[index], ...record };
+        });
+        return { records: next };
+      }),
     listAll: () => sortParticipationRecordsNewestFirst(get().records),
     listByZone: zoneId =>
       sortParticipationRecordsNewestFirst(

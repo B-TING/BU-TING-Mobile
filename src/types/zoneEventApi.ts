@@ -126,3 +126,43 @@ export type ZoneEventSubmitResultResponse = {
   pointBalance?: number;
 };
 
+export type ZoneEventHistoryEventBriefResponse = {
+  eventId: string;
+  title?: string | null;
+  typeCode?: string | null;
+  zone?: ZoneEventApiZoneRef | null;
+  roundId?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+};
+
+export type ZoneEventHistoryItemResponse = {
+  participationId: string;
+  status?: string | null;
+  event: ZoneEventHistoryEventBriefResponse;
+  mediaUrl?: string | null;
+  mediaUrlExpiresIn?: number | null;
+  content?: string | null;
+  likeCount?: number;
+  commentCount?: number;
+  visibility?: string | null;
+  joinedAt?: string | null;
+  completedAt?: string | null;
+};
+
+export type ZoneEventHistoryPageResponse = {
+  items?: ZoneEventHistoryItemResponse[] | null;
+  nextCursor?: string | null;
+  hasNext?: boolean;
+};
+
+export type ZoneEventHistoryQuery = {
+  zone?: string;
+  type?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  cursor?: string;
+  size?: number;
+};
+

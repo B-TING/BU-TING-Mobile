@@ -1,4 +1,5 @@
 import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
+import type { EventParticipationRecord, EventParticipationStatus } from '../../types/eventParticipation';
 import type {
   EventZoneId,
   ZoneEvent,
@@ -9,6 +10,8 @@ import type {
   ZoneEventAuthTargetBriefResponse,
   ZoneEventAuthTargetDetailResponse,
   ZoneEventDetailResponse,
+  ZoneEventHistoryItemResponse,
+  ZoneEventParticipationResponse,
   ZoneEventRoundStatusResponse,
   ZoneEventSummaryResponse,
 } from '../../types/zoneEventApi';
@@ -231,14 +234,85 @@ export function mapCurrentZoneEventRound(
   };
 }
 
-export function mapSubmitParticipationStatus(
+export function mapParticipationStatus(
   status: string | null | undefined,
-): 'pending_review' | 'approved' | 'rejected' {
+): EventParticipationStatus {
   if (status === 'SUCCESS') {
     return 'approved';
   }
-  if (status === 'FAIL' || status === 'REVOKED') {
+  if (status === 'FAIL' || status === 'REVOKED' || status === 'CANCELLED') {
     return 'rejected';
+  }
+  if (status === 'JOINED') {
+    return 'in_progress';
   }
   return 'pending_review';
 }
+
+export function mapSubmitParticipationStatus(
+  status: string | null | undefined,
+): 'pending_review' | 'approved' | 'rejected' {
+  const mapped = mapParticipationStatus(status);
+  return mapped === 'in_progress' ? 'pending_review' : mapped;
+}
+
+function mapPhase1TypeCode(
+  typeCode: string | null | undefined,
+): Extract<ZoneEventType, 'PLACE_AUTH' | 'OBJECT_AUTH'> | null {
+  if (typeCode === 'PLACE_AUTH' || typeCode === 'OBJECT_AUTH') {
+    return typeCode;
+  }
+  return null;
+}
+
+export function mapHistoryItemToRecord(
+  dto: ZoneEventHistoryItemResponse,
+): EventParticipationRecord | null {
+  const participationId = asString(dto.participationId);
+  const eventId = asString(dto.event?.eventId);
+  const zoneId = dto.event?.zone?.zoneId;
+  const eventType = mapPhase1TypeCode(dto.event?.typeCode);
+  if (!participationId || !eventId || !isEventZoneId(zoneId) || !eventType) {
+    return null;
+  }
+  if (asString(dto.status) === 'CANCELLED') {
+    return null;
+  }
+  const joinedAt = asString(dto.joinedAt) || new Date().toISOString();
+  const completedAt = asString(dto.completedAt) || undefined;
+  return {
+    id: participationId,
+    eventId,
+    zoneId,
+    eventType,
+    eventTitleKo: asString(dto.event?.title) || eventType,
+    status: mapParticipationStatus(dto.status),
+    createdAt: joinedAt,
+    submittedAt: completedAt,
+  };
+}
+
+export function mapParticipationToRecord(
+  dto: ZoneEventParticipationResponse,
+): EventParticipationRecord | null {
+  const participationId = asString(dto.participationId);
+  const eventId = asString(dto.eventId);
+  const zoneId = dto.zoneId;
+  const eventType = mapPhase1TypeCode(dto.typeCode);
+  if (!participationId || !eventId || !isEventZoneId(zoneId) || !eventType) {
+    return null;
+  }
+  const joinedAt = asString(dto.joinedAt) || new Date().toISOString();
+  const completedAt = asString(dto.completedAt) || undefined;
+  return {
+    id: participationId,
+    eventId,
+    zoneId,
+    eventType,
+    eventTitleKo: eventType,
+    status: mapParticipationStatus(dto.status),
+    createdAt: joinedAt,
+    submittedAt: completedAt,
+  };
+}
+

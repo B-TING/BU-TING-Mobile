@@ -154,6 +154,8 @@ export const ZONE_EVENT_ENDPOINTS = {
   /** POST /api/v1/zone-events/{eventId}/participations/{participationId}/submit */
   submit: (eventId: string, participationId: string) =>
     \`/api/v1/zone-events/\${eventId}/participations/\${participationId}/submit\`,
+  /** GET /api/v1/users/me/zone-event-participations */
+  myHistory: '/api/v1/users/me/zone-event-participations',
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

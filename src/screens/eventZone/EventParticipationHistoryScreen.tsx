@@ -1,20 +1,19 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EventHistoryCard } from '../../components/eventZone/EventHistoryCard';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import { EVENT_ZONE_BY_ID, eventZoneName } from '../../constants/eventZone/eventZone';
+import { useEventParticipationHistory } from '../../hooks/eventZone/useEventParticipationHistory';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import { useEventParticipationStore } from '../../stores';
-import { sortParticipationRecordsNewestFirst } from '../../stores/useEventParticipationStore';
 import {
   formatParticipationTimestamp,
   participationStatusLabel,
 } from '../../utils/eventZone/participationLabels';
-import type { EventParticipationStatus } from '../../types/eventParticipation';
+import type { EventParticipationRecord, EventParticipationStatus } from '../../types/eventParticipation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventParticipationHistory'>;
 
@@ -31,10 +30,45 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
-  const rawRecords = useEventParticipationStore(s => s.records);
-  const records = useMemo(
-    () => sortParticipationRecordsNewestFirst(rawRecords),
-    [rawRecords],
+  const { records, loading, refreshing, loadingMore, refresh, loadMore } =
+    useEventParticipationHistory();
+
+  const renderItem = useMemo(
+    () =>
+      function HistoryItem({ item }: { item: EventParticipationRecord }) {
+        const zone = EVENT_ZONE_BY_ID[item.zoneId];
+        if (!zone) {
+          return null;
+        }
+        const statusLabel = participationStatusLabel(item.status, copy);
+        const typeLabel =
+          item.eventType === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
+        const timestamp = formatParticipationTimestamp(
+          item.submittedAt ?? item.createdAt,
+          language,
+        );
+        const timestampLabel = timestamp
+          ? item.submittedAt
+            ? copy.historySubmittedAt(timestamp)
+            : copy.historyStartedAt(timestamp)
+          : undefined;
+
+        return (
+          <EventHistoryCard
+            title={item.eventTitleKo}
+            zoneName={eventZoneName(zone, language)}
+            result={typeLabel}
+            status={item.status}
+            statusLabel={statusLabel}
+            timestamp={timestampLabel}
+            resultTone={resultToneForStatus(item.status)}
+            onPress={() =>
+              navigation.navigate('EventGameDetail', { eventId: item.eventId })
+            }
+          />
+        );
+      },
+    [copy, language, navigation],
   );
 
   return (
@@ -48,54 +82,42 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
         />
       </View>
 
-      {records.length === 0 ? (
+      {loading && records.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      ) : records.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-center text-sm leading-relaxed text-[#64748B]">
             {copy.historyEmpty}
           </Text>
         </View>
       ) : (
-        <ScrollView
-          className="flex-1"
+        <FlatList
+          data={records}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
           contentContainerStyle={{
             padding: 16,
             paddingBottom: insets.bottom + 24,
             gap: 10,
           }}
-          showsVerticalScrollIndicator={false}>
-          {records.map(record => {
-            const zone = EVENT_ZONE_BY_ID[record.zoneId];
-            if (!zone) return null;
-            const statusLabel = participationStatusLabel(record.status, copy);
-            const typeLabel =
-              record.eventType === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
-            const timestamp = formatParticipationTimestamp(
-              record.submittedAt ?? record.createdAt,
-              language,
-            );
-            const timestampLabel = timestamp
-              ? record.submittedAt
-                ? copy.historySubmittedAt(timestamp)
-                : copy.historyStartedAt(timestamp)
-              : undefined;
-
-            return (
-              <EventHistoryCard
-                key={record.id}
-                title={record.eventTitleKo}
-                zoneName={eventZoneName(zone, language)}
-                result={typeLabel}
-                status={record.status}
-                statusLabel={statusLabel}
-                timestamp={timestampLabel}
-                resultTone={resultToneForStatus(record.status)}
-                onPress={() =>
-                  navigation.navigate('EventGameDetail', { eventId: record.eventId })
-                }
-              />
-            );
-          })}
-        </ScrollView>
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />
+          }
+          onEndReached={() => {
+            void loadMore();
+          }}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? (
+              <View className="py-4">
+                <ActivityIndicator />
+              </View>
+            ) : null
+          }
+        />
       )}
     </View>
   );

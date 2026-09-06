@@ -39,7 +39,7 @@ import {
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useJoinZoneEvent } from '../../hooks/eventZone/useJoinZoneEvent';
-import { useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
+import { useHydrateMyEventParticipations, useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
 import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -141,6 +141,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const { loading: detailLoading } = useHydrateZoneEventDetail(eventId);
+  useHydrateMyEventParticipations(eventId);
   const beginParticipation = useEventParticipationStore(s => s.beginParticipation);
   const participation = useEventParticipationStore(s =>
     s.records.find(item => item.eventId === eventId),
