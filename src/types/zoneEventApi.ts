@@ -203,3 +203,37 @@ export type ZoneEventVisibilityUpdateRequest = {
   visibility: 'PUBLIC' | 'PRIVATE';
 };
 
+export type ZoneEventLikeResponse = {
+  likeId: string;
+  participationId: string;
+  likedAt?: string | null;
+  likeCount?: number;
+};
+
+export type ZoneEventCommentResponse = {
+  commentId: string;
+  participationId: string;
+  authorId: string;
+  authorNickname?: string | null;
+  authorProfileImageUrl?: string | null;
+  equippedTitle?: unknown;
+  content?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type ZoneEventCommentPageResponse = {
+  items?: ZoneEventCommentResponse[] | null;
+  nextCursor?: string | null;
+  hasNext?: boolean;
+};
+
+export type ZoneEventCommentQuery = {
+  cursor?: string;
+  size?: number;
+};
+
+export type ZoneEventCommentRequest = {
+  content: string;
+};
+

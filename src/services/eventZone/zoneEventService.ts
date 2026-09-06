@@ -3,9 +3,14 @@ import type { EventZoneId } from '../../types/eventZone';
 import type {
   ZoneEventAlbumPageResponse,
   ZoneEventAlbumQuery,
+  ZoneEventCommentPageResponse,
+  ZoneEventCommentQuery,
+  ZoneEventCommentRequest,
+  ZoneEventCommentResponse,
   ZoneEventDetailResponse,
   ZoneEventHistoryPageResponse,
   ZoneEventHistoryQuery,
+  ZoneEventLikeResponse,
   ZoneEventParticipationJoinRequest,
   ZoneEventParticipationResponse,
   ZoneEventParticipationSubmitRequest,
@@ -309,5 +314,104 @@ export async function updateZoneEventParticipationVisibility(
       allowEmptyBody: true,
     },
   );
+}
+
+/** POST /api/v1/zone-event-participations/{id}/likes — 로그인 필요 */
+export async function likeZoneEventParticipation(
+  accessToken: string,
+  participationId: string,
+): Promise<ZoneEventLikeResponse> {
+  const data = await apiPost<ZoneEventLikeResponse>(
+    url(ZONE_EVENT_ENDPOINTS.likes(participationId)),
+    auth(accessToken),
+  );
+  if (!data?.likeId && data?.likeCount == null) {
+    throw new ZoneEventServiceError('Zone event like failed');
+  }
+  return data;
+}
+
+/** DELETE /api/v1/zone-event-participations/{id}/likes — 로그인 필요 */
+export async function unlikeZoneEventParticipation(
+  accessToken: string,
+  participationId: string,
+): Promise<void> {
+  await apiDelete(url(ZONE_EVENT_ENDPOINTS.likes(participationId)), {
+    ...auth(accessToken),
+    allowEmptyBody: true,
+  });
+}
+
+/** GET /api/v1/zone-event-participations/{id}/comments — 비로그인 가능 */
+export async function fetchZoneEventComments(
+  participationId: string,
+  query: ZoneEventCommentQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventCommentPageResponse> {
+  const data = await apiGet<ZoneEventCommentPageResponse>(
+    url(
+      `${ZONE_EVENT_ENDPOINTS.comments(participationId)}${toQuery({
+        cursor: query.cursor,
+        size: query.size,
+      })}`,
+    ),
+    queryOptions(accessToken),
+  );
+  return {
+    items: Array.isArray(data?.items) ? data.items : [],
+    nextCursor: data?.nextCursor ?? null,
+    hasNext: Boolean(data?.hasNext),
+  };
+}
+
+/** POST /api/v1/zone-event-participations/{id}/comments — 로그인 필요 */
+export async function addZoneEventComment(
+  accessToken: string,
+  participationId: string,
+  content: string,
+): Promise<ZoneEventCommentResponse> {
+  const data = await apiPost<ZoneEventCommentResponse>(
+    url(ZONE_EVENT_ENDPOINTS.comments(participationId)),
+    {
+      ...auth(accessToken),
+      body: { content } satisfies ZoneEventCommentRequest,
+    },
+  );
+  if (!data?.commentId) {
+    throw new ZoneEventServiceError('Zone event comment failed');
+  }
+  return data;
+}
+
+/** PATCH /api/v1/zone-event-participations/{id}/comments/{commentId} — 로그인 필요 */
+export async function editZoneEventComment(
+  accessToken: string,
+  participationId: string,
+  commentId: string,
+  content: string,
+): Promise<ZoneEventCommentResponse> {
+  const data = await apiPatch<ZoneEventCommentResponse>(
+    url(ZONE_EVENT_ENDPOINTS.commentById(participationId, commentId)),
+    {
+      ...auth(accessToken),
+      body: { content } satisfies ZoneEventCommentRequest,
+    },
+  );
+  if (!data?.commentId) {
+    throw new ZoneEventServiceError('Zone event comment edit failed');
+  }
+  return data;
+}
+
+/** DELETE /api/v1/zone-event-participations/{id}/comments/{commentId} — 로그인 필요 */
+export async function deleteZoneEventComment(
+  accessToken: string,
+  participationId: string,
+  commentId: string,
+): Promise<void> {
+  await apiDelete(url(ZONE_EVENT_ENDPOINTS.commentById(participationId, commentId)), {
+    ...auth(accessToken),
+    allowEmptyBody: true,
+  });
 }
 

@@ -165,6 +165,15 @@ export const ZONE_EVENT_ENDPOINTS = {
   /** PATCH /api/v1/zone-event-participations/{id}/visibility */
   visibility: (participationId: string) =>
     \`/api/v1/zone-event-participations/\${participationId}/visibility\`,
+  /** POST/DELETE /api/v1/zone-event-participations/{id}/likes */
+  likes: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/likes\`,
+  /** GET/POST /api/v1/zone-event-participations/{id}/comments */
+  comments: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/comments\`,
+  /** PATCH/DELETE /api/v1/zone-event-participations/{id}/comments/{commentId} */
+  commentById: (participationId: string, commentId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/comments/\${commentId}\`,
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

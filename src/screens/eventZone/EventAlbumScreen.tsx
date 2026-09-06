@@ -15,6 +15,7 @@ import { EventAlbumCard } from '../../components/eventZone/EventAlbumCard';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import {
   AppModal,
+  AppModalActions,
   AppModalPrimaryFooter,
 } from '../../components/shared/modals';
 import { useEventAlbumScreen } from '../../hooks/eventZone/useEventAlbumScreen';
@@ -72,19 +73,32 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     loading,
     refreshing,
     loadingMore,
+    loadingComments,
     openComment,
     closeComment,
     toggleLike,
     handleToggleVisibility,
     handleSubmitComment,
+    handleEditComment,
+    handleDeleteComment,
+    editComment,
+    deleteComment,
+    openEditComment,
+    closeEditComment,
+    openDeleteComment,
+    closeDeleteComment,
     refresh,
     loadMore,
     goBack,
   } = useEventAlbumScreen(navigation, route.params ?? {});
 
   const inputRef = useRef<TextInput>(null);
+  const editInputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState('');
+  const [editDraft, setEditDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!commentPost) {
@@ -95,6 +109,17 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(timer);
   }, [commentPost]);
+
+  useEffect(() => {
+    if (!editComment) {
+      setEditDraft('');
+      setEditing(false);
+      return;
+    }
+    setEditDraft(editComment.content);
+    const timer = setTimeout(() => editInputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, [editComment]);
 
   const cardCopy = {
     typePlaceAuth: copy.typePlaceAuth,
@@ -110,19 +135,57 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     privateBadge: copy.albumPrivateBadge,
   };
 
-  const onSubmitComment = () => {
+  const onSubmitComment = async () => {
     const trimmed = draft.trim();
     if (!trimmed || submitting) {
       return;
     }
     if (!userId) {
+      navigation.navigate('Login');
       return;
     }
     setSubmitting(true);
-    handleSubmitComment();
-    setDraft('');
-    setSubmitting(false);
-    closeComment();
+    try {
+      await handleSubmitComment(trimmed);
+      setDraft('');
+    } catch {
+      // keep draft
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onSaveEditComment = async () => {
+    const trimmed = editDraft.trim();
+    if (!trimmed || editing || !editComment) {
+      return;
+    }
+    if (trimmed === editComment.content) {
+      closeEditComment();
+      return;
+    }
+    setEditing(true);
+    try {
+      await handleEditComment(trimmed);
+    } catch {
+      // keep draft
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  const onConfirmDeleteComment = async () => {
+    if (deleting) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await handleDeleteComment();
+    } catch {
+      // keep comment
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const sorts: { key: EventAlbumSort; label: string }[] = [
@@ -194,7 +257,7 @@ export function EventAlbumScreen({ navigation, route }: Props) {
               language={language}
               copy={cardCopy}
               isMine={Boolean(item.isMine) || (Boolean(userId) && item.authorId === userId)}
-              onToggleLike={() => toggleLike()}
+              onToggleLike={() => void toggleLike(item.id)}
               onPressComment={() => openComment(item.id)}
               onToggleVisibility={() =>
                 void handleToggleVisibility(item.id, item.visibility === 'private')
@@ -220,17 +283,43 @@ export function EventAlbumScreen({ navigation, route }: Props) {
           />
         }>
         <View className="px-5 pb-3">
-          {commentPost && commentPost.comments.length > 0 ? (
-            <View className="mb-3 max-h-40 gap-2">
-              {commentPost.comments.map(comment => (
-                <Text
-                  key={comment.id}
-                  className="text-[13px] leading-5"
-                  style={{ color: BRAND_TEXT }}>
-                  <Text className="font-bold">{comment.authorNickname} </Text>
-                  {comment.content}
-                </Text>
-              ))}
+          {loadingComments ? (
+            <View className="mb-3 py-3">
+              <ActivityIndicator />
+            </View>
+          ) : commentPost && commentPost.comments.length > 0 ? (
+            <View className="mb-3 max-h-40 gap-3">
+              {commentPost.comments.map(comment => {
+                const isMineComment = Boolean(userId) && comment.authorId === userId;
+                return (
+                  <View key={comment.id} className="gap-1">
+                    <Text className="text-[13px] leading-5" style={{ color: BRAND_TEXT }}>
+                      <Text className="font-bold">{comment.authorNickname} </Text>
+                      {comment.content}
+                    </Text>
+                    {isMineComment ? (
+                      <View className="flex-row gap-3">
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => openEditComment(comment.id)}
+                          className="active:opacity-80">
+                          <Text className="text-[12px] font-semibold" style={{ color: BRAND_PRIMARY }}>
+                            {copy.albumCommentEdit}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => openDeleteComment(comment.id)}
+                          className="active:opacity-80">
+                          <Text className="text-[12px] font-semibold" style={{ color: BRAND_MUTED }}>
+                            {copy.albumCommentDelete}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
             </View>
           ) : null}
           <TextInput
@@ -240,15 +329,82 @@ export function EventAlbumScreen({ navigation, route }: Props) {
             placeholder={copy.albumCommentPlaceholder}
             placeholderTextColor={BRAND_MUTED}
             multiline
+            maxLength={200}
             className="min-h-[72px] rounded-xl border px-3 py-2 text-[14px]"
             style={{ borderColor: BRAND_BORDER, color: BRAND_TEXT }}
           />
           {!userId ? (
-            <Text className="mt-2 text-[12px]" style={{ color: BRAND_MUTED }}>
-              {copy.albumLoginRequired}
-            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Login')}
+              className="mt-2">
+              <Text className="text-[12px]" style={{ color: BRAND_MUTED }}>
+                {copy.albumLoginRequired}
+              </Text>
+            </Pressable>
           ) : null}
         </View>
+      </AppModal>
+
+      <AppModal
+        visible={editComment != null}
+        title={copy.albumCommentEditTitle}
+        onClose={closeEditComment}
+        keyboardAware
+        footer={
+          <AppModalPrimaryFooter
+            cancelLabel={copy.albumCommentCancel}
+            confirmLabel={copy.albumCommentEditSave}
+            onCancel={closeEditComment}
+            onConfirm={() => void onSaveEditComment()}
+            confirmDisabled={!editDraft.trim() || editing}
+          />
+        }>
+        <View className="px-5 pb-3">
+          <TextInput
+            ref={editInputRef}
+            value={editDraft}
+            onChangeText={setEditDraft}
+            placeholder={copy.albumCommentPlaceholder}
+            placeholderTextColor={BRAND_MUTED}
+            multiline
+            maxLength={200}
+            className="min-h-[72px] rounded-xl border px-3 py-2 text-[14px]"
+            style={{ borderColor: BRAND_BORDER, color: BRAND_TEXT }}
+          />
+        </View>
+      </AppModal>
+
+      <AppModal
+        visible={deleteComment != null}
+        title={copy.albumCommentDeleteTitle}
+        subtitle={copy.albumCommentDeleteMessage}
+        onClose={closeDeleteComment}
+        footer={
+          <AppModalActions
+            actions={[
+              {
+                label: copy.albumCommentCancel,
+                onPress: closeDeleteComment,
+                variant: 'secondary',
+                disabled: deleting,
+              },
+              {
+                label: copy.albumCommentDeleteConfirm,
+                onPress: () => void onConfirmDeleteComment(),
+                variant: 'danger',
+                disabled: deleting,
+              },
+            ]}
+          />
+        }>
+        {deleteComment ? (
+          <View className="px-5 pb-3">
+            <Text className="text-[13px] leading-5" style={{ color: BRAND_TEXT }}>
+              {deleteComment.content}
+            </Text>
+          </View>
+        ) : null}
       </AppModal>
     </View>
   );

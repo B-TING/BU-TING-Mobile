@@ -263,6 +263,13 @@ export const EVENT_GAME_COPY: Record<
     albumCommentsTitle: string;
     albumCommentPlaceholder: string;
     albumCommentCancel: string;
+    albumCommentEdit: string;
+    albumCommentDelete: string;
+    albumCommentEditTitle: string;
+    albumCommentEditSave: string;
+    albumCommentDeleteTitle: string;
+    albumCommentDeleteMessage: string;
+    albumCommentDeleteConfirm: string;
     albumVisibilityPublic: string;
     albumVisibilityPrivate: string;
     albumMakePublic: string;
@@ -375,6 +382,13 @@ export const EVENT_GAME_COPY: Record<
     albumCommentsTitle: '댓글',
     albumCommentPlaceholder: '댓글을 입력하세요',
     albumCommentCancel: '닫기',
+    albumCommentEdit: '수정',
+    albumCommentDelete: '삭제',
+    albumCommentEditTitle: '댓글 수정',
+    albumCommentEditSave: '저장',
+    albumCommentDeleteTitle: '댓글을 삭제할까요?',
+    albumCommentDeleteMessage: '삭제하면 되돌릴 수 없어요.',
+    albumCommentDeleteConfirm: '삭제',
     albumVisibilityPublic: '공개',
     albumVisibilityPrivate: '비공개',
     albumMakePublic: '공개로 변경',
@@ -485,6 +499,13 @@ export const EVENT_GAME_COPY: Record<
     albumCommentsTitle: 'Comments',
     albumCommentPlaceholder: 'Write a comment',
     albumCommentCancel: 'Close',
+    albumCommentEdit: 'Edit',
+    albumCommentDelete: 'Delete',
+    albumCommentEditTitle: 'Edit comment',
+    albumCommentEditSave: 'Save',
+    albumCommentDeleteTitle: 'Delete this comment?',
+    albumCommentDeleteMessage: 'This cannot be undone.',
+    albumCommentDeleteConfirm: 'Delete',
     albumVisibilityPublic: 'Public',
     albumVisibilityPrivate: 'Private',
     albumMakePublic: 'Make public',
@@ -595,6 +616,13 @@ export const EVENT_GAME_COPY: Record<
     albumCommentsTitle: 'コメント',
     albumCommentPlaceholder: 'コメントを入力',
     albumCommentCancel: '閉じる',
+    albumCommentEdit: '編集',
+    albumCommentDelete: '削除',
+    albumCommentEditTitle: 'コメントを編集',
+    albumCommentEditSave: '保存',
+    albumCommentDeleteTitle: 'コメントを削除しますか？',
+    albumCommentDeleteMessage: '削除すると元に戻せません。',
+    albumCommentDeleteConfirm: '削除',
     albumVisibilityPublic: '公開',
     albumVisibilityPrivate: '非公開',
     albumMakePublic: '公開にする',
@@ -702,6 +730,13 @@ export const EVENT_GAME_COPY: Record<
     albumCommentsTitle: '评论',
     albumCommentPlaceholder: '输入评论',
     albumCommentCancel: '关闭',
+    albumCommentEdit: '编辑',
+    albumCommentDelete: '删除',
+    albumCommentEditTitle: '编辑评论',
+    albumCommentEditSave: '保存',
+    albumCommentDeleteTitle: '要删除这条评论吗？',
+    albumCommentDeleteMessage: '删除后无法恢复。',
+    albumCommentDeleteConfirm: '删除',
     albumVisibilityPublic: '公开',
     albumVisibilityPrivate: '私密',
     albumMakePublic: '设为公开',

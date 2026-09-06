@@ -6,11 +6,12 @@ import type {
   ZoneEventAuthTarget,
   ZoneEventType,
 } from '../../types/eventZone';
-import type { EventAlbumPost } from '../../types/eventAlbum';
+import type { EventAlbumComment, EventAlbumPost } from '../../types/eventAlbum';
 import type {
   ZoneEventAlbumItemResponse,
   ZoneEventAuthTargetBriefResponse,
   ZoneEventAuthTargetDetailResponse,
+  ZoneEventCommentResponse,
   ZoneEventDetailResponse,
   ZoneEventHistoryItemResponse,
   ZoneEventParticipationResponse,
@@ -322,6 +323,22 @@ export function mapAlbumItemToPost(
     visibility: 'public',
     isMine: Boolean(dto.isMine),
     completedAt: asString(dto.completedAt) || new Date().toISOString(),
+  };
+}
+
+export function mapAlbumComment(
+  dto: ZoneEventCommentResponse,
+): EventAlbumComment | null {
+  const id = asString(dto.commentId);
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    authorId: asString(dto.authorId),
+    authorNickname: asString(dto.authorNickname) || '여행자',
+    content: asString(dto.content),
+    createdAt: asString(dto.createdAt) || new Date().toISOString(),
   };
 }
 

@@ -4,12 +4,19 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../../navigation/types';
 import { useCopy } from '../../i18n';
-import { mapAlbumItemToPost } from '../../services/eventZone/zoneEventMapper';
+import { mapAlbumComment, mapAlbumItemToPost } from '../../services/eventZone/zoneEventMapper';
 import {
+  addZoneEventComment,
+  deleteZoneEventComment,
+  editZoneEventComment,
   fetchEventAlbum,
   fetchRoundAlbum,
   fetchZoneAlbum,
+  fetchZoneEventComments,
+  likeZoneEventParticipation,
+  unlikeZoneEventParticipation,
   updateZoneEventParticipationVisibility,
+  ZoneEventServiceError,
 } from '../../services/eventZone/zoneEventService';
 import { useEventAlbumStore } from '../../stores';
 import {
@@ -46,9 +53,17 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const replacePosts = useEventAlbumStore(s => s.replacePosts);
   const upsertPosts = useEventAlbumStore(s => s.upsertPosts);
   const setVisibility = useEventAlbumStore(s => s.setVisibility);
+  const setLike = useEventAlbumStore(s => s.setLike);
+  const setComments = useEventAlbumStore(s => s.setComments);
+  const appendComment = useEventAlbumStore(s => s.appendComment);
+  const updateComment = useEventAlbumStore(s => s.updateComment);
+  const removeComment = useEventAlbumStore(s => s.removeComment);
 
   const [sort, setSort] = useState<EventAlbumSort>('latest');
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [editCommentId, setEditCommentId] = useState<string | null>(null);
+  const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -56,6 +71,8 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const cursorRef = useRef<string | null>(null);
   const loadingMoreRef = useRef(false);
   const visibilityBusyRef = useRef(false);
+  const likeBusyRef = useRef<Set<string>>(new Set());
+  const commentBusyRef = useRef(false);
   const scopeRef = useRef('');
 
   const hasScope = Boolean(params.eventId || params.zoneId || params.roundId);
@@ -94,18 +111,27 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
         .filter((item): item is NonNullable<typeof item> => item != null);
 
       if (reset) {
-        const keptPrivateMine = useEventAlbumStore
-          .getState()
-          .posts.filter(
-            post =>
-              post.visibility === 'private' &&
-              (post.isMine || (Boolean(userId) && post.authorId === userId)),
-          );
+        const prevPosts = useEventAlbumStore.getState().posts;
+        const prevById = new Map(prevPosts.map(post => [post.id, post]));
+        const merged = mapped.map(post => {
+          const prev = prevById.get(post.id);
+          if (!prev) {
+            return post;
+          }
+          return {
+            ...post,
+            visibility: prev.visibility === 'private' ? 'private' : post.visibility,
+            comments: prev.comments.length > 0 ? prev.comments : post.comments,
+          };
+        });
         const incomingIds = new Set(mapped.map(post => post.id));
-        replacePosts([
-          ...mapped,
-          ...keptPrivateMine.filter(post => !incomingIds.has(post.id)),
-        ]);
+        const keptPrivateMine = prevPosts.filter(
+          post =>
+            !incomingIds.has(post.id) &&
+            post.visibility === 'private' &&
+            (post.isMine || (Boolean(userId) && post.authorId === userId)),
+        );
+        replacePosts([...merged, ...keptPrivateMine]);
       } else {
         upsertPosts(mapped);
       }
@@ -194,6 +220,167 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
     [sortedPosts, commentPostId],
   );
 
+  const editComment = useMemo(
+    () => commentPost?.comments.find(item => item.id === editCommentId) ?? null,
+    [commentPost, editCommentId],
+  );
+
+  const deleteComment = useMemo(
+    () => commentPost?.comments.find(item => item.id === deleteCommentId) ?? null,
+    [commentPost, deleteCommentId],
+  );
+
+  const loadComments = useCallback(
+    async (postId: string) => {
+      setLoadingComments(true);
+      try {
+        const page = await fetchZoneEventComments(
+          postId,
+          { size: PAGE_SIZE },
+          accessToken,
+        );
+        const comments = (page.items ?? [])
+          .map(mapAlbumComment)
+          .filter((item): item is NonNullable<typeof item> => item != null);
+        const post = useEventAlbumStore.getState().posts.find(item => item.id === postId);
+        setComments(
+          postId,
+          comments,
+          Math.max(post?.commentCount ?? 0, comments.length),
+        );
+      } catch {
+        // keep current comments
+      } finally {
+        setLoadingComments(false);
+      }
+    },
+    [accessToken, setComments],
+  );
+
+  const openComment = useCallback(
+    (postId: string) => {
+      setCommentPostId(postId);
+      void loadComments(postId);
+    },
+    [loadComments],
+  );
+
+  const handleToggleLike = useCallback(
+    async (postId: string) => {
+      if (likeBusyRef.current.has(postId)) {
+        return;
+      }
+      if (!accessToken) {
+        navigation.navigate('Login');
+        return;
+      }
+      const post = useEventAlbumStore.getState().posts.find(item => item.id === postId);
+      if (!post) {
+        return;
+      }
+      if (post.isMine || (userId && post.authorId === userId)) {
+        return;
+      }
+      const prevLiked = post.likedByMe;
+      const prevCount = post.likeCount;
+      const nextLiked = !prevLiked;
+      const nextCount = Math.max(0, prevCount + (nextLiked ? 1 : -1));
+      likeBusyRef.current.add(postId);
+      setLike(postId, nextLiked, nextCount);
+      try {
+        if (nextLiked) {
+          const result = await likeZoneEventParticipation(accessToken, postId);
+          if (typeof result.likeCount === 'number') {
+            setLike(postId, true, result.likeCount);
+          }
+        } else {
+          await unlikeZoneEventParticipation(accessToken, postId);
+        }
+      } catch (error) {
+        if (error instanceof ZoneEventServiceError && error.status === 409 && nextLiked) {
+          setLike(postId, true, nextCount);
+          return;
+        }
+        setLike(postId, prevLiked, prevCount);
+      } finally {
+        likeBusyRef.current.delete(postId);
+      }
+    },
+    [accessToken, navigation, setLike, userId],
+  );
+
+  const handleSubmitComment = useCallback(
+    async (text: string) => {
+      const content = text.trim().slice(0, 200);
+      if (!content || !commentPostId || commentBusyRef.current) {
+        return;
+      }
+      if (!accessToken) {
+        navigation.navigate('Login');
+        return;
+      }
+      commentBusyRef.current = true;
+      try {
+        const created = await addZoneEventComment(accessToken, commentPostId, content);
+        const mapped = mapAlbumComment(created);
+        if (mapped) {
+          appendComment(commentPostId, mapped);
+        }
+      } finally {
+        commentBusyRef.current = false;
+      }
+    },
+    [accessToken, appendComment, commentPostId, navigation],
+  );
+
+  const handleEditComment = useCallback(
+    async (text: string) => {
+      const content = text.trim().slice(0, 200);
+      if (!content || !commentPostId || !editCommentId || commentBusyRef.current) {
+        return;
+      }
+      if (!accessToken) {
+        navigation.navigate('Login');
+        return;
+      }
+      commentBusyRef.current = true;
+      try {
+        const updated = await editZoneEventComment(
+          accessToken,
+          commentPostId,
+          editCommentId,
+          content,
+        );
+        const mapped = mapAlbumComment(updated);
+        if (mapped) {
+          updateComment(commentPostId, mapped);
+        }
+        setEditCommentId(null);
+      } finally {
+        commentBusyRef.current = false;
+      }
+    },
+    [accessToken, commentPostId, editCommentId, navigation, updateComment],
+  );
+
+  const handleDeleteComment = useCallback(async () => {
+    if (!commentPostId || !deleteCommentId || commentBusyRef.current) {
+      return;
+    }
+    if (!accessToken) {
+      navigation.navigate('Login');
+      return;
+    }
+    commentBusyRef.current = true;
+    try {
+      await deleteZoneEventComment(accessToken, commentPostId, deleteCommentId);
+      removeComment(commentPostId, deleteCommentId);
+      setDeleteCommentId(null);
+    } finally {
+      commentBusyRef.current = false;
+    }
+  }, [accessToken, commentPostId, deleteCommentId, navigation, removeComment]);
+
   const handleToggleVisibility = useCallback(
     async (postId: string, isPrivate: boolean) => {
       if (visibilityBusyRef.current) {
@@ -227,11 +414,24 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
     loading,
     refreshing,
     loadingMore,
-    openComment: (postId: string) => setCommentPostId(postId),
-    closeComment: () => setCommentPostId(null),
-    toggleLike: () => undefined,
+    loadingComments,
+    openComment,
+    closeComment: () => {
+      setCommentPostId(null);
+      setEditCommentId(null);
+      setDeleteCommentId(null);
+    },
+    toggleLike: handleToggleLike,
     handleToggleVisibility,
-    handleSubmitComment: () => undefined,
+    handleSubmitComment,
+    handleEditComment,
+    handleDeleteComment,
+    editComment,
+    deleteComment,
+    openEditComment: (commentId: string) => setEditCommentId(commentId),
+    closeEditComment: () => setEditCommentId(null),
+    openDeleteComment: (commentId: string) => setDeleteCommentId(commentId),
+    closeDeleteComment: () => setDeleteCommentId(null),
     refresh,
     loadMore,
     goBack: () => navigation.goBack(),
