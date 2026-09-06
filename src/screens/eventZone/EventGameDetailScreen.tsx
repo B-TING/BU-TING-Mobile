@@ -45,6 +45,8 @@ import {
   useEventParticipationStore,
   useZoneEventStore,
 } from '../../stores';
+import { useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
+import { zoneEventTypeCode } from '../../constants/eventZone/zoneEvents';
 import {
   formatZoneEventRemaining,
   useZoneEventRemaining,
@@ -126,6 +128,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const [radiusModal, setRadiusModal] = useState<RadiusModalConfig | null>(null);
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
+  const { loading: detailLoading } = useHydrateZoneEventDetail(eventId);
   const beginParticipation = useEventParticipationStore(s => s.beginParticipation);
   const participation = useEventParticipationStore(s =>
     s.records.find(item => item.eventId === eventId),
@@ -157,6 +160,18 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     return null;
   }, [authTargets, participation?.targetId, selectedTargetId]);
 
+  if ((!event || !isPhase1EventGame(event)) && detailLoading) {
+    return (
+      <View
+        className="flex-1 items-center justify-center px-6"
+        style={{ paddingTop: insets.top, backgroundColor: BRAND_PAGE_BG }}>
+        <Text className="text-center" style={{ color: BRAND_MUTED }}>
+          …
+        </Text>
+      </View>
+    );
+  }
+
   if (!event || !isPhase1EventGame(event)) {
     return (
       <View
@@ -173,7 +188,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const zone = EVENT_ZONE_BY_ID[event.zoneId];
   const authTarget = resolveEventAuthTarget(event, effectiveTargetId);
   const remainingText = formatZoneEventRemaining(remainingMs, language);
-  const typeLabel = event.type === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
+  const typeLabel =
+    zoneEventTypeCode(event) === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
   const targetLocked =
     participation != null &&
     (participation.status === 'pending_review' ||

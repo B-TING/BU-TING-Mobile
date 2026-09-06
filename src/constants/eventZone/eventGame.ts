@@ -41,7 +41,8 @@ export function isEventGameType(type: string): type is EventGameType {
 
 /** Phase 1 화면에서 다루는 인증 게임인지 */
 export function isPhase1EventGame(event: ZoneEvent): boolean {
-  return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
+  const typeCode = event.typeCode ?? event.type;
+  return typeCode === 'PLACE_AUTH' || typeCode === 'OBJECT_AUTH';
 }
 
 export function isEventGame(event: ZoneEvent): boolean {

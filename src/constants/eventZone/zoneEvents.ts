@@ -91,12 +91,29 @@ export function buildRandomMockZoneEvent(): ZoneEvent {
   return buildMockZoneEvent(zone.id, type);
 }
 
-/** 이벤트 종료 시각 계산 */
+/** 이벤트 종료 시각 계산 (API endsAt 우선) */
 export function zoneEventEndsAt(event: ZoneEvent): number {
+  if (event.endsAt) {
+    const parsed = new Date(event.endsAt).getTime();
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
   return new Date(event.startsAt).getTime() + event.durationMinutes * 60_000;
 }
 
+export function zoneEventTypeCode(event: ZoneEvent): string {
+  return event.typeCode ?? event.type;
+}
+
 export function isZoneEventActive(event: ZoneEvent, now = Date.now()): boolean {
+  if (event.status === 'CLOSED' || event.status === 'CANCELLED') {
+    return false;
+  }
+  if (typeof event.remainingSeconds === 'number' && event.fetchedAt != null) {
+    const elapsedSec = Math.floor((now - event.fetchedAt) / 1000);
+    return event.remainingSeconds - elapsedSec > 0;
+  }
   const start = new Date(event.startsAt).getTime();
   return now >= start && now < zoneEventEndsAt(event);
 }

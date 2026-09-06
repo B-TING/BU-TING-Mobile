@@ -4,21 +4,16 @@ import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useFeatureUnavailableAlert } from '../../components/shared/modals';
-import {
-  ALPHA_FEATURE_LABELS,
-  isAlphaFeatureBlocked,
-} from '../../constants/common/alphaFeatureBlocks';
+import { ALPHA_FEATURE_LABELS } from '../../constants/common/alphaFeatureBlocks';
 import {
   EVENT_ZONE_BY_ID,
   allZoneChatRooms,
   eventZoneName,
   getChatRoomByZoneId,
 } from '../../constants/eventZone/eventZone';
-import {
-  buildRandomMockGameEvent,
-  isPhase1EventGame,
-} from '../../constants/eventZone/eventGame';
+import { isPhase1EventGame } from '../../constants/eventZone/eventGame';
 import { isZoneEventActive } from '../../constants/eventZone/zoneEvents';
+import { canQueryZoneEvents, useHydrateZoneEvents } from './useHydrateZoneEvents';
 import { useLocationCache } from '../location/useLocationCache';
 import { useCurrentEventZone } from '../useCurrentEventZone';
 import { useAllZoneChatMemberCounts } from '../useZoneChatRoomSummary';
@@ -54,9 +49,9 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   const isSlotDimmed = highlightZoneId != null;
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
-  const triggerEvent = useZoneEventStore(s => s.triggerEvent);
+  const { refresh: refreshZoneEvents } = useHydrateZoneEvents(isFocused);
   const eventZoneIds = useMemo(() => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
+    if (!canQueryZoneEvents()) {
       return [] as EventZoneId[];
     }
     return Object.keys(activeEventsByZone) as EventZoneId[];
@@ -120,21 +115,27 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     };
   }, [cancelPendingSelection]);
 
-  const handleTriggerEvent = () => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
+  const handleTriggerEvent = async () => {
+    if (!canQueryZoneEvents()) {
       showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
       return;
     }
-    const event = buildRandomMockGameEvent(
-      currentZoneId ?? (Object.keys(EVENT_ZONE_BY_ID)[0] as EventZoneId),
-    );
-    triggerEvent(event);
-    showToast(
-      copy.eventToast(
-        eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
-        event.titleKo,
-      ),
-    );
+    try {
+      await refreshZoneEvents(true);
+      const events = Object.values(useZoneEventStore.getState().activeEventsByZone);
+      const event = events.find(item => item && isPhase1EventGame(item) && isZoneEventActive(item));
+      if (!event) {
+        return;
+      }
+      showToast(
+        copy.eventToast(
+          eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
+          event.titleKo,
+        ),
+      );
+    } catch {
+      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
+    }
   };
 
   const currentZoneGameEvent = useMemo(() => {
@@ -204,7 +205,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
   };
 
-  const zoneEventBlocked = isAlphaFeatureBlocked('zoneEvent');
+  const zoneEventBlocked = !canQueryZoneEvents();
   const selectedActiveEvent =
     zoneEventBlocked || !focusZoneId ? undefined : activeEventsByZone[focusZoneId];
   const listActiveEventsByZone = zoneEventBlocked ? {} : activeEventsByZone;

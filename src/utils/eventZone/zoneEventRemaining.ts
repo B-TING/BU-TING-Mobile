@@ -61,6 +61,10 @@ export function formatZoneEventRemaining(ms: number, language: AppLanguage): str
 }
 
 export function zoneEventRemainingMs(event: ZoneEvent, now = Date.now()): number {
+  if (typeof event.remainingSeconds === 'number' && event.fetchedAt != null) {
+    const elapsedSec = Math.floor((now - event.fetchedAt) / 1000);
+    return Math.max(0, (event.remainingSeconds - elapsedSec) * 1000);
+  }
   return Math.max(0, zoneEventEndsAt(event) - now);
 }
 

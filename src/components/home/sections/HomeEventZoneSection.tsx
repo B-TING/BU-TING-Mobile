@@ -13,11 +13,16 @@ import { useCurrentEventZone } from '../../../hooks/useCurrentEventZone';
 import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
-import type { EventZoneId } from '../../../types/eventZone';
-import { isAlphaFeatureBlocked } from '../../../constants/common/alphaFeatureBlocks';
+import type { EventZoneId, ZoneEventType } from '../../../types/eventZone';
+import { canQueryZoneEvents, useHydrateZoneEvents } from '../../../hooks/eventZone/useHydrateZoneEvents';
+import { ZONE_EVENT_TYPE_META, zoneEventTypeCode } from '../../../constants/eventZone/zoneEvents';
 import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
+import {
+  formatZoneEventRemaining,
+  useZoneEventRemaining,
+} from '../../../utils/eventZone/zoneEventRemaining';
 
 const WIDGET_BODY_HEIGHT = 210;
 const CHAT_PANEL_WIDTH_RATIO = 0.54;
@@ -57,8 +62,17 @@ export function HomeEventZoneSection({
   const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
+  useHydrateZoneEvents(canQueryZoneEvents());
   const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
-  const activeEvent = isAlphaFeatureBlocked('zoneEvent') ? undefined : activeEventRaw;
+  const activeEvent = canQueryZoneEvents() ? activeEventRaw : undefined;
+  const remainingMs = useZoneEventRemaining(activeEvent);
+  const typeCode = activeEvent ? zoneEventTypeCode(activeEvent) : undefined;
+  const typeLabel =
+    typeCode && typeCode in ZONE_EVENT_TYPE_META
+      ? ZONE_EVENT_TYPE_META[typeCode as ZoneEventType].labelKo
+      : typeCode;
+  const remainingText =
+    activeEvent && remainingMs > 0 ? formatZoneEventRemaining(remainingMs, language) : '';
 
   return (
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
@@ -133,6 +147,8 @@ export function HomeEventZoneSection({
             {activeEvent ? (
               <Text className="mt-0.5 text-[10px] font-semibold text-pink-600 ellipsis" numberOfLines={1}>
                 ⚡ {activeEvent.titleKo}
+                {typeLabel ? ` · ${typeLabel}` : ''}
+                {remainingText ? ` · ${remainingText}` : ''}
               </Text>
             ) : null}
             </View>

@@ -101,12 +101,16 @@ export type ZoneEventAuthTarget = {
   radiusM: number;
   objectLabelKo?: string;
   emoji?: string;
+  guideText?: string;
+  exampleImageUrl?: string;
 };
 
-/** 구역에 발생하는 이벤트 VO (목업) */
+/** 구역에 발생하는 이벤트 VO */
 export type ZoneEvent = {
   id: string;
   type: ZoneEventType;
+  /** 서버 typeCode. 없으면 type과 동일 */
+  typeCode?: string;
   zoneId: EventZoneId;
   /** 백엔드 이벤트 제목 — 한국어 */
   titleKo: string;
@@ -114,8 +118,19 @@ export type ZoneEvent = {
   descriptionKo: string;
   /** ISO 8601 시작 시각 */
   startsAt: string;
+  /** ISO 8601 종료 시각 (API) */
+  endsAt?: string;
   /** 이벤트 지속 시간(분) */
   durationMinutes: number;
+  /** 서버 remainingSeconds (수신 시각 기준) */
+  remainingSeconds?: number;
+  /** remainingSeconds를 받은 시각 (epoch ms) */
+  fetchedAt?: number;
+  status?: string;
+  roundId?: string;
+  myParticipationStatus?: string;
+  myOpenParticipationId?: string;
+  myRemainingAttempts?: number | null;
   /** 회차 번호 (예: 1) */
   roundNo?: number;
   /** 슬롯 코드 (예: 1-A) */
