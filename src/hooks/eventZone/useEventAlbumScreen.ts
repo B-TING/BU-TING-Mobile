@@ -16,6 +16,7 @@ import {
   likeZoneEventParticipation,
   unlikeZoneEventParticipation,
   updateZoneEventParticipationVisibility,
+  reportZoneEventParticipation,
   ZoneEventServiceError,
 } from '../../services/eventZone/zoneEventService';
 import { useEventAlbumStore } from '../../stores';
@@ -26,7 +27,7 @@ import {
 import { selectAuthUser, selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import type { EventAlbumSort } from '../../types/eventAlbum';
 import type { EventZoneId } from '../../types/eventZone';
-import type { ZoneEventAlbumQuery } from '../../types/zoneEventApi';
+import type { ZoneEventAlbumQuery, ZoneEventReportReasonCode } from '../../types/zoneEventApi';
 import { canQueryZoneEvents } from './useHydrateZoneEvents';
 
 const PAGE_SIZE = 20;
@@ -63,6 +64,8 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const [editCommentId, setEditCommentId] = useState<string | null>(null);
   const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
+  const [reportPostId, setReportPostId] = useState<string | null>(null);
+  const [reportedPostIds, setReportedPostIds] = useState<Set<string>>(new Set());
   const [loadingComments, setLoadingComments] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,6 +76,7 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const visibilityBusyRef = useRef(false);
   const likeBusyRef = useRef<Set<string>>(new Set());
   const commentBusyRef = useRef(false);
+  const reportBusyRef = useRef(false);
   const scopeRef = useRef('');
 
   const hasScope = Boolean(params.eventId || params.zoneId || params.roundId);
@@ -404,6 +408,49 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
     [accessToken, navigation, setVisibility],
   );
 
+  const reportPost = useMemo(
+    () => sortedPosts.find(post => post.id === reportPostId) ?? null,
+    [sortedPosts, reportPostId],
+  );
+
+  const handleReport = useCallback(
+    async (reasonCode: ZoneEventReportReasonCode, memo?: string) => {
+      if (!reportPostId || reportBusyRef.current) {
+        return 'idle' as const;
+      }
+      if (!accessToken) {
+        navigation.navigate('Login');
+        return 'login' as const;
+      }
+      reportBusyRef.current = true;
+      try {
+        await reportZoneEventParticipation(accessToken, reportPostId, {
+          reasonCode,
+          memo: memo?.trim() ? memo.trim().slice(0, 500) : undefined,
+        });
+        setReportedPostIds(prev => new Set(prev).add(reportPostId));
+        setReportPostId(null);
+        return 'ok' as const;
+      } catch (error) {
+        if (error instanceof ZoneEventServiceError) {
+          if (error.status === 401) {
+            navigation.navigate('Login');
+            return 'login' as const;
+          }
+          if (error.status === 409) {
+            setReportedPostIds(prev => new Set(prev).add(reportPostId));
+            setReportPostId(null);
+            return 'duplicate' as const;
+          }
+        }
+        return 'failed' as const;
+      } finally {
+        reportBusyRef.current = false;
+      }
+    },
+    [accessToken, navigation, reportPostId],
+  );
+
   return {
     copy,
     userId,
@@ -432,6 +479,18 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
     closeEditComment: () => setEditCommentId(null),
     openDeleteComment: (commentId: string) => setDeleteCommentId(commentId),
     closeDeleteComment: () => setDeleteCommentId(null),
+    reportPost,
+    reportedPostIds,
+    openReport: (postId: string) => {
+      if (!accessToken) {
+        navigation.navigate('Login');
+        return;
+      }
+      setReportPostId(postId);
+    },
+    closeReport: () => setReportPostId(null),
+    handleReport,
+    openTitles: () => navigation.navigate('EventTitles'),
     refresh,
     loadMore,
     goBack: () => navigation.goBack(),

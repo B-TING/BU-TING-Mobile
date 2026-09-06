@@ -14,6 +14,8 @@ import type {
   ZoneEventParticipationJoinRequest,
   ZoneEventParticipationResponse,
   ZoneEventParticipationSubmitRequest,
+  ZoneEventReportRequest,
+  ZoneEventReportResponse,
   ZoneEventRoundStatusResponse,
   ZoneEventSubmitResultResponse,
   ZoneEventSummaryResponse,
@@ -413,5 +415,24 @@ export async function deleteZoneEventComment(
     ...auth(accessToken),
     allowEmptyBody: true,
   });
+}
+
+/** POST /api/v1/zone-event-participations/{id}/reports — 로그인 필요 */
+export async function reportZoneEventParticipation(
+  accessToken: string,
+  participationId: string,
+  request: ZoneEventReportRequest,
+): Promise<ZoneEventReportResponse> {
+  const data = await apiPost<ZoneEventReportResponse>(
+    url(ZONE_EVENT_ENDPOINTS.reports(participationId)),
+    {
+      ...auth(accessToken),
+      body: request,
+    },
+  );
+  if (!data?.reportId) {
+    throw new ZoneEventServiceError('Zone event report failed');
+  }
+  return data;
 }
 

@@ -44,6 +44,7 @@ export type RootStackParamList = {
   EventGameMukjjippa: { eventId: string };
   EventParticipationHistory: undefined;
   EventAlbum: { zoneId?: EventZoneId; eventId?: string; roundId?: string } | undefined;
+  EventTitles: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

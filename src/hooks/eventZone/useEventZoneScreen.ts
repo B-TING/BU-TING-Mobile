@@ -206,6 +206,10 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventAlbum');
   };
 
+  const handleOpenTitles = () => {
+    navigation.navigate('EventTitles');
+  };
+
   const handleJoinMission = () => {
     if (selectedZoneGameEvent) {
       handleOpenGameDetail(selectedZoneGameEvent.id);
@@ -253,6 +257,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     handleOpenGameDetail,
     handleOpenParticipationHistory,
     handleOpenAlbum,
+    handleOpenTitles,
     handleJoinMission,
   };
 }

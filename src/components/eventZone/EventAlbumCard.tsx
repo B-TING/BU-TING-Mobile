@@ -20,6 +20,8 @@ type EventAlbumCardCopy = {
   makePrivate: string;
   addComment: string;
   privateBadge: string;
+  reportLabel: string;
+  reportedLabel: string;
 };
 
 type EventAlbumCardProps = {
@@ -30,6 +32,8 @@ type EventAlbumCardProps = {
   onToggleLike: () => void;
   onPressComment: () => void;
   onToggleVisibility: () => void;
+  onPressReport?: () => void;
+  reported?: boolean;
 };
 
 function authorInitial(nickname: string): string {
@@ -45,6 +49,8 @@ export function EventAlbumCard({
   onToggleLike,
   onPressComment,
   onToggleVisibility,
+  onPressReport,
+  reported,
 }: EventAlbumCardProps) {
   const zone = EVENT_ZONE_BY_ID[post.zoneId];
   const zoneLabel = zone ? eventZoneName(zone, language) : post.zoneId;
@@ -69,6 +75,9 @@ export function EventAlbumCard({
             <Text className="text-[14px] font-bold" style={{ color: BRAND_TEXT }}>
               {post.authorNickname}
             </Text>
+            {post.equippedTitle ? (
+              <EventChip label={post.equippedTitle.titleName} variant="title" />
+            ) : null}
             {isPrivate ? <EventChip label={copy.privateBadge} variant="muted" /> : null}
           </View>
           <Text className="text-[12px] font-medium" style={{ color: BRAND_MUTED }} numberOfLines={1}>
@@ -152,6 +161,18 @@ export function EventAlbumCard({
               style={{ borderColor: BRAND_BORDER }}>
               <Text className="text-[12px] font-bold" style={{ color: BRAND_PRIMARY }}>
                 {isPrivate ? copy.makePublic : copy.makePrivate}
+              </Text>
+            </Pressable>
+          ) : onPressReport ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: reported }}
+              disabled={reported}
+              onPress={onPressReport}
+              className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-2 active:opacity-80"
+              style={{ borderColor: BRAND_BORDER }}>
+              <Text className="text-[12px] font-bold" style={{ color: reported ? BRAND_MUTED : BRAND_PRIMARY }}>
+                {reported ? copy.reportedLabel : copy.reportLabel}
               </Text>
             </Pressable>
           ) : null}

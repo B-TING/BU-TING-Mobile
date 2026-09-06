@@ -1,3 +1,5 @@
+import type { EquippedTitleResponse } from './zoneTitleApi';
+
 /** GET /api/v1/zone-events* · /zone-event-rounds/current 응답 DTO */
 
 export type ZoneEventApiZoneRef = {
@@ -182,7 +184,7 @@ export type ZoneEventAlbumItemResponse = {
   authorId: string;
   authorNickname?: string | null;
   authorProfileImageUrl?: string | null;
-  equippedTitle?: unknown;
+  equippedTitle?: EquippedTitleResponse | null;
   content?: string | null;
   mediaUrl?: string | null;
   mediaUrlExpiresIn?: number | null;
@@ -216,7 +218,7 @@ export type ZoneEventCommentResponse = {
   authorId: string;
   authorNickname?: string | null;
   authorProfileImageUrl?: string | null;
-  equippedTitle?: unknown;
+  equippedTitle?: EquippedTitleResponse | null;
   content?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -235,5 +237,22 @@ export type ZoneEventCommentQuery = {
 
 export type ZoneEventCommentRequest = {
   content: string;
+};
+
+export type ZoneEventReportReasonCode =
+  | 'NOT_ON_SITE'
+  | 'INAPPROPRIATE'
+  | 'SPAM'
+  | 'OTHER';
+
+export type ZoneEventReportRequest = {
+  reasonCode: ZoneEventReportReasonCode;
+  memo?: string;
+};
+
+export type ZoneEventReportResponse = {
+  reportId: string;
+  participationId: string;
+  createdAt?: string | null;
 };
 

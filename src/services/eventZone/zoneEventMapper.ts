@@ -7,6 +7,7 @@ import type {
   ZoneEventType,
 } from '../../types/eventZone';
 import type { EventAlbumComment, EventAlbumPost } from '../../types/eventAlbum';
+import type { EquippedTitleResponse } from '../../types/zoneTitleApi';
 import type {
   ZoneEventAlbumItemResponse,
   ZoneEventAuthTargetBriefResponse,
@@ -34,6 +35,26 @@ function asString(value: unknown): string {
     return String(value);
   }
   return '';
+}
+
+export function mapEquippedTitle(value: unknown): EquippedTitleResponse | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  const dto = value as Record<string, unknown>;
+  const titleName = asString(dto.titleName);
+  const zoneId = asString(dto.zoneId);
+  if (!titleName || !isEventZoneId(zoneId)) {
+    return undefined;
+  }
+  return {
+    titleCode: asString(dto.titleCode) || titleName,
+    titleName,
+    zoneId,
+    tier: asNumber(dto.tier) ?? 0,
+    style: asString(dto.style) || undefined,
+    color: asString(dto.color) || undefined,
+  };
 }
 
 function asNumber(value: unknown): number | null {
@@ -314,6 +335,7 @@ export function mapAlbumItemToPost(
     eventType,
     authorId: asString(dto.authorId),
     authorNickname: asString(dto.authorNickname) || '여행자',
+    equippedTitle: mapEquippedTitle(dto.equippedTitle),
     content: asString(dto.content) || undefined,
     localImageUri: asString(dto.mediaUrl) || undefined,
     likeCount: asNumber(dto.likeCount) ?? 0,

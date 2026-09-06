@@ -17,7 +17,10 @@ import {
   AppModal,
   AppModalActions,
   AppModalPrimaryFooter,
+  useAppAlert,
 } from '../../components/shared/modals';
+import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { ICON_COLOR_PRIMARY } from '../../constants/icons';
 import { useEventAlbumScreen } from '../../hooks/eventZone/useEventAlbumScreen';
 import { useAppLanguage } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -25,9 +28,11 @@ import {
   BRAND_BORDER,
   BRAND_MUTED,
   BRAND_PRIMARY,
+  BRAND_SELECTED,
   BRAND_TEXT,
 } from '../../components/eventZone/eventZoneTheme';
 import type { EventAlbumSort } from '../../types/eventAlbum';
+import type { ZoneEventReportReasonCode } from '../../types/zoneEventApi';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventAlbum'>;
 
@@ -87,10 +92,18 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     closeEditComment,
     openDeleteComment,
     closeDeleteComment,
+    reportPost,
+    reportedPostIds,
+    openReport,
+    closeReport,
+    handleReport,
+    openTitles,
     refresh,
     loadMore,
     goBack,
   } = useEventAlbumScreen(navigation, route.params ?? {});
+
+  const { alert } = useAppAlert();
 
   const inputRef = useRef<TextInput>(null);
   const editInputRef = useRef<TextInput>(null);
@@ -99,6 +112,9 @@ export function EventAlbumScreen({ navigation, route }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState<ZoneEventReportReasonCode>('NOT_ON_SITE');
+  const [reportMemo, setReportMemo] = useState('');
 
   useEffect(() => {
     if (!commentPost) {
@@ -121,6 +137,14 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     return () => clearTimeout(timer);
   }, [editComment]);
 
+  useEffect(() => {
+    if (!reportPost) {
+      setReportReason('NOT_ON_SITE');
+      setReportMemo('');
+      setReporting(false);
+    }
+  }, [reportPost]);
+
   const cardCopy = {
     typePlaceAuth: copy.typePlaceAuth,
     typeObjectSight: copy.typeObjectSight,
@@ -133,6 +157,8 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     makePrivate: copy.albumMakePrivate,
     addComment: copy.albumAddComment,
     privateBadge: copy.albumPrivateBadge,
+    reportLabel: copy.albumReport,
+    reportedLabel: copy.albumReportReported,
   };
 
   const onSubmitComment = async () => {
@@ -188,6 +214,32 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     }
   };
 
+  const onSubmitReport = async () => {
+    if (reporting) {
+      return;
+    }
+    setReporting(true);
+    try {
+      const result = await handleReport(reportReason, reportMemo);
+      if (result === 'ok') {
+        alert({ title: copy.albumReportTitle, message: copy.albumReportDone });
+      } else if (result === 'duplicate') {
+        alert({ title: copy.albumReportTitle, message: copy.albumReportDuplicate });
+      } else if (result === 'failed') {
+        alert({ title: copy.albumReportTitle, message: copy.albumReportFailed });
+      }
+    } finally {
+      setReporting(false);
+    }
+  };
+
+  const reportReasons: ZoneEventReportReasonCode[] = [
+    'NOT_ON_SITE',
+    'INAPPROPRIATE',
+    'SPAM',
+    'OTHER',
+  ];
+
   const sorts: { key: EventAlbumSort; label: string }[] = [
     { key: 'latest', label: copy.albumSortLatest },
     { key: 'most_liked', label: copy.albumSortMostLiked },
@@ -201,6 +253,18 @@ export function EventAlbumScreen({ navigation, route }: Props) {
           subtitle={copy.albumSubtitle}
           onBack={goBack}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
+          rightAccessory={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copy.albumTitles}
+              onPress={openTitles}
+              className="flex-row items-center gap-1 rounded-xl px-2 py-2 active:opacity-80">
+              <AppIcon name="star" size={18} color={ICON_COLOR_PRIMARY} />
+              <Text className="text-[12px] font-bold" style={{ color: BRAND_PRIMARY }}>
+                {copy.albumTitles}
+              </Text>
+            </Pressable>
+          }
         />
       </View>
 
@@ -261,6 +325,12 @@ export function EventAlbumScreen({ navigation, route }: Props) {
               onPressComment={() => openComment(item.id)}
               onToggleVisibility={() =>
                 void handleToggleVisibility(item.id, item.visibility === 'private')
+              }
+              reported={reportedPostIds.has(item.id)}
+              onPressReport={
+                Boolean(item.isMine) || (Boolean(userId) && item.authorId === userId)
+                  ? undefined
+                  : () => openReport(item.id)
               }
             />
           )}
@@ -405,6 +475,56 @@ export function EventAlbumScreen({ navigation, route }: Props) {
             </Text>
           </View>
         ) : null}
+      </AppModal>
+
+      <AppModal
+        visible={reportPost != null}
+        title={copy.albumReportTitle}
+        subtitle={reportPost?.eventTitleKo}
+        onClose={closeReport}
+        keyboardAware
+        footer={
+          <AppModalPrimaryFooter
+            cancelLabel={copy.albumReportCancel}
+            confirmLabel={copy.albumReportSubmit}
+            onCancel={closeReport}
+            onConfirm={() => void onSubmitReport()}
+            confirmDisabled={reporting}
+          />
+        }>
+        <View className="px-5 pb-3 gap-2">
+          {reportReasons.map(reason => {
+            const selected = reportReason === reason;
+            return (
+              <Pressable
+                key={reason}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                onPress={() => setReportReason(reason)}
+                className="flex-row items-center rounded-xl border px-3 py-2.5 active:opacity-80"
+                style={{
+                  borderColor: selected ? BRAND_PRIMARY : BRAND_BORDER,
+                  backgroundColor: selected ? BRAND_SELECTED : '#FFFFFF',
+                }}>
+                <Text
+                  className="text-[13px] font-semibold"
+                  style={{ color: selected ? BRAND_PRIMARY : BRAND_TEXT }}>
+                  {copy.albumReportReasons[reason]}
+                </Text>
+              </Pressable>
+            );
+          })}
+          <TextInput
+            value={reportMemo}
+            onChangeText={setReportMemo}
+            placeholder={copy.albumReportMemoPlaceholder}
+            placeholderTextColor={BRAND_MUTED}
+            multiline
+            maxLength={500}
+            className="mt-1 min-h-[72px] rounded-xl border px-3 py-2 text-[14px]"
+            style={{ borderColor: BRAND_BORDER, color: BRAND_TEXT }}
+          />
+        </View>
       </AppModal>
     </View>
   );

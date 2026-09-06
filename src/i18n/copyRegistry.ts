@@ -1,6 +1,7 @@
 import type { AppLanguage } from '../types/user';
 import { EVENT_GAME_COPY } from '../constants/eventZone/eventGame';
 import { EVENT_ZONE_MAP_LAYER_COPY, EVENT_ZONE_COPY, ZONE_CHAT_COPY } from '../constants/eventZone/eventZone';
+import { ZONE_TITLES_COPY } from '../constants/eventZone/zoneTitles';
 import { FESTIVAL_CALENDAR_COPY } from '../constants/festival/festivalCalendar';
 import { HELP_DESK_COPY } from '../constants/helpdesk/helpDesk';
 import { HOME_EVENT_ZONE_COPY, MAIN_HOME_COPY } from '../constants/home/mainHome';
@@ -17,6 +18,7 @@ export const COPY_NAMESPACES = {
   homeEventZone: HOME_EVENT_ZONE_COPY,
   eventZone: EVENT_ZONE_COPY,
   eventGame: EVENT_GAME_COPY,
+  zoneTitles: ZONE_TITLES_COPY,
   eventZoneMapLayer: EVENT_ZONE_MAP_LAYER_COPY,
   zoneChat: ZONE_CHAT_COPY,
   planDetail: PLAN_DETAIL_COPY,

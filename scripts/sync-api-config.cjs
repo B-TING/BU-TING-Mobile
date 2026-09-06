@@ -174,6 +174,20 @@ export const ZONE_EVENT_ENDPOINTS = {
   /** PATCH/DELETE /api/v1/zone-event-participations/{id}/comments/{commentId} */
   commentById: (participationId: string, commentId: string) =>
     \`/api/v1/zone-event-participations/\${participationId}/comments/\${commentId}\`,
+  /** POST /api/v1/zone-event-participations/{id}/reports */
+  reports: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/reports\`,
+} as const;
+
+export const ZONE_TITLE_ENDPOINTS = {
+  /** GET /api/v1/zone-titles — 비로그인 가능 */
+  list: '/api/v1/zone-titles',
+  /** GET /api/v1/users/me/zone-titles */
+  me: '/api/v1/users/me/zone-titles',
+  /** PATCH /api/v1/users/me/zone-titles/{userTitleId}/equip */
+  equip: (userTitleId: string) => \`/api/v1/users/me/zone-titles/\${userTitleId}/equip\`,
+  /** DELETE /api/v1/users/me/zone-titles/equipped */
+  unequip: '/api/v1/users/me/zone-titles/equipped',
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

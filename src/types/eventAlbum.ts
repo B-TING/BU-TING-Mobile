@@ -1,4 +1,5 @@
 import type { EventZoneId, ZoneEventType } from './eventZone';
+import type { EquippedTitleResponse } from './zoneTitleApi';
 
 export type EventAlbumVisibility = 'public' | 'private';
 
@@ -25,6 +26,7 @@ export type EventAlbumPost = {
   eventType: EventAlbumAuthType;
   authorId: string;
   authorNickname: string;
+  equippedTitle?: EquippedTitleResponse;
   content?: string;
   localImageUri?: string;
   likeCount: number;

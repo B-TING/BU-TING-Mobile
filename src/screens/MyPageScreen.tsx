@@ -288,6 +288,11 @@ export function MyPageScreen({ navigation }: Props) {
                 testID={TEST_ID.mypage.preferences}
               />
               <SettingsRow
+                icon="star"
+                label={copy.zoneTitles}
+                onPress={() => navigation.navigate('EventTitles')}
+              />
+              <SettingsRow
                 icon="bell"
                 label={copy.notificationSettings}
                 onPress={handleNotificationSettings}

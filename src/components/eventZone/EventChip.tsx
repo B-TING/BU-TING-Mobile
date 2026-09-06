@@ -7,9 +7,11 @@ import {
   BRAND_SELECTED,
   BRAND_SURFACE,
   EVENT_PINK,
+  EVENT_PINK_BG,
+  EVENT_PINK_TEXT,
 } from './eventZoneTheme';
 
-export type EventChipVariant = 'event' | 'neutral' | 'muted';
+export type EventChipVariant = 'event' | 'neutral' | 'muted' | 'title';
 
 type EventChipProps = {
   label: string;
@@ -29,6 +31,7 @@ const VARIANT_STYLE: Record<
     wrap: { backgroundColor: BRAND_SURFACE, borderColor: BRAND_BORDER, borderWidth: 1 },
     text: { color: BRAND_MUTED },
   },
+  title: { wrap: { backgroundColor: EVENT_PINK_BG }, text: { color: EVENT_PINK_TEXT } },
 };
 
 export function EventChip({ label, variant = 'event' }: EventChipProps) {

@@ -278,6 +278,22 @@ export const EVENT_GAME_COPY: Record<
     albumGuestName: string;
     albumLoginRequired: string;
     albumOpen: string;
+    albumTitles: string;
+    albumReport: string;
+    albumReportTitle: string;
+    albumReportSubmit: string;
+    albumReportCancel: string;
+    albumReportMemoPlaceholder: string;
+    albumReportDone: string;
+    albumReportDuplicate: string;
+    albumReportFailed: string;
+    albumReportReported: string;
+    albumReportReasons: {
+      NOT_ON_SITE: string;
+      INAPPROPRIATE: string;
+      SPAM: string;
+      OTHER: string;
+    };
   }
 > = {
   ko: {
@@ -397,6 +413,22 @@ export const EVENT_GAME_COPY: Record<
     albumGuestName: '여행자',
     albumLoginRequired: '댓글을 쓰려면 로그인이 필요해요.',
     albumOpen: '앨범 보기',
+    albumTitles: '칭호',
+    albumReport: '신고',
+    albumReportTitle: '게시물 신고',
+    albumReportSubmit: '신고하기',
+    albumReportCancel: '취소',
+    albumReportMemoPlaceholder: '추가 설명 (선택)',
+    albumReportDone: '신고가 접수되었어요.',
+    albumReportDuplicate: '이미 신고한 게시물이에요.',
+    albumReportFailed: '신고에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    albumReportReported: '신고됨',
+    albumReportReasons: {
+      NOT_ON_SITE: '현장에 있지 않음',
+      INAPPROPRIATE: '부적절한 내용',
+      SPAM: '스팸',
+      OTHER: '기타',
+    },
   },
   en: {
     nearbyEventBanner: 'An event is happening at your current location!',
@@ -514,6 +546,22 @@ export const EVENT_GAME_COPY: Record<
     albumGuestName: 'Traveler',
     albumLoginRequired: 'Log in to leave a comment.',
     albumOpen: 'View album',
+    albumTitles: 'Titles',
+    albumReport: 'Report',
+    albumReportTitle: 'Report post',
+    albumReportSubmit: 'Submit report',
+    albumReportCancel: 'Cancel',
+    albumReportMemoPlaceholder: 'More details (optional)',
+    albumReportDone: 'Report submitted.',
+    albumReportDuplicate: 'You already reported this post.',
+    albumReportFailed: 'Could not submit the report. Try again later.',
+    albumReportReported: 'Reported',
+    albumReportReasons: {
+      NOT_ON_SITE: 'Not on site',
+      INAPPROPRIATE: 'Inappropriate',
+      SPAM: 'Spam',
+      OTHER: 'Other',
+    },
   },
   ja: {
     nearbyEventBanner: '現在地でイベントが発生しました！',
@@ -631,6 +679,22 @@ export const EVENT_GAME_COPY: Record<
     albumGuestName: '旅行者',
     albumLoginRequired: 'コメントにはログインが必要です。',
     albumOpen: 'アルバムを見る',
+    albumTitles: '称号',
+    albumReport: '通報',
+    albumReportTitle: '投稿を通報',
+    albumReportSubmit: '通報する',
+    albumReportCancel: 'キャンセル',
+    albumReportMemoPlaceholder: '補足（任意）',
+    albumReportDone: '通報を受け付けました。',
+    albumReportDuplicate: 'すでに通報した投稿です。',
+    albumReportFailed: '通報に失敗しました。しばらくしてから再試行してください。',
+    albumReportReported: '通報済み',
+    albumReportReasons: {
+      NOT_ON_SITE: '現場にいない',
+      INAPPROPRIATE: '不適切な内容',
+      SPAM: 'スパム',
+      OTHER: 'その他',
+    },
   },
   zh: {
     nearbyEventBanner: '您当前位置发生了活动！',
@@ -745,5 +809,21 @@ export const EVENT_GAME_COPY: Record<
     albumGuestName: '旅行者',
     albumLoginRequired: '评论需要登录。',
     albumOpen: '查看相册',
+    albumTitles: '称号',
+    albumReport: '举报',
+    albumReportTitle: '举报帖子',
+    albumReportSubmit: '提交举报',
+    albumReportCancel: '取消',
+    albumReportMemoPlaceholder: '补充说明（选填）',
+    albumReportDone: '已收到举报。',
+    albumReportDuplicate: '你已经举报过这篇帖子。',
+    albumReportFailed: '举报失败，请稍后再试。',
+    albumReportReported: '已举报',
+    albumReportReasons: {
+      NOT_ON_SITE: '不在现场',
+      INAPPROPRIATE: '不当内容',
+      SPAM: '垃圾信息',
+      OTHER: '其他',
+    },
   },
 };

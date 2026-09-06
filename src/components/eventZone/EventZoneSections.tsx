@@ -127,6 +127,8 @@ type EventZoneChatListProps = {
   onHistoryPress?: () => void;
   albumLabel?: string;
   onAlbumPress?: () => void;
+  titlesLabel?: string;
+  onTitlesPress?: () => void;
   surpriseMissionBadge?: string;
   embedded?: boolean;
 };
@@ -146,6 +148,8 @@ export function EventZoneChatList({
   onHistoryPress,
   albumLabel,
   onAlbumPress,
+  titlesLabel,
+  onTitlesPress,
   surpriseMissionBadge,
   embedded = false,
 }: EventZoneChatListProps) {
@@ -177,7 +181,21 @@ export function EventZoneChatList({
             style={{ color: BRAND_TEXT }}>
             {title}
           </Text>
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row flex-wrap items-center justify-end gap-2">
+            {titlesLabel && onTitlesPress ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onTitlesPress}
+                className="flex-row items-center gap-1 rounded-full border bg-white px-3 py-1.5 active:opacity-80"
+                style={{ borderColor: BRAND_BORDER }}>
+                <AppIcon name="star" size={14} color={ICON_COLOR_MUTED} />
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: BRAND_PRIMARY }}>
+                  {titlesLabel}
+                </Text>
+              </Pressable>
+            ) : null}
             {albumLabel && onAlbumPress ? (
               <Pressable
                 accessibilityRole="button"
