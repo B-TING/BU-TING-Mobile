@@ -1,4 +1,9 @@
-# Shared: debug 빌드에서 언어 화면 → E2E 세션 → 홈
+appId: com.butingmobile
+name: Shared enter main
+tags:
+  - shared
+---
+# debug 빌드에서 언어 화면에서 E2E 세션으로 홈에 들어간다
 - launchApp:
     clearState: true
 - extendedWaitUntil:
@@ -7,6 +12,15 @@
     timeout: 45000
 - tapOn:
     id: language.e2eBootstrap
+# 홈 위젯이 위치 동의를 띄우면 화면을 가린다. 거절한 뒤 홈을 확인한다.
+- extendedWaitUntil:
+    visible:
+      id: location.disclosure
+    timeout: 15000
+    optional: true
+- runFlow: dismiss-optional.yaml
+- waitForAnimationToEnd:
+    timeout: 4000
 - extendedWaitUntil:
     visible:
       id: home.screen

@@ -5,7 +5,9 @@ tags:
 ---
 - runFlow: ../../shared/enter-main.yaml
 - tapOn:
-    id: navbar.tab.my
+    id: appBar.profile
+- waitForAnimationToEnd:
+    timeout: 4000
 - extendedWaitUntil:
     visible:
       id: mypage.screen

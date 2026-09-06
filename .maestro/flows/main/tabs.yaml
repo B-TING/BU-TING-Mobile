@@ -5,32 +5,38 @@ tags:
   - main
 ---
 - runFlow: ../../shared/enter-main.yaml
+# 홈 헬프 FAB이 우측 마이 탭을 가린다. 가려지지 않는 프로필로 들어간다.
 - tapOn:
-    id: navbar.tab.my
+    id: appBar.profile
+- waitForAnimationToEnd:
+    timeout: 4000
 - extendedWaitUntil:
     visible:
       id: mypage.screen
     timeout: 10000
-- tapOn:
-    id: navbar.tab.feed
-- extendedWaitUntil:
-    visible:
-      id: feed.screen
-    timeout: 10000
-- tapOn:
-    id: navbar.tab.home
-- extendedWaitUntil:
-    visible:
-      id: home.screen
-    timeout: 10000
+- runFlow:
+    file: ../../shared/switch-tab.yaml
+    env:
+      TAB: navbar.tab.feed
+      SCREEN: feed.screen
+- runFlow:
+    file: ../../shared/switch-tab.yaml
+    env:
+      TAB: navbar.tab.home
+      SCREEN: home.screen
 - tapOn:
     id: navbar.tab.route
+- waitForAnimationToEnd:
+    timeout: 4000
 - extendedWaitUntil:
     visible:
       id: planWizard.screen
     timeout: 10000
 - tapOn:
     id: planWizard.back
+- runFlow: ../../shared/dismiss-optional.yaml
+- waitForAnimationToEnd:
+    timeout: 4000
 - extendedWaitUntil:
     visible:
       id: home.screen

@@ -113,7 +113,12 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   } = useTravelogueFeedScreen({ embeddedInMainTabs });
 
   return (
-    <View testID={TEST_ID.feed.screen} className="flex-1 bg-brand-background">
+    <View
+      testID={TEST_ID.feed.screen}
+      accessible
+      accessibilityLabel={TEST_ID.feed.screen}
+      collapsable={false}
+      className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
         {!embeddedInMainTabs ? (
           <BackButton

@@ -111,6 +111,7 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
               testID={TEST_ID.navbar.tab(tab.id)}
               className="min-w-[56px] flex-1 items-center py-1 active:opacity-70"
               accessibilityRole="button"
+              accessibilityLabel={label}
               accessibilityState={{ selected: active }}>
               <AppIcon
                 name={NAVBAR_TAB_ICONS[tab.id]}
