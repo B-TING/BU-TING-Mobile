@@ -6,7 +6,9 @@ import type {
   ZoneEventAuthTarget,
   ZoneEventType,
 } from '../../types/eventZone';
+import type { EventAlbumPost } from '../../types/eventAlbum';
 import type {
+  ZoneEventAlbumItemResponse,
   ZoneEventAuthTargetBriefResponse,
   ZoneEventAuthTargetDetailResponse,
   ZoneEventDetailResponse,
@@ -289,6 +291,37 @@ export function mapHistoryItemToRecord(
     status: mapParticipationStatus(dto.status),
     createdAt: joinedAt,
     submittedAt: completedAt,
+  };
+}
+
+export function mapAlbumItemToPost(
+  dto: ZoneEventAlbumItemResponse,
+): EventAlbumPost | null {
+  const participationId = asString(dto.participationId);
+  const eventId = asString(dto.eventId);
+  const zoneId = dto.zoneId;
+  if (!participationId || !eventId || !isEventZoneId(zoneId)) {
+    return null;
+  }
+  const eventType: EventAlbumPost['eventType'] = 'PLACE_AUTH';
+  return {
+    id: participationId,
+    participationId,
+    eventId,
+    zoneId,
+    eventTitleKo: asString(dto.eventTitle) || eventId,
+    eventType,
+    authorId: asString(dto.authorId),
+    authorNickname: asString(dto.authorNickname) || '여행자',
+    content: asString(dto.content) || undefined,
+    localImageUri: asString(dto.mediaUrl) || undefined,
+    likeCount: asNumber(dto.likeCount) ?? 0,
+    likedByMe: Boolean(dto.likedByMe),
+    comments: [],
+    commentCount: asNumber(dto.commentCount) ?? 0,
+    visibility: 'public',
+    isMine: Boolean(dto.isMine),
+    completedAt: asString(dto.completedAt) || new Date().toISOString(),
   };
 }
 

@@ -1,6 +1,8 @@
 import { API_BASE_URL, ZONE_EVENT_ENDPOINTS } from '../../constants/api/apiConfig';
 import type { EventZoneId } from '../../types/eventZone';
 import type {
+  ZoneEventAlbumPageResponse,
+  ZoneEventAlbumQuery,
   ZoneEventDetailResponse,
   ZoneEventHistoryPageResponse,
   ZoneEventHistoryQuery,
@@ -10,8 +12,9 @@ import type {
   ZoneEventRoundStatusResponse,
   ZoneEventSubmitResultResponse,
   ZoneEventSummaryResponse,
+  ZoneEventVisibilityUpdateRequest,
 } from '../../types/zoneEventApi';
-import { ApiClientError, apiDelete, apiGet, apiPost } from '../api/apiClient';
+import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '../api/apiClient';
 
 export class ZoneEventServiceError extends ApiClientError {
   distanceMeters?: number;
@@ -235,5 +238,76 @@ export async function fetchMyZoneEventHistory(
     nextCursor: data?.nextCursor ?? null,
     hasNext: Boolean(data?.hasNext),
   };
+}
+
+function normalizeAlbumPage(
+  data: ZoneEventAlbumPageResponse | undefined,
+): ZoneEventAlbumPageResponse {
+  return {
+    items: Array.isArray(data?.items) ? data.items : [],
+    nextCursor: data?.nextCursor ?? null,
+    hasNext: Boolean(data?.hasNext),
+  };
+}
+
+async function fetchAlbumPage(
+  path: string,
+  query: ZoneEventAlbumQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventAlbumPageResponse> {
+  const data = await apiGet<ZoneEventAlbumPageResponse>(
+    url(
+      `${path}${toQuery({
+        sort: query.sort,
+        cursor: query.cursor,
+        size: query.size,
+      })}`,
+    ),
+    queryOptions(accessToken),
+  );
+  return normalizeAlbumPage(data);
+}
+
+/** GET /api/v1/zone-events/{eventId}/album — 비로그인 가능 */
+export function fetchEventAlbum(
+  eventId: string,
+  query: ZoneEventAlbumQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventAlbumPageResponse> {
+  return fetchAlbumPage(ZONE_EVENT_ENDPOINTS.eventAlbum(eventId), query, accessToken);
+}
+
+/** GET /api/v1/zones/{zoneId}/album — 비로그인 가능 */
+export function fetchZoneAlbum(
+  zoneId: string,
+  query: ZoneEventAlbumQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventAlbumPageResponse> {
+  return fetchAlbumPage(ZONE_EVENT_ENDPOINTS.zoneAlbum(zoneId), query, accessToken);
+}
+
+/** GET /api/v1/zone-event-rounds/{roundId}/album — 비로그인 가능 */
+export function fetchRoundAlbum(
+  roundId: string,
+  query: ZoneEventAlbumQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventAlbumPageResponse> {
+  return fetchAlbumPage(ZONE_EVENT_ENDPOINTS.roundAlbum(roundId), query, accessToken);
+}
+
+/** PATCH /api/v1/zone-event-participations/{id}/visibility — 로그인 필요 */
+export async function updateZoneEventParticipationVisibility(
+  accessToken: string,
+  participationId: string,
+  visibility: ZoneEventVisibilityUpdateRequest['visibility'],
+): Promise<void> {
+  await apiPatch(
+    url(ZONE_EVENT_ENDPOINTS.visibility(participationId)),
+    {
+      ...auth(accessToken),
+      body: { visibility } satisfies ZoneEventVisibilityUpdateRequest,
+      allowEmptyBody: true,
+    },
+  );
 }
 

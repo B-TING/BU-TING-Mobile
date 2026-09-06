@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   Text,
   TextInput,
   View,
@@ -67,11 +69,16 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     setSort,
     sortedPosts,
     commentPost,
+    loading,
+    refreshing,
+    loadingMore,
     openComment,
     closeComment,
     toggleLike,
     handleToggleVisibility,
     handleSubmitComment,
+    refresh,
+    loadMore,
     goBack,
   } = useEventAlbumScreen(navigation, route.params ?? {});
 
@@ -112,7 +119,7 @@ export function EventAlbumScreen({ navigation, route }: Props) {
       return;
     }
     setSubmitting(true);
-    handleSubmitComment(trimmed);
+    handleSubmitComment();
     setDraft('');
     setSubmitting(false);
     closeComment();
@@ -145,32 +152,52 @@ export function EventAlbumScreen({ navigation, route }: Props) {
         ))}
       </View>
 
-      {sortedPosts.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center text-sm leading-relaxed" style={{ color: BRAND_MUTED }}>
-            {copy.albumEmpty}
-          </Text>
+      {loading && sortedPosts.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
         </View>
       ) : (
         <FlatList
           data={sortedPosts}
           keyExtractor={item => item.id}
           contentContainerStyle={{
+            flexGrow: 1,
             padding: 16,
             paddingBottom: insets.bottom + 24,
             gap: 12,
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />
+          }
+          onEndReached={() => {
+            void loadMore();
+          }}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            <View className="flex-1 items-center justify-center px-8 py-16">
+              <Text className="text-center text-sm leading-relaxed" style={{ color: BRAND_MUTED }}>
+                {copy.albumEmpty}
+              </Text>
+            </View>
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <View className="py-4">
+                <ActivityIndicator />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <EventAlbumCard
               post={item}
               language={language}
               copy={cardCopy}
-              isMine={Boolean(userId) && item.authorId === userId}
-              onToggleLike={() => toggleLike(item.id)}
+              isMine={Boolean(item.isMine) || (Boolean(userId) && item.authorId === userId)}
+              onToggleLike={() => toggleLike()}
               onPressComment={() => openComment(item.id)}
               onToggleVisibility={() =>
-                handleToggleVisibility(item.id, item.visibility === 'private')
+                void handleToggleVisibility(item.id, item.visibility === 'private')
               }
             />
           )}

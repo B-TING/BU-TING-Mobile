@@ -156,6 +156,15 @@ export const ZONE_EVENT_ENDPOINTS = {
     \`/api/v1/zone-events/\${eventId}/participations/\${participationId}/submit\`,
   /** GET /api/v1/users/me/zone-event-participations */
   myHistory: '/api/v1/users/me/zone-event-participations',
+  /** GET /api/v1/zone-events/{eventId}/album */
+  eventAlbum: (eventId: string) => \`/api/v1/zone-events/\${eventId}/album\`,
+  /** GET /api/v1/zones/{zoneId}/album */
+  zoneAlbum: (zoneId: string) => \`/api/v1/zones/\${zoneId}/album\`,
+  /** GET /api/v1/zone-event-rounds/{roundId}/album */
+  roundAlbum: (roundId: string) => \`/api/v1/zone-event-rounds/\${roundId}/album\`,
+  /** PATCH /api/v1/zone-event-participations/{id}/visibility */
+  visibility: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/visibility\`,
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

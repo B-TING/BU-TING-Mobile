@@ -43,8 +43,7 @@ export type RootStackParamList = {
   /** Phase 3+ — 네비 미등록 */
   EventGameMukjjippa: { eventId: string };
   EventParticipationHistory: undefined;
-  /** Phase 2 — 네비 미등록 */
-  EventAlbum: { zoneId?: EventZoneId; eventId?: string } | undefined;
+  EventAlbum: { zoneId?: EventZoneId; eventId?: string; roundId?: string } | undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

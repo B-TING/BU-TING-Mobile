@@ -166,3 +166,40 @@ export type ZoneEventHistoryQuery = {
   size?: number;
 };
 
+export type ZoneEventAlbumSortParam = 'LATEST' | 'MOST_LIKED';
+
+export type ZoneEventAlbumQuery = {
+  sort?: ZoneEventAlbumSortParam;
+  cursor?: string;
+  size?: number;
+};
+
+export type ZoneEventAlbumItemResponse = {
+  participationId: string;
+  eventId: string;
+  eventTitle?: string | null;
+  zoneId: string;
+  authorId: string;
+  authorNickname?: string | null;
+  authorProfileImageUrl?: string | null;
+  equippedTitle?: unknown;
+  content?: string | null;
+  mediaUrl?: string | null;
+  mediaUrlExpiresIn?: number | null;
+  likeCount?: number;
+  likedByMe?: boolean;
+  commentCount?: number;
+  isMine?: boolean;
+  completedAt?: string | null;
+};
+
+export type ZoneEventAlbumPageResponse = {
+  items?: ZoneEventAlbumItemResponse[] | null;
+  nextCursor?: string | null;
+  hasNext?: boolean;
+};
+
+export type ZoneEventVisibilityUpdateRequest = {
+  visibility: 'PUBLIC' | 'PRIVATE';
+};
+

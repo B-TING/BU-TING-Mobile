@@ -136,9 +136,9 @@ export function EventAlbumCard({
             <Text className="text-[12px] font-bold" style={{ color: BRAND_TEXT }}>
               {copy.addComment}
             </Text>
-            {post.comments.length > 0 ? (
+            {(post.commentCount ?? post.comments.length) > 0 ? (
               <Text className="text-[12px] font-semibold" style={{ color: BRAND_MUTED }}>
-                {copy.commentCount(post.comments.length)}
+                {copy.commentCount(post.commentCount ?? post.comments.length)}
               </Text>
             ) : null}
           </Pressable>

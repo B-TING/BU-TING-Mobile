@@ -338,7 +338,19 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
           subtitle={eventZoneName(zone, language)}
           onBack={() => navigation.goBack()}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
-          rightAccessory={undefined}
+          rightAccessory={
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                navigation.navigate('EventAlbum', {
+                  eventId: event.id,
+                  zoneId: event.zoneId,
+                })
+              }
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 active:opacity-80">
+              <Text className="text-xs font-semibold text-[#0077B6]">{copy.albumOpen}</Text>
+            </Pressable>
+          }
         />
       </View>
 

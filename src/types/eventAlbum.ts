@@ -14,10 +14,10 @@ export type EventAlbumComment = {
   createdAt: string;
 };
 
-/** Phase 2 이벤트 앨범 게시물 (세션 mock) */
+/** 구역 이벤트 앨범 게시물 (GET album → EventAlbumPost) */
 export type EventAlbumPost = {
   id: string;
-  /** 내 참여 이력과 연결될 때 */
+  /** 참여 UUID. PATCH visibility / 이력 연결 */
   participationId?: string;
   eventId: string;
   zoneId: EventZoneId;
@@ -30,6 +30,8 @@ export type EventAlbumPost = {
   likeCount: number;
   likedByMe: boolean;
   comments: EventAlbumComment[];
+  commentCount?: number;
   visibility: EventAlbumVisibility;
+  isMine?: boolean;
   completedAt: string;
 };
