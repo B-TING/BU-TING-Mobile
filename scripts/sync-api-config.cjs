@@ -136,6 +136,23 @@ export const FILE_ENDPOINTS = {
   files: '/api/v1/files',
 } as const;
 
+export const ZONE_EVENT_ENDPOINTS = {
+  /** GET /api/v1/zone-events/active?zone= */
+  active: '/api/v1/zone-events/active',
+  /** GET /api/v1/zone-events/{eventId} */
+  detail: (eventId: string) => \`/api/v1/zone-events/\${eventId}\`,
+  /** GET /api/v1/zone-event-rounds/current */
+  currentRound: '/api/v1/zone-event-rounds/current',
+  /** POST /api/v1/zone-events/{eventId}/participations */
+  join: (eventId: string) => \`/api/v1/zone-events/\${eventId}/participations\`,
+  /** GET /api/v1/zone-events/{eventId}/participations/me */
+  myParticipations: (eventId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/me\`,
+  /** DELETE /api/v1/zone-events/{eventId}/participations/{participationId} */
+  cancelParticipation: (eventId: string, participationId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/\${participationId}\`,
+} as const;
+
 export const TRAVEL_RECORD_ENDPOINTS = {
   /** 여행 기록 초안 생성 */
   createDraft: (travelId: string) => \`/api/v1/travels/\${travelId}/records\`,

@@ -38,6 +38,8 @@ import {
 } from '../../constants/eventZone/eventGame';
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
+import { useJoinZoneEvent } from '../../hooks/eventZone/useJoinZoneEvent';
+import { useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
 import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -45,7 +47,8 @@ import {
   useEventParticipationStore,
   useZoneEventStore,
 } from '../../stores';
-import { useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
+import { getCachedCoordinates } from '../../stores/useLocationStore';
+import { useAppAlert } from '../../components/shared/modals';
 import { zoneEventTypeCode } from '../../constants/eventZone/zoneEvents';
 import {
   formatZoneEventRemaining,
@@ -53,6 +56,13 @@ import {
 } from '../../utils/eventZone/zoneEventRemaining';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameDetail'>;
+
+function isServerParticipationId(id: string | undefined): id is string {
+  return (
+    typeof id === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  );
+}
 
 // ─── 반경 체크 결과 모달 ────────────────────────────────────────────
 type RadiusModalConfig = {
@@ -123,6 +133,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const copy = useCopy('eventGame');
   const zoneCopy = useCopy('eventZone');
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
+  const { accessToken, joining, join } = useJoinZoneEvent();
+  const { alert } = useAppAlert();
   useLocationCache();
 
   const [radiusModal, setRadiusModal] = useState<RadiusModalConfig | null>(null);
@@ -213,12 +225,13 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const canCapture =
     remainingMs > 0 &&
     !checking &&
+    !joining &&
     !participationBlocked &&
     effectiveTargetId != null &&
     (participation == null || participation.status === 'in_progress');
 
   const participateLabel = (() => {
-    if (checking) return copy.checkingLocation;
+    if (checking || joining) return copy.checkingLocation;
     if (participation?.status === 'pending_review') return copy.pendingReviewTitle;
     if (participation?.status === 'approved') return copy.statusCompleted;
     if (participation?.status === 'rejected') return copy.statusRejected;
@@ -232,6 +245,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
 
   const handleParticipate = async () => {
     if (!canCapture || !effectiveTargetId) return;
+    if (!accessToken) {
+      navigation.navigate('Login');
+      return;
+    }
     const within = await assertWithinRadius(
       event,
       result => {
@@ -241,11 +258,61 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       effectiveTargetId,
     );
     if (!within) return;
-    if (beginParticipation(event, effectiveTargetId) === 'blocked') return;
-    navigation.navigate('EventGameCamera', {
-      eventId: event.id,
-      targetId: effectiveTargetId,
-    });
+
+    const openServerId = isServerParticipationId(event.myOpenParticipationId)
+      ? event.myOpenParticipationId
+      : isServerParticipationId(participation?.id) && participation?.status === 'in_progress'
+        ? participation.id
+        : undefined;
+
+    const goToCamera = (participationId: string) => {
+      if (beginParticipation(event, effectiveTargetId, participationId) === 'blocked') {
+        return;
+      }
+      navigation.navigate('EventGameCamera', {
+        eventId: event.id,
+        targetId: effectiveTargetId,
+        participationId,
+      });
+    };
+
+    if (openServerId) {
+      goToCamera(openServerId);
+      return;
+    }
+
+    const coords = getCachedCoordinates();
+    if (!coords) {
+      const config = buildRadiusModalConfig({ status: 'location_unavailable' }, copy);
+      if (config) setRadiusModal(config);
+      return;
+    }
+
+    const result = await join(event.id, coords);
+    if (result.status === 'unauthenticated') {
+      navigation.navigate('Login');
+      return;
+    }
+    if (result.status === 'out_of_range') {
+      const config = buildRadiusModalConfig(
+        {
+          status: 'outside',
+          distanceM: result.distanceMeters,
+          radiusM: authTarget?.radiusM ?? 0,
+        },
+        copy,
+      );
+      if (config) setRadiusModal(config);
+      return;
+    }
+    if (result.status === 'error') {
+      alert({
+        title: copy.outOfRadiusTitle,
+        message: result.message,
+      });
+      return;
+    }
+    goToCamera(result.participationId);
   };
 
   const statItems = [

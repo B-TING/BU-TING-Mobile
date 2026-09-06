@@ -18,7 +18,8 @@ type EventParticipationState = {
   ) => void;
   beginParticipation: (
     event: ZoneEvent,
-    targetId?: string | null,
+    targetId: string | null | undefined,
+    participationId: string,
   ) => 'ok' | 'blocked';
   submitForReview: (
     event: ZoneEvent,
@@ -78,8 +79,8 @@ export const useEventParticipationStore = create<EventParticipationState>()(
           item.id === id ? { ...item, ...patch, status } : item,
         ),
       })),
-    beginParticipation: (event, targetId) => {
-      if (!isPhase1AuthEvent(event)) {
+    beginParticipation: (event, targetId, participationId) => {
+      if (!isPhase1AuthEvent(event) || !participationId) {
         return 'blocked';
       }
 
@@ -93,7 +94,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
 
       const now = new Date().toISOString();
       get().upsertRecord({
-        id: existing?.id ?? createParticipationId(),
+        id: participationId,
         eventId: event.id,
         zoneId: event.zoneId,
         eventType: event.type,

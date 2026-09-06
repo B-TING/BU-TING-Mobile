@@ -38,7 +38,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending';
 
 export function EventGameCameraScreen({ navigation, route }: Props) {
-  const { eventId, targetId } = route.params;
+  const { eventId, targetId, participationId } = route.params;
   const insets = useSafeAreaInsets();
   const language = useAppLanguage();
   const copy = useCopy('eventGame');
@@ -60,12 +60,12 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   >(null);
 
   useEffect(() => {
-    if (!event || !isCameraEventGame(event)) {
+    if (!event || !isCameraEventGame(event) || !participationId) {
       navigation.goBack();
     }
-  }, [event, navigation]);
+  }, [event, navigation, participationId]);
 
-  if (!event || !isCameraEventGame(event)) {
+  if (!event || !isCameraEventGame(event) || !participationId) {
     return null;
   }
 

@@ -90,3 +90,25 @@ export type ZoneEventRoundStatusResponse = {
   endsAt?: string | null;
   zones?: ZoneEventRoundSlotResponse[] | null;
 };
+
+export type ZoneEventParticipationJoinRequest = {
+  latitude: number;
+  longitude: number;
+};
+
+export type ZoneEventParticipationResponse = {
+  participationId: string;
+  eventId: string;
+  zoneId?: string | null;
+  typeCode?: string | null;
+  status?: string | null;
+  success?: boolean | null;
+  distanceM?: number | null;
+  mediaUrl?: string | null;
+  content?: string | null;
+  likeCount?: number;
+  visibility?: string | null;
+  joinedAt?: string | null;
+  completedAt?: string | null;
+};
+
