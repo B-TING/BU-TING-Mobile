@@ -1,0 +1,29 @@
+appId: com.butingmobile
+name: Plan wizard — open from home CTA
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.heroCta
+- extendedWaitUntil:
+    visible:
+      id: planWizard.screen
+    timeout: 10000
+- assertVisible:
+    id: planWizard.titleInput
+- tapOn:
+    id: planWizard.titleInput
+- inputText: E2E 여행
+- tapOn:
+    id: planWizard.next
+- assertVisible:
+    id: planWizard.screen
+- tapOn:
+    id: planWizard.back
+- tapOn:
+    id: planWizard.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

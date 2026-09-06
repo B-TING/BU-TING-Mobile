@@ -7,6 +7,7 @@ import { LockerMapView } from '../../components/locker/LockerMapView';
 import { SubwayLockerDetailSheet } from '../../components/locker/SubwayLockerDetailSheet';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useAppLanguage } from '../../i18n';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import {
@@ -42,6 +43,7 @@ export function LuggageStorageScreen({ navigation }: Props) {
 
   return (
     <View
+      testID={TEST_ID.luggage.screen}
       className="flex-1 bg-brand-background"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">

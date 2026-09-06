@@ -15,6 +15,7 @@ import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
 import { isAlphaFeatureBlocked } from '../../../constants/common/alphaFeatureBlocks';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 
@@ -93,6 +94,7 @@ export function HomeEventZoneSection({
         <View className="absolute inset-0 overflow-hidden">
           <Pressable
             onPress={onMapPress}
+            testID={TEST_ID.home.eventZoneMap}
             className="h-full w-full active:opacity-95"
             accessibilityRole="button"
             accessibilityLabel={copy.mapA11y}>
@@ -154,6 +156,7 @@ export function HomeEventZoneSection({
           <Pressable
             onPress={() => onEnterChat(chatZoneId)}
             disabled={!room}
+            testID={TEST_ID.home.eventZoneChat}
             className={`mt-2 items-center rounded-xl py-2 active:opacity-90 ${
               room ? 'bg-brand-primary' : 'bg-brand-border'
             }`}

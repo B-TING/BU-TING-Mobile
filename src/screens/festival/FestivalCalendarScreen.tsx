@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FestivalCard } from '../../components/festival/FestivalCard';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
 import {
   festivalsInMonth,
@@ -75,6 +76,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
 
   return (
     <View
+      testID={TEST_ID.festival.screen}
       className="flex-1 bg-brand-background"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -88,6 +90,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
       <View className="flex-row items-center justify-between border-b border-brand-border bg-brand-surface px-4 py-3">
         <Pressable
           onPress={goPrevMonth}
+          testID={TEST_ID.festival.prevMonth}
           hitSlop={12}
           className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
           accessibilityRole="button"
@@ -106,6 +109,7 @@ export function FestivalCalendarScreen({ navigation, route }: Props) {
         </View>
         <Pressable
           onPress={goNextMonth}
+          testID={TEST_ID.festival.nextMonth}
           hitSlop={12}
           className="h-9 w-9 items-center justify-center rounded-full active:bg-brand-selected"
           accessibilityRole="button"

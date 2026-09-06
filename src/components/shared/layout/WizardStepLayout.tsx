@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { layout } from '../../../constants/common/layout';
 
 type WizardStepLayoutProps = {
@@ -15,6 +16,7 @@ type WizardStepLayoutProps = {
   omitTopSafeArea?: boolean;
   children: ReactNode;
   footer: ReactNode;
+  testID?: string;
 };
 
 export function WizardStepLayout({
@@ -28,17 +30,23 @@ export function WizardStepLayout({
   omitTopSafeArea = false,
   children,
   footer,
+  testID = TEST_ID.planWizard.screen,
 }: WizardStepLayoutProps) {
   const insets = useSafeAreaInsets();
   const progress = (stepIndex + 1) / totalSteps;
 
   return (
     <View
+      testID={testID}
       className="flex-1 bg-brand-background px-6"
       style={[layout.screenPad24, { paddingTop: omitTopSafeArea ? 8 : insets.top + 8 }]}>
       <View className="mb-3 flex-row items-center justify-between">
         {onBack && backLabel ? (
-          <Pressable onPress={onBack} hitSlop={8} className="active:opacity-80">
+          <Pressable
+            onPress={onBack}
+            testID={TEST_ID.planWizard.back}
+            hitSlop={8}
+            className="active:opacity-80">
             <Text className="text-sm font-semibold text-brand-primary">{backLabel}</Text>
           </Pressable>
         ) : (

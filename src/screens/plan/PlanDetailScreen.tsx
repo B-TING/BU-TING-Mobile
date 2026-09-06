@@ -19,6 +19,7 @@ import { PlaceReviewFormModal } from '../../components/review/modals/PlaceReview
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppBarTopInset } from '../../components/shared/navigation/AppBar';
 import { ICON_COLOR_DEFAULT, ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { canRemovePlanDay } from '../../services/travel/planDaySync';
 import { usePlanDetailScreen } from '../../hooks/plan/usePlanDetailScreen';
 import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
@@ -172,7 +173,7 @@ export function PlanDetailScreen({ navigation, route, embeddedInMainTabs = false
   }
 
   return (
-    <View className="flex-1 bg-brand-background">
+    <View testID={TEST_ID.planDetail.screen} className="flex-1 bg-brand-background">
       <View
         className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 pb-3"
         style={{

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { BrandIcon } from '../components/shared/brand/BrandIcon';
 import { layout } from '../constants/common/layout';
+import { TEST_ID } from '../constants/e2e/testIds';
 import { useSetupPhase } from '../hooks/useSetupPhase';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
@@ -87,7 +88,7 @@ export function RootNavigator() {
 
   if (!ready || !hasAppHydrated || !hasAuthHydrated) {
     return (
-      <View style={[layout.screen, styles.loading]}>
+      <View testID={TEST_ID.app.loading} style={[layout.screen, styles.loading]}>
         <BrandIcon size={72} />
         <ActivityIndicator size="large" color="#0077B6" style={styles.spinner} />
       </View>

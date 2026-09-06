@@ -8,6 +8,7 @@ import { AppBar } from '../components/shared/navigation/AppBar';
 import { AppMenuDrawer } from '../components/shared/navigation/AppMenuDrawer';
 import { Navbar, type NavbarTab } from '../components/shared/navigation/Navbar';
 import { layout } from '../constants/common/layout';
+import { TEST_ID } from '../constants/e2e/testIds';
 import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
@@ -202,7 +203,7 @@ export function MainTabNavigator({ navigation, route }: Props) {
 
   return (
     <MainTabNavigationContext.Provider value={contextValue}>
-      <View className="flex-1 bg-brand-background" style={layout.screen}>
+      <View testID={TEST_ID.main.screen} className="flex-1 bg-brand-background" style={layout.screen}>
         <AppBar
           onMenuPress={() => setMenuOpen(true)}
           onProfilePress={() => goToTab('my')}

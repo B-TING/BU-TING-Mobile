@@ -1,0 +1,17 @@
+# Shared: debug 빌드에서 언어 화면 → E2E 세션 → 홈
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 45000
+- tapOn:
+    id: language.e2eBootstrap
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: navbar.root
+    timeout: 10000

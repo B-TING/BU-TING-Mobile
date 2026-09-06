@@ -1,0 +1,29 @@
+appId: com.butingmobile
+name: App menu drawer — festival calendar
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: appBar.menu
+- extendedWaitUntil:
+    visible:
+      id: menu.drawer
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: menu.item.calendar
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: menu.item.calendar
+- extendedWaitUntil:
+    visible:
+      id: festival.screen
+    timeout: 15000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

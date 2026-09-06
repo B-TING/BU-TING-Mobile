@@ -1,0 +1,13 @@
+# 위치 동의 모달·시스템 권한 팝업이 뜨면 거절하고 계속
+- tapOn:
+    id: location.decline
+    optional: true
+- tapOn:
+    text: '허용 안 함'
+    optional: true
+- tapOn:
+    text: '거부'
+    optional: true
+- tapOn:
+    text: "Don't allow"
+    optional: true

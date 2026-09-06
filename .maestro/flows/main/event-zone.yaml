@@ -1,0 +1,19 @@
+appId: com.butingmobile
+name: Event zone map
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.eventZoneMap
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: eventZone.screen
+    timeout: 20000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

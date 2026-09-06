@@ -1,0 +1,37 @@
+appId: com.butingmobile
+name: Main tabs — home, my, feed, itinerary
+tags:
+  - smoke
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: navbar.tab.my
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- tapOn:
+    id: navbar.tab.feed
+- extendedWaitUntil:
+    visible:
+      id: feed.screen
+    timeout: 10000
+- tapOn:
+    id: navbar.tab.home
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000
+- tapOn:
+    id: navbar.tab.route
+- extendedWaitUntil:
+    visible:
+      id: planWizard.screen
+    timeout: 10000
+- tapOn:
+    id: planWizard.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

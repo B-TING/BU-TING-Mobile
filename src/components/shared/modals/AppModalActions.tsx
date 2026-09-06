@@ -7,6 +7,7 @@ export type AppModalAction = {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
+  testID?: string;
 };
 
 type AppModalActionsProps = {
@@ -26,6 +27,7 @@ export function AppModalActions({ actions, className }: AppModalActionsProps) {
             key={action.label}
             onPress={action.onPress}
             disabled={action.disabled}
+            testID={action.testID}
             className={cn(
               'flex-1 items-center rounded-2xl py-3.5 active:opacity-90',
               action.disabled && 'opacity-50',

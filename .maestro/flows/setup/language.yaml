@@ -1,0 +1,22 @@
+appId: com.butingmobile
+name: Setup — language selection
+tags:
+  - smoke
+  - setup
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 45000
+- tapOn:
+    id: language.option.en
+- tapOn:
+    id: language.option.ko
+- tapOn:
+    id: language.continue
+- extendedWaitUntil:
+    visible:
+      id: onboarding.screen
+    timeout: 15000

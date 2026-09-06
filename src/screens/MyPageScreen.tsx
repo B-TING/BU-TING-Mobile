@@ -19,6 +19,7 @@ import { AppIcon } from '../components/shared/icons/AppIcon';
 import { getNavbarOverlayHeight } from '../components/shared/navigation/Navbar';
 import { useMyPageScreen } from '../hooks/mypage/useMyPageScreen';
 import { layout } from '../constants/common/layout';
+import { TEST_ID } from '../constants/e2e/testIds';
 import {
   ICON_COLOR_HEART,
   ICON_COLOR_MUTED,
@@ -50,6 +51,7 @@ function SettingsRow({
   danger,
   showChevron = true,
   last,
+  testID,
 }: {
   icon: LucideIconName;
   label: string;
@@ -57,10 +59,12 @@ function SettingsRow({
   danger?: boolean;
   showChevron?: boolean;
   last?: boolean;
+  testID?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      testID={testID}
       className={cn(
         'flex-row items-center px-4 py-3.5 active:opacity-80',
         !last && 'border-b border-brand-border',
@@ -122,7 +126,7 @@ export function MyPageScreen({ navigation }: Props) {
   } = useMyPageScreen({ navigation });
 
   return (
-    <View className="flex-1 bg-brand-background" style={layout.screen}>
+    <View testID={TEST_ID.mypage.screen} className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: navbarClearance + 24 }}
@@ -181,6 +185,7 @@ export function MyPageScreen({ navigation }: Props) {
               <Text className="mb-4 text-base text-brand-muted">{copy.notLoggedIn}</Text>
               <Pressable
                 onPress={goToLogin}
+                testID={TEST_ID.mypage.login}
                 className="items-center rounded-xl border border-brand-primary bg-brand-primary px-8 py-2.5 active:opacity-80"
                 accessibilityRole="button">
                 <Text className="text-sm font-bold text-white">{copy.loginAgain}</Text>
@@ -264,17 +269,23 @@ export function MyPageScreen({ navigation }: Props) {
 
         {isAuthenticated && user ? (
           <View className="px-5">
-            <Text className="mb-3 text-base font-bold text-brand-text">{copy.settings}</Text>
+            <Text
+              testID={TEST_ID.mypage.settings}
+              className="mb-3 text-base font-bold text-brand-text">
+              {copy.settings}
+            </Text>
             <View className="overflow-hidden rounded-2xl border border-brand-border bg-brand-surface">
               <SettingsRow
                 icon="pencil"
                 label={copy.editProfile}
                 onPress={() => setNicknameModalOpen(true)}
+                testID={TEST_ID.mypage.nickname}
               />
               <SettingsRow
                 icon="sparkles"
                 label={copy.editPreferences}
                 onPress={() => navigation.navigate('Onboarding', { mode: 'edit' })}
+                testID={TEST_ID.mypage.preferences}
               />
               <SettingsRow
                 icon="bell"
@@ -287,11 +298,13 @@ export function MyPageScreen({ navigation }: Props) {
                 onPress={() =>
                   navigation.navigate('LanguageSelection', { mode: 'settings' })
                 }
+                testID={TEST_ID.mypage.language}
               />
               <SettingsRow
                 icon="settings"
                 label={copy.accountSettings}
                 onPress={() => setAccountOpen(true)}
+                testID={TEST_ID.mypage.account}
               />
               <SettingsRow
                 icon="logOut"
@@ -300,6 +313,7 @@ export function MyPageScreen({ navigation }: Props) {
                 danger
                 showChevron={false}
                 last
+                testID={TEST_ID.mypage.logout}
               />
             </View>
           </View>

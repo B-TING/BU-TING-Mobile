@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { QuickAccessItem } from '../../../constants/home/mainHome';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
@@ -33,6 +34,7 @@ export function QuickAccessRow({
           const content = (
             <Pressable
               onPress={() => onItemPress?.(item.id)}
+              testID={TEST_ID.home.quickAccess(item.id)}
               className="w-full items-center active:opacity-80"
               accessibilityRole="button">
               <View

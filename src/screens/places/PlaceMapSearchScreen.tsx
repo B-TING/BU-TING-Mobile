@@ -13,6 +13,7 @@ import { PlaceDetailSheet } from '../../components/places/PlaceDetailSheet';
 import { PlaceMapView } from '../../components/places/PlaceMapView';
 import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { buildPlaceListMetaLine } from '../../constants/places/placeSearch';
 import { usePlaceMapSearchScreen } from '../../hooks/places/usePlaceMapSearchScreen';
 import { useAppLanguage } from '../../i18n';
@@ -86,6 +87,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
 
   return (
     <View
+      testID={TEST_ID.placeSearch.screen}
       className="flex-1 bg-brand-background"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
@@ -108,6 +110,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
                 <Pressable
                   key={typeId}
                   onPress={() => handleChangeContentType(typeId)}
+                  testID={TEST_ID.placeSearch.category(typeId)}
                   accessibilityRole="button"
                   accessibilityLabel={copy.categoryTabA11y(label)}
                   className={`mr-2 rounded-full px-3 py-1.5 ${
@@ -189,6 +192,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
           <View className="border-t border-brand-border bg-brand-surface">
             <View className="flex-row items-center gap-2 px-4 pt-3">
               <TextInput
+                testID={TEST_ID.placeSearch.keyword}
                 className="min-h-11 flex-1 rounded-2xl border border-brand-border bg-brand-background px-3 py-2.5 text-sm text-brand-text"
                 value={keywordDraft}
                 onChangeText={setKeywordDraft}
@@ -212,6 +216,7 @@ export function PlaceMapSearchScreen({ navigation, route }: Props) {
               <Pressable
                 onPress={handleSubmitKeyword}
                 disabled={keywordDraft.trim().length === 0 || keywordLoading}
+                testID={TEST_ID.placeSearch.search}
                 accessibilityRole="button"
                 accessibilityLabel={copy.keywordSearchA11y}
                 className={`h-11 items-center justify-center rounded-2xl px-3 ${

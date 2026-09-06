@@ -17,6 +17,7 @@ import { BrandIcon } from '../../components/shared/brand/BrandIcon';
 import { BrandLogo } from '../../components/shared/brand/BrandLogo';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { completeProviderLogin } from '../../services/auth/authSession';
@@ -26,6 +27,7 @@ import { useAppStore, usePlanStore } from '../../stores';
 import type { OAuthProvider } from '../../types/auth';
 import { logAuth } from '../../utils/auth/authLogger';
 import { cn } from '../../utils/common/cn';
+import { enterE2ESession } from '../../utils/e2e/enterE2ESession';
 import { listOfflineViewablePlans } from '../../utils/plan/selectLatestLocalPlan';
 
 const heroImage = require('../../../assets/images/home-hero.jpg');
@@ -135,8 +137,15 @@ export function LoginScreen({ navigation }: Props) {
     setOfflinePickerOpen(true);
   }, [copy.offlineModeEmpty, openOfflinePlan]);
 
+  const onE2EEnter = useCallback(() => {
+    if (!enterE2ESession()) {
+      return;
+    }
+    navigation.replace('MainTabs');
+  }, [navigation]);
+
   return (
-    <View className="flex-1 bg-white">
+    <View testID={TEST_ID.login.screen} className="flex-1 bg-white">
       <View style={[styles.heroShadow, { height: heroHeight + insets.top }]}>
         <ImageBackground
           source={heroImage}
@@ -173,6 +182,7 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           disabled={isLoading}
           onPress={() => setRememberMe(current => !current)}
+          testID={TEST_ID.login.rememberMe}
           className="mb-1 mt-1 flex-row items-center active:opacity-80">
           <View
             className={cn(
@@ -189,7 +199,9 @@ export function LoginScreen({ navigation }: Props) {
         </Pressable>
 
         {errorMessage ? (
-          <Text className="mt-3 text-sm text-red-600">{errorMessage}</Text>
+          <Text testID={TEST_ID.login.error} className="mt-3 text-sm text-red-600">
+            {errorMessage}
+          </Text>
         ) : null}
 
         {isLoading ? (
@@ -209,6 +221,7 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           disabled={offlineEntryDisabled}
           onPress={onEnterOfflineMode}
+          testID={TEST_ID.login.offline}
           accessibilityRole="button"
           accessibilityLabel={copy.offlineMode}
           className={cn(
@@ -218,6 +231,17 @@ export function LoginScreen({ navigation }: Props) {
           <Text className="text-base font-semibold text-brand-text">{copy.offlineMode}</Text>
           <Text className="mt-1 text-xs text-brand-muted">{copy.offlineModeHint}</Text>
         </Pressable>
+
+        {__DEV__ ? (
+          <Pressable
+            onPress={onE2EEnter}
+            testID={TEST_ID.login.e2eEnter}
+            className="mt-3 items-center py-2 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="E2E enter main">
+            <Text className="text-xs font-medium text-brand-muted">E2E: 메인으로</Text>
+          </Pressable>
+        ) : null}
 
         <Text className="mt-6 text-center text-xs leading-5 text-brand-muted">
           {copy.loginTermsPrefix}

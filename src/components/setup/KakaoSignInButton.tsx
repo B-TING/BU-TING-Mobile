@@ -5,6 +5,7 @@ import {
   KAKAO_BUTTON,
   OAUTH_BUTTON_HEIGHT,
 } from '../../constants/auth/oauthButtonStyle';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import type { AppLanguage } from '../../types/user';
 import { cn } from '../../utils/common/cn';
 import { KakaoSymbolIcon } from './icons/KakaoSymbolIcon';
@@ -25,6 +26,7 @@ export function KakaoSignInButton({ language, disabled = false, onPress }: Props
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={TEST_ID.login.kakao}
       className={cn('mb-3 w-full active:opacity-90', disabled && 'opacity-50')}>
       <View
         style={{

@@ -1,0 +1,35 @@
+appId: com.butingmobile
+name: My page — settings rows
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: navbar.tab.my
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: mypage.settings
+    direction: DOWN
+    timeout: 8000
+- assertVisible:
+    id: mypage.language
+- assertVisible:
+    id: mypage.account
+- assertVisible:
+    id: mypage.logout
+- tapOn:
+    id: mypage.language
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 10000
+- tapOn:
+    id: language.back
+- extendedWaitUntil:
+    visible:
+      id: mypage.screen
+    timeout: 10000

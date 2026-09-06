@@ -27,6 +27,8 @@
     "fonts:sync": "node scripts/sync-pretendard-fonts.cjs",
     "postinstall": "node scripts/sync-kakao-map-key.cjs && node scripts/sync-api-config.cjs && node scripts/sync-oauth-config.cjs && node scripts/sync-pretendard-fonts.cjs && patch-package && node scripts/pin-metro-image-size.cjs && node scripts/install-git-hooks.cjs",
     "test": "jest",
+    "e2e": "maestro test .maestro/flows",
+    "e2e:smoke": "maestro test --include-tags smoke .maestro/flows",
     "icons:generate": "node scripts/generate-app-icons.cjs"
   },
   "dependencies": {

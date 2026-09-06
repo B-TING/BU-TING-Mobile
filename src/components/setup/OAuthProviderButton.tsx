@@ -70,6 +70,7 @@ export function OAuthProviderButton({
     <Pressable
       disabled={disabled}
       onPress={() => onPress(provider)}
+      testID={`login.${provider}`}
       className={cn(
         'mb-3 rounded-xl border px-4 py-3.5 active:opacity-90',
         meta.backgroundClass,

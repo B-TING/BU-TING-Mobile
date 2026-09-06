@@ -19,6 +19,7 @@ import {
 } from '../../components/eventZone/eventZoneTheme';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import { EVENT_MAP_BG } from '../../constants/eventZone/mapChrome';
 import { useEventZoneScreen } from '../../hooks/eventZone/useEventZoneScreen';
@@ -68,7 +69,7 @@ export function EventZoneScreen({ navigation }: Props) {
   const sheetBottomInset = Math.max(12, insets.bottom);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: EVENT_MAP_BG }}>
+    <View testID={TEST_ID.eventZone.screen} className="flex-1" style={{ backgroundColor: EVENT_MAP_BG }}>
       {/* 상단 맵 */}
       <View className="relative" style={{ flex: MAP_FLEX }}>
         <BusanZoneMap

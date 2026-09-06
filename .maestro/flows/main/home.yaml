@@ -1,0 +1,28 @@
+appId: com.butingmobile
+name: Home — bootstrap and core widgets
+tags:
+  - smoke
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- assertVisible:
+    id: home.heroCta
+- assertVisible:
+    id: home.quickAccess.hotels
+- assertVisible:
+    id: home.quickAccess.attractions
+- assertVisible:
+    id: home.quickAccess.festivals
+- assertVisible:
+    id: home.quickAccess.restaurants
+- assertVisible:
+    id: home.quickAccess.luggage
+- assertVisible:
+    id: home.eventZoneMap
+- assertVisible:
+    id: home.helpFab
+- scrollUntilVisible:
+    element:
+      id: home.eventsViewAll
+    direction: DOWN
+    timeout: 8000

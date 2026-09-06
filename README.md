@@ -13,7 +13,7 @@
 | 상태 | Zustand + AsyncStorage persist |
 | 지도 | WebView + Kakao Map JavaScript SDK |
 | 로그인 | Google / Kakao 네이티브 SDK → 백엔드 OAuth (`id_token`) |
-| 품질 | ESLint · Prettier · Jest |
+| 품질 | ESLint · Prettier · Jest · Maestro E2E |
 
 ## 사전 요구사항
 
@@ -254,6 +254,8 @@ versionName "1.0.0-alpha.2"  // 표시용 문자열
 | `npm run lint` / `lint:fix` | ESLint |
 | `npm run format` / `format:check` | Prettier |
 | `npm test` | Jest |
+| `npm run e2e` | Maestro E2E (기기/에뮬레이터, debug 빌드) |
+| `npm run e2e:smoke` | Maestro 스모크 태그 (`setup` + 홈/탭) |
 | `npm run ngrok:auth` | ngrok Authtoken 등록 |
 | `npm run icons:generate` | 앱 아이콘 생성 |
 
@@ -277,6 +279,7 @@ versionName "1.0.0-alpha.2"  // 표시용 문자열
 ├── scripts/            # sync·빌드·git hooks
 ├── android/ · ios/     # 네이티브 (OAuth 매니페스트는 sync로 생성)
 ├── __tests__/
+├── .maestro/           # Maestro E2E 플로우
 ├── .env.example        # 환경 변수 템플릿 (커밋 O)
 └── .env                # 로컬 비밀 (커밋 X)
 ```
@@ -322,6 +325,22 @@ npm test
 - ESLint: `@react-native/eslint-config`
 - Prettier: `.prettierrc.js` (android/ios/node_modules는 ignore)
 - Jest: `__tests__/` · `*.test.tsx`
+- Maestro E2E: `.maestro/flows/` (셀렉터는 `src/constants/e2e/testIds.ts`)
+
+### E2E (Maestro)
+
+실제 기기·에뮬레이터에서 설정 플로우와 메인 탐색을 QA합니다. **debug 빌드**가 필요합니다. `__DEV__`에서만 보이는 `E2E: 메인으로`로 OAuth 없이 홈에 들어갑니다.
+
+1. [Maestro CLI](https://docs.maestro.dev/getting-started/installing-maestro)를 설치합니다.
+2. Metro를 띄운 뒤 debug 앱을 설치합니다 (`npm start`, `npm run android`).
+3. 플로우를 실행합니다.
+
+```bash
+npm run e2e:smoke   # 언어·온보딩·로그인 UI + 홈/탭
+npm run e2e         # .maestro/flows 전체
+```
+
+OAuth 실로그인·결제·카메라 미션은 자동화하지 않습니다. 로그인 화면은 버튼 노출만 검증합니다.
 
 ### 에디터 (VS Code / Cursor)
 

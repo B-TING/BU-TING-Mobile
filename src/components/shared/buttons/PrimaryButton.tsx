@@ -6,17 +6,20 @@ type PrimaryButtonProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  testID?: string;
 };
 
 export function PrimaryButton({
   label,
   onPress,
   disabled = false,
+  testID,
 }: PrimaryButtonProps) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      testID={testID}
       className={cn(
         'items-center rounded-full py-4',
         disabled ? 'bg-[#E8EEF5]' : 'bg-brand-primary active:opacity-90',

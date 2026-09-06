@@ -7,6 +7,7 @@ import { PrimaryButton } from '../../components/shared/buttons/PrimaryButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { PlaceSearchListItem } from '../../components/places/PlaceSearchListItem';
 import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import {
   TRAVEL_CONSTRAINT_OPTIONS,
   TRAVEL_STYLE_OPTIONS,
@@ -71,6 +72,7 @@ export function PlanWizardScreen(props: Props) {
         return (
           <View>
             <TextInput
+              testID={TEST_ID.planWizard.titleInput}
               className="rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text"
               value={answers.title}
               onChangeText={title => setAnswers(p => ({ ...p, title }))}
@@ -340,6 +342,7 @@ export function PlanWizardScreen(props: Props) {
       onBack={goBack}
       footer={
         <PrimaryButton
+          testID={TEST_ID.planWizard.next}
           label={isLast ? copy.finish : copy.next}
           onPress={goNext}
           disabled={!canProceed()}

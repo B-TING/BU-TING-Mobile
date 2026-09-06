@@ -12,6 +12,7 @@ import { TraveloguePreview } from '../components/home/sections/TraveloguePreview
 import { HomeActionFabs } from '../components/helpdesk/HomeActionFabs';
 import { QUICK_ACCESS_ITEMS } from '../constants/home/mainHome';
 import { layout } from '../constants/common/layout';
+import { TEST_ID } from '../constants/e2e/testIds';
 import { useMainHomeScreen } from '../hooks/home/useMainHomeScreen';
 import { openItineraryOrWizard } from '../navigation/navigateToMainTab';
 import type { RootStackParamList } from '../navigation/types';
@@ -76,7 +77,7 @@ export function MainHomeScreen({
   });
 
   return (
-    <View className="flex-1 bg-brand-background" style={layout.screen}>
+    <View testID={TEST_ID.home.screen} className="flex-1 bg-brand-background" style={layout.screen}>
       <ScrollView
         ref={scrollRef}
         className="flex-1"

@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ChatMessageBubble } from '../../components/helpdesk/ChatMessageBubble';
 import { SuggestedQuestions } from '../../components/helpdesk/SuggestedQuestions';
 import { BackButton } from '../../components/shared/buttons/BackButton';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useHelpDeskChatScreen } from '../../hooks/helpdesk/useHelpDeskChatScreen';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -63,7 +64,9 @@ export function HelpDeskChatScreen({ navigation }: Props) {
 
   const body = (
     <>
-      <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
+      <View
+        testID={TEST_ID.helpdesk.screen}
+        className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
         <BackButton
           accessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
           onPress={() => navigation.goBack()}
@@ -91,6 +94,7 @@ export function HelpDeskChatScreen({ navigation }: Props) {
 
       <View style={[styles.inputBar, { paddingBottom: inputBottomPad }]}>
         <TextInput
+          testID={TEST_ID.helpdesk.input}
           style={styles.textInput}
           value={input}
           onChangeText={setInput}
@@ -109,7 +113,8 @@ export function HelpDeskChatScreen({ navigation }: Props) {
             input.trim() && !loading ? styles.sendButtonActive : styles.sendButtonDisabled,
           ]}
           accessibilityRole="button"
-          accessibilityLabel={copy.send}>
+          accessibilityLabel={copy.send}
+          testID={TEST_ID.helpdesk.send}>
           <Text
             style={[
               styles.sendLabel,

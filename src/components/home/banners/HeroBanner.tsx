@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 import { AppIcon } from '../../shared/icons/AppIcon';
@@ -42,6 +43,7 @@ export function HeroBanner({
           <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="self-start">
             <Pressable
               onPress={onCtaPress}
+              testID={TEST_ID.home.heroCta}
               className="flex-row items-center rounded-xl bg-brand-primary px-4 py-2.5 active:opacity-90"
               accessibilityRole="button">
               <AppIcon name="sparkles" size={16} color={ICON_COLOR_WHITE} />

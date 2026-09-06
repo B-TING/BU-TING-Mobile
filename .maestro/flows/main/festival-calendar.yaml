@@ -1,0 +1,23 @@
+appId: com.butingmobile
+name: Festival calendar — month navigation
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.quickAccess.festivals
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: festival.screen
+    timeout: 20000
+- tapOn:
+    id: festival.nextMonth
+- tapOn:
+    id: festival.prevMonth
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000
