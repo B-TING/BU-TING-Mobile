@@ -230,3 +230,15 @@ export function mapCurrentZoneEventRound(
       })),
   };
 }
+
+export function mapSubmitParticipationStatus(
+  status: string | null | undefined,
+): 'pending_review' | 'approved' | 'rejected' {
+  if (status === 'SUCCESS') {
+    return 'approved';
+  }
+  if (status === 'FAIL' || status === 'REVOKED') {
+    return 'rejected';
+  }
+  return 'pending_review';
+}

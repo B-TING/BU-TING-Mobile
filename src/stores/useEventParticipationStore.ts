@@ -24,7 +24,8 @@ type EventParticipationState = {
   submitForReview: (
     event: ZoneEvent,
     localImageUri: string,
-    targetId?: string | null,
+    targetId: string | null | undefined,
+    status: EventParticipationStatus,
   ) => void;
   getByEventId: (eventId: string) => EventParticipationRecord | undefined;
   /** imperative only — React 셀렉터로 쓰지 말 것 (정렬 복사본) */
@@ -107,7 +108,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
       });
       return 'ok';
     },
-    submitForReview: (event, localImageUri, targetId) => {
+    submitForReview: (event, localImageUri, targetId, status) => {
       if (!isPhase1AuthEvent(event)) {
         return;
       }
@@ -121,7 +122,7 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         eventType: event.type,
         eventTitleKo: event.titleKo,
         targetId: targetId ?? existing?.targetId,
-        status: 'pending_review',
+        status,
         localImageUri,
         createdAt: existing?.createdAt ?? now,
         submittedAt: now,

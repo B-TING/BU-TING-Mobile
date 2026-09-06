@@ -151,6 +151,9 @@ export const ZONE_EVENT_ENDPOINTS = {
   /** DELETE /api/v1/zone-events/{eventId}/participations/{participationId} */
   cancelParticipation: (eventId: string, participationId: string) =>
     \`/api/v1/zone-events/\${eventId}/participations/\${participationId}\`,
+  /** POST /api/v1/zone-events/{eventId}/participations/{participationId}/submit */
+  submit: (eventId: string, participationId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/\${participationId}/submit\`,
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

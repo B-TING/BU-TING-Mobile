@@ -167,11 +167,6 @@ export function eventGameObjectLabel(
   return target?.objectLabelKo ?? event.targetObjectLabelKo ?? '';
 }
 
-/** @deprecated Phase 1 본 플로우에서는 사용하지 않음 — 검수 대기만 표시 */
-export function mockEvaluateGameCapture(_event: ZoneEvent): boolean {
-  return Math.random() < 0.9;
-}
-
 export const EVENT_GAME_COPY: Record<
   AppLanguage,
   {

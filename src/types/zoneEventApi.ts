@@ -112,3 +112,17 @@ export type ZoneEventParticipationResponse = {
   completedAt?: string | null;
 };
 
+export type ZoneEventParticipationSubmitRequest = {
+  mediaFileKey: string;
+  content?: string | null;
+  latitude: number;
+  longitude: number;
+  capturedAt?: string | null;
+};
+
+export type ZoneEventSubmitResultResponse = {
+  participation: ZoneEventParticipationResponse;
+  rewards?: unknown;
+  pointBalance?: number;
+};
+

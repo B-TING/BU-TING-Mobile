@@ -18,7 +18,9 @@ import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   eventGameObjectLabel,
   isCameraEventGame,
+  resolveEventAuthTarget,
 } from '../../constants/eventZone/eventGame';
+import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -27,15 +29,37 @@ import {
   useEventParticipationStore,
   useZoneEventStore,
 } from '../../stores';
+import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
+import { getCachedCoordinates } from '../../stores/useLocationStore';
+import { mapSubmitParticipationStatus } from '../../services/eventZone/zoneEventMapper';
+import {
+  submitZoneEventParticipation,
+  ZoneEventServiceError,
+} from '../../services/eventZone/zoneEventService';
+import { uploadFile } from '../../services/files/fileUploadService';
 import {
   hasCameraPermission,
   requestCameraPermission,
 } from '../../utils/media/mediaPermissions';
-import { pickReviewMedia } from '../../utils/media/pickMedia';
+import { pickReviewMedia, type MediaPickAsset } from '../../utils/media/pickMedia';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 
-type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending';
+type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending' | 'success' | 'fail';
+
+function toUploadInput(asset: MediaPickAsset) {
+  const mime =
+    asset.mimeType === 'image/png'
+      ? 'image/png'
+      : asset.mimeType === 'image/webp'
+        ? 'image/webp'
+        : 'image/jpeg';
+  return {
+    uri: asset.uri,
+    type: mime,
+    name: asset.fileName || `zone-event-${Date.now()}.jpg`,
+  };
+}
 
 export function EventGameCameraScreen({ navigation, route }: Props) {
   const { eventId, targetId, participationId } = route.params;
@@ -44,6 +68,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const copy = useCopy('eventGame');
   const { alert } = useAppAlert();
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
+  const accessToken = useAuthStore(selectReusableAccessToken);
   useLocationCache();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
@@ -54,7 +79,8 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   );
 
   const [phase, setPhase] = useState<CapturePhase>('ready');
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [previewAsset, setPreviewAsset] = useState<MediaPickAsset | null>(null);
+  const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [permissionPrompt, setPermissionPrompt] = useState<
     null | 'request' | 'blocked'
   >(null);
@@ -70,10 +96,38 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   }
 
   const objectLabel = eventGameObjectLabel(event, language, targetId);
+  const authTarget = resolveEventAuthTarget(event, targetId);
   const hintText =
     event.type === 'PLACE_AUTH'
       ? copy.cameraHintPlace
       : copy.cameraHintObject(objectLabel);
+
+  const notifyRadiusResult = (result: RadiusGateResult) => {
+    if (result.status === 'inside') {
+      return;
+    }
+    if (result.status === 'outside') {
+      alert({
+        title: copy.outOfRadiusTitle,
+        message:
+          result.distanceM != null
+            ? copy.outOfRadiusMessage(result.distanceM, result.radiusM)
+            : copy.outOfRadiusHint,
+      });
+      return;
+    }
+    if (result.status === 'consent_denied' || result.status === 'permission_denied') {
+      alert({
+        title: copy.locationDeniedTitle,
+        message: copy.locationDeniedMessage,
+      });
+      return;
+    }
+    alert({
+      title: copy.locationUnavailableTitle,
+      message: copy.locationUnavailableMessage,
+    });
+  };
 
   const mediaLabels = {
     title: copy.capture,
@@ -105,7 +159,8 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
 
-    setImageUri(result.asset.uri);
+    setPreviewAsset(result.asset);
+    setCapturedAt(new Date().toISOString());
     setPhase('preview');
   };
 
@@ -140,7 +195,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
 
-    const within = await assertWithinRadius(event, undefined, targetId);
+    const within = await assertWithinRadius(event, notifyRadiusResult, targetId);
     if (!within) {
       return;
     }
@@ -149,26 +204,114 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   };
 
   const handleRetake = () => {
-    setImageUri(null);
+    setPreviewAsset(null);
+    setCapturedAt(null);
     setPhase('ready');
   };
 
-  const handleSubmit = () => {
-    if (!imageUri || phase !== 'preview') {
+  const handleSubmit = async () => {
+    if (!previewAsset || phase !== 'preview') {
+      return;
+    }
+    if (!accessToken) {
+      navigation.navigate('Login');
+      return;
+    }
+
+    const within = await assertWithinRadius(event, notifyRadiusResult, targetId);
+    if (!within) {
+      return;
+    }
+
+    const coords = getCachedCoordinates();
+    if (!coords) {
+      alert({
+        title: copy.locationUnavailableTitle,
+        message: copy.locationUnavailableMessage,
+      });
       return;
     }
 
     setPhase('submitting');
-
-    submitForReview(event, imageUri, targetId);
-    setPhase('pending');
+    try {
+      const uploaded = await uploadFile(accessToken, toUploadInput(previewAsset));
+      const result = await submitZoneEventParticipation(
+        accessToken,
+        eventId,
+        participationId,
+        {
+          mediaFileKey: uploaded.fileKey,
+          latitude: coords.lat,
+          longitude: coords.lng,
+          capturedAt: capturedAt ?? new Date().toISOString(),
+        },
+      );
+      const localStatus = mapSubmitParticipationStatus(result.participation.status);
+      submitForReview(event, previewAsset.uri, targetId, localStatus);
+      if (localStatus === 'approved') {
+        setPhase('success');
+        return;
+      }
+      if (localStatus === 'rejected') {
+        setPhase('fail');
+        return;
+      }
+      setPhase('pending');
+    } catch (error) {
+      setPhase('preview');
+      if (error instanceof ZoneEventServiceError) {
+        if (error.status === 401) {
+          navigation.navigate('Login');
+          return;
+        }
+        if (error.distanceMeters != null) {
+          alert({
+            title: copy.outOfRadiusTitle,
+            message: copy.outOfRadiusMessage(
+              error.distanceMeters,
+              authTarget?.radiusM ?? error.distanceMeters,
+            ),
+          });
+          return;
+        }
+        alert({ title: copy.captureFailed, message: error.message });
+        return;
+      }
+      alert({
+        title: copy.captureFailed,
+        message: error instanceof Error ? error.message : copy.captureFailed,
+      });
+    }
   };
 
-  const handleClosePending = () => {
+  const handleCloseResult = () => {
+    if (phase === 'fail') {
+      handleRetake();
+      return;
+    }
     navigation.navigate('EventZone');
   };
 
   const busy = checking || phase === 'submitting';
+  const resultVisible = phase === 'pending' || phase === 'success' || phase === 'fail';
+  const resultTitle =
+    phase === 'success'
+      ? copy.successTitle
+      : phase === 'fail'
+        ? copy.failTitle
+        : copy.pendingReviewTitle;
+  const resultBody =
+    phase === 'success'
+      ? event.type === 'OBJECT_AUTH'
+        ? copy.successObject(objectLabel)
+        : copy.successPlace
+      : phase === 'fail'
+        ? event.type === 'OBJECT_AUTH'
+          ? copy.failObject
+          : copy.failPlace
+        : copy.pendingReviewMessage;
+  const resultAction = phase === 'fail' ? copy.retry : copy.done;
+  const resultEmoji = phase === 'success' ? '🎉' : phase === 'fail' ? '⚠️' : '⏳';
 
   return (
     <View className="flex-1 bg-black">
@@ -188,9 +331,9 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
 
       <View className="flex-1 items-center justify-center px-6">
         <View className="aspect-[3/4] w-full max-w-sm overflow-hidden rounded-3xl border-2 border-white/20 bg-neutral-900">
-          {phase === 'preview' && imageUri ? (
+          {phase === 'preview' && previewAsset ? (
             <Image
-              source={{ uri: imageUri }}
+              source={{ uri: previewAsset.uri }}
               className="h-full w-full"
               resizeMode="cover"
             />
@@ -234,7 +377,9 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
             <Pressable
               accessibilityRole="button"
               disabled={busy}
-              onPress={handleSubmit}
+              onPress={() => {
+                void handleSubmit();
+              }}
               className="flex-1 items-center rounded-2xl bg-brand-primary py-3.5 active:opacity-90 disabled:opacity-40">
               <Text className="font-bold text-white">{copy.submitForReview}</Text>
             </Pressable>
@@ -256,20 +401,20 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
         )}
       </View>
 
-      <Modal visible={phase === 'pending'} transparent animationType="fade">
+      <Modal visible={resultVisible} transparent animationType="fade">
         <View className="flex-1 items-center justify-center bg-black/60 px-6">
           <View className="w-full max-w-sm rounded-3xl bg-brand-surface p-6">
-            <Text className="text-center text-4xl">⏳</Text>
+            <Text className="text-center text-4xl">{resultEmoji}</Text>
             <Text className="mt-3 text-center text-xl font-bold text-brand-text">
-              {copy.pendingReviewTitle}
+              {resultTitle}
             </Text>
             <Text className="mt-2 text-center text-sm leading-relaxed text-brand-muted">
-              {copy.pendingReviewMessage}
+              {resultBody}
             </Text>
             <Pressable
-              onPress={handleClosePending}
+              onPress={handleCloseResult}
               className="mt-6 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">
-              <Text className="font-bold text-white">{copy.done}</Text>
+              <Text className="font-bold text-white">{resultAction}</Text>
             </Pressable>
           </View>
         </View>

@@ -4,7 +4,9 @@ import type {
   ZoneEventDetailResponse,
   ZoneEventParticipationJoinRequest,
   ZoneEventParticipationResponse,
+  ZoneEventParticipationSubmitRequest,
   ZoneEventRoundStatusResponse,
+  ZoneEventSubmitResultResponse,
   ZoneEventSummaryResponse,
 } from '../../types/zoneEventApi';
 import { ApiClientError, apiDelete, apiGet, apiPost } from '../api/apiClient';
@@ -173,4 +175,24 @@ export async function cancelZoneEventParticipation(
     ...auth(accessToken),
     allowEmptyBody: true,
   });
+}
+
+/** POST /api/v1/zone-events/{eventId}/participations/{participationId}/submit */
+export async function submitZoneEventParticipation(
+  accessToken: string,
+  eventId: string,
+  participationId: string,
+  body: ZoneEventParticipationSubmitRequest,
+): Promise<ZoneEventSubmitResultResponse> {
+  const data = await apiPost<ZoneEventSubmitResultResponse>(
+    url(ZONE_EVENT_ENDPOINTS.submit(eventId, participationId)),
+    {
+      ...auth(accessToken),
+      body,
+    },
+  );
+  if (!data?.participation?.participationId) {
+    throw new ZoneEventServiceError('Zone event submit failed');
+  }
+  return data;
 }
