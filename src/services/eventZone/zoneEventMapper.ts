@@ -20,6 +20,7 @@ import type {
   ZoneEventParticipationResponse,
   ZoneEventRewardSummaryResponse,
   ZoneEventRoundStatusResponse,
+  ZoneEventSubmitResultResponse,
   ZoneEventSummaryResponse,
 } from '../../types/zoneEventApi';
 
@@ -199,6 +200,18 @@ export function mapNewlyEarnedTitles(value: unknown): EquippedTitleResponse[] {
   return value
     .map(mapEquippedTitle)
     .filter((item): item is EquippedTitleResponse => item != null);
+}
+
+export function mapZoneEventSubmitResult(
+  dto: ZoneEventSubmitResultResponse,
+): ZoneEventSubmitResultResponse {
+  return {
+    participation: dto.participation,
+    rewards: mapGrantedRewards(dto.rewards),
+    pointBalance: asNumber(dto.pointBalance) ?? undefined,
+    newlyEarnedTitles: mapNewlyEarnedTitles(dto.newlyEarnedTitles),
+    titleProgress: dto.titleProgress,
+  };
 }
 
 function mapSharedFields(dto: {

@@ -21,6 +21,7 @@ import type {
   ZoneEventSummaryResponse,
   ZoneEventVisibilityUpdateRequest,
 } from '../../types/zoneEventApi';
+import { mapZoneEventSubmitResult } from './zoneEventMapper';
 import { ApiClientError, apiDelete, apiGet, apiPatch, apiPost } from '../api/apiClient';
 
 export class ZoneEventServiceError extends ApiClientError {
@@ -206,7 +207,7 @@ export async function submitZoneEventParticipation(
   if (!data?.participation?.participationId) {
     throw new ZoneEventServiceError('Zone event submit failed');
   }
-  return data;
+  return mapZoneEventSubmitResult(data);
 }
 
 function toQuery(params: Record<string, string | number | undefined | null>): string {

@@ -4,12 +4,15 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EventChip } from '../../components/eventZone/EventChip';
+import { BRAND_BORDER, BRAND_MUTED, BRAND_TEXT } from '../../components/eventZone/eventZoneTheme';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { useAppAlert } from '../../components/shared/modals';
@@ -32,6 +35,11 @@ import {
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import { getCachedCoordinates } from '../../stores/useLocationStore';
 import { mapSubmitParticipationStatus } from '../../services/eventZone/zoneEventMapper';
+import type {
+  ZoneEventGrantedRewardResponse,
+  ZoneEventSubmitResultResponse,
+} from '../../types/zoneEventApi';
+import type { EquippedTitleResponse } from '../../types/zoneTitleApi';
 import {
   submitZoneEventParticipation,
   ZoneEventServiceError,
@@ -47,6 +55,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 
 type CapturePhase = 'ready' | 'preview' | 'submitting' | 'pending' | 'success' | 'fail';
 
+type SubmitExtras = {
+  rewards: ZoneEventGrantedRewardResponse[];
+  pointBalance?: number;
+  newlyEarnedTitles: EquippedTitleResponse[];
+};
+
 function toUploadInput(asset: MediaPickAsset) {
   const mime =
     asset.mimeType === 'image/png'
@@ -59,6 +73,35 @@ function toUploadInput(asset: MediaPickAsset) {
     type: mime,
     name: asset.fileName || `zone-event-${Date.now()}.jpg`,
   };
+}
+
+function extrasFromSubmit(result: ZoneEventSubmitResultResponse): SubmitExtras {
+  return {
+    rewards: result.rewards ?? [],
+    pointBalance: result.pointBalance,
+    newlyEarnedTitles: result.newlyEarnedTitles ?? [],
+  };
+}
+
+function hasSubmitExtras(extras: SubmitExtras | null): extras is SubmitExtras {
+  return Boolean(
+    extras &&
+      (extras.rewards.length > 0 ||
+        extras.newlyEarnedTitles.length > 0 ||
+        extras.pointBalance != null),
+  );
+}
+
+function rewardLine(
+  reward: ZoneEventGrantedRewardResponse,
+  pointsLabel: (n: number) => string,
+): string {
+  const name = reward.name || reward.code;
+  const points = reward.pointAmount != null ? pointsLabel(reward.pointAmount) : null;
+  if (name && points) {
+    return `${name} · ${points}`;
+  }
+  return name || points || '';
 }
 
 export function EventGameCameraScreen({ navigation, route }: Props) {
@@ -81,6 +124,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const [phase, setPhase] = useState<CapturePhase>('ready');
   const [previewAsset, setPreviewAsset] = useState<MediaPickAsset | null>(null);
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
+  const [submitExtras, setSubmitExtras] = useState<SubmitExtras | null>(null);
   const [permissionPrompt, setPermissionPrompt] = useState<
     null | 'request' | 'blocked'
   >(null);
@@ -206,6 +250,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const handleRetake = () => {
     setPreviewAsset(null);
     setCapturedAt(null);
+    setSubmitExtras(null);
     setPhase('ready');
   };
 
@@ -248,6 +293,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       );
       const localStatus = mapSubmitParticipationStatus(result.participation.status);
       submitForReview(event, previewAsset.uri, targetId, localStatus);
+      setSubmitExtras(extrasFromSubmit(result));
       if (localStatus === 'approved') {
         setPhase('success');
         return;
@@ -403,14 +449,70 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
 
       <Modal visible={resultVisible} transparent animationType="fade">
         <View className="flex-1 items-center justify-center bg-black/60 px-6">
-          <View className="w-full max-w-sm rounded-3xl bg-brand-surface p-6">
-            <Text className="text-center text-4xl">{resultEmoji}</Text>
-            <Text className="mt-3 text-center text-xl font-bold text-brand-text">
-              {resultTitle}
-            </Text>
-            <Text className="mt-2 text-center text-sm leading-relaxed text-brand-muted">
-              {resultBody}
-            </Text>
+          <View className="w-full max-w-sm rounded-3xl bg-brand-surface p-6" style={{ maxHeight: '80%' }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 4 }}>
+              <Text className="text-center text-4xl">{resultEmoji}</Text>
+              <Text className="mt-3 text-center text-xl font-bold text-brand-text">
+                {resultTitle}
+              </Text>
+              <Text className="mt-2 text-center text-sm leading-relaxed text-brand-muted">
+                {resultBody}
+              </Text>
+              {phase !== 'fail' && hasSubmitExtras(submitExtras) ? (
+                <View className="mt-4 gap-3">
+                  {submitExtras.pointBalance != null ? (
+                    <Text className="text-center text-[13px] font-semibold" style={{ color: BRAND_TEXT }}>
+                      {copy.submitPointBalance(submitExtras.pointBalance)}
+                    </Text>
+                  ) : null}
+                  {submitExtras.rewards.length > 0 ? (
+                    <View
+                      className="rounded-2xl border px-3.5 py-3"
+                      style={{ borderColor: BRAND_BORDER }}>
+                      <Text className="text-[12px] font-bold" style={{ color: BRAND_MUTED }}>
+                        {copy.submitRewardsTitle}
+                      </Text>
+                      <View className="mt-2 gap-1.5">
+                        {submitExtras.rewards.map((reward, index) => {
+                          const line = rewardLine(reward, copy.submitRewardPoints);
+                          if (!line) {
+                            return null;
+                          }
+                          return (
+                            <Text
+                              key={reward.grantId || reward.code || `${reward.name}-${index}`}
+                              className="text-[13px] leading-5"
+                              style={{ color: BRAND_TEXT }}>
+                              {line}
+                            </Text>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : null}
+                  {submitExtras.newlyEarnedTitles.length > 0 ? (
+                    <View
+                      className="rounded-2xl border px-3.5 py-3"
+                      style={{ borderColor: BRAND_BORDER }}>
+                      <Text className="text-[12px] font-bold" style={{ color: BRAND_MUTED }}>
+                        {copy.submitNewTitlesTitle}
+                      </Text>
+                      <View className="mt-2 flex-row flex-wrap gap-1.5">
+                        {submitExtras.newlyEarnedTitles.map(title => (
+                          <EventChip
+                            key={title.titleCode}
+                            label={title.titleName}
+                            variant="title"
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+            </ScrollView>
             <Pressable
               onPress={handleCloseResult}
               className="mt-6 items-center rounded-2xl bg-brand-primary py-3 active:opacity-90">

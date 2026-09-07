@@ -231,6 +231,10 @@ export const EVENT_GAME_COPY: Record<
     successTitle: string;
     successPlace: string;
     successObject: (objectName: string) => string;
+    submitRewardsTitle: string;
+    submitRewardPoints: (n: number) => string;
+    submitPointBalance: (n: number) => string;
+    submitNewTitlesTitle: string;
     successMukjjippa: string;
     failTitle: string;
     failPlace: string;
@@ -366,6 +370,10 @@ export const EVENT_GAME_COPY: Record<
     successTitle: '미션 성공!',
     successPlace: '장소 인증에 성공했어요!',
     successObject: objectName => `'${objectName}' 인증 성공!`,
+    submitRewardsTitle: '받은 보상',
+    submitRewardPoints: n => `${n.toLocaleString('ko-KR')}P`,
+    submitPointBalance: n => `보유 포인트 ${n.toLocaleString('ko-KR')}P`,
+    submitNewTitlesTitle: '새로 얻은 칭호',
     successMukjjippa: '묵찌빠에서 승리했어요!',
     failTitle: '다시 시도해 주세요',
     failPlace: '목표 장소와 거리가 멀거나 촬영이 불명확해요.',
@@ -499,6 +507,10 @@ export const EVENT_GAME_COPY: Record<
     successTitle: 'Mission complete!',
     successPlace: 'Place verified successfully!',
     successObject: objectName => `Recognized: ${objectName}!`,
+    submitRewardsTitle: 'Rewards earned',
+    submitRewardPoints: n => `${n.toLocaleString('en-US')} pts`,
+    submitPointBalance: n => `Point balance ${n.toLocaleString('en-US')}`,
+    submitNewTitlesTitle: 'New titles',
     successMukjjippa: 'You won Muk-jji-ppa!',
     failTitle: 'Try again',
     failPlace: 'You may be too far from the target or the photo is unclear.',
@@ -632,6 +644,10 @@ export const EVENT_GAME_COPY: Record<
     successTitle: 'ミッション成功！',
     successPlace: '場所認証に成功しました！',
     successObject: objectName => `「${objectName}」を認識しました！`,
+    submitRewardsTitle: '獲得した報酬',
+    submitRewardPoints: n => `${n.toLocaleString('ja-JP')}P`,
+    submitPointBalance: n => `保有ポイント ${n.toLocaleString('ja-JP')}P`,
+    submitNewTitlesTitle: '新しい称号',
     successMukjjippa: 'ムクチッパに勝利しました！',
     failTitle: 'もう一度お試しください',
     failPlace: '目標地点から離れているか、写真が不明瞭です。',
@@ -762,6 +778,10 @@ export const EVENT_GAME_COPY: Record<
     successTitle: '任务成功！',
     successPlace: '地点认证成功！',
     successObject: objectName => `已识别：${objectName}！`,
+    submitRewardsTitle: '获得的奖励',
+    submitRewardPoints: n => `${n.toLocaleString('zh-CN')}P`,
+    submitPointBalance: n => `积分余额 ${n.toLocaleString('zh-CN')}P`,
+    submitNewTitlesTitle: '新获得的称号',
     successMukjjippa: '你赢了默默啪！',
     failTitle: '请重试',
     failPlace: '距离目标较远或照片不够清晰。',
