@@ -86,6 +86,13 @@ export type ZoneEventType =
   | 'OBJECT_AUTH' // 사물 인증 (카메라 + 검수)
   | 'MUKJJIPPA'; // 묵찌빠 (Phase 3+)
 
+export type ZoneEventRewardSummary = {
+  points?: number;
+  badgeCode?: string;
+  topN?: number;
+  prizeRewardCode?: string;
+};
+
 /** 이벤트 게임 타입 */
 export type EventGameType = 'PLACE_AUTH' | 'OBJECT_AUTH' | 'MUKJJIPPA';
 
@@ -131,6 +138,10 @@ export type ZoneEvent = {
   myParticipationStatus?: string;
   myOpenParticipationId?: string;
   myRemainingAttempts?: number | null;
+  successCount?: number;
+  successLimitPerUser?: number | null;
+  baseReward?: ZoneEventRewardSummary;
+  excellenceReward?: ZoneEventRewardSummary;
   /** 회차 번호 (예: 1) */
   roundNo?: number;
   /** 슬롯 코드 (예: 1-A) */

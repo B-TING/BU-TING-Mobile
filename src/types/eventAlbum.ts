@@ -11,6 +11,7 @@ export type EventAlbumComment = {
   id: string;
   authorId: string;
   authorNickname: string;
+  equippedTitle?: EquippedTitleResponse;
   content: string;
   createdAt: string;
 };

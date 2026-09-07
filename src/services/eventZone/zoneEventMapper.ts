@@ -4,6 +4,7 @@ import type {
   EventZoneId,
   ZoneEvent,
   ZoneEventAuthTarget,
+  ZoneEventRewardSummary,
   ZoneEventType,
 } from '../../types/eventZone';
 import type { EventAlbumComment, EventAlbumPost } from '../../types/eventAlbum';
@@ -14,8 +15,10 @@ import type {
   ZoneEventAuthTargetDetailResponse,
   ZoneEventCommentResponse,
   ZoneEventDetailResponse,
+  ZoneEventGrantedRewardResponse,
   ZoneEventHistoryItemResponse,
   ZoneEventParticipationResponse,
+  ZoneEventRewardSummaryResponse,
   ZoneEventRoundStatusResponse,
   ZoneEventSummaryResponse,
 } from '../../types/zoneEventApi';
@@ -145,6 +148,59 @@ function mapDetailAuthTarget(
   ];
 }
 
+function mapRewardSummary(
+  dto: ZoneEventRewardSummaryResponse | null | undefined,
+): ZoneEventRewardSummary | undefined {
+  if (!dto) {
+    return undefined;
+  }
+  const points = asNumber(dto.points) ?? undefined;
+  const badgeCode = asString(dto.badgeCode) || undefined;
+  const topN = asNumber(dto.topN) ?? undefined;
+  const prizeRewardCode = asString(dto.prizeRewardCode) || undefined;
+  if (points == null && !badgeCode && topN == null && !prizeRewardCode) {
+    return undefined;
+  }
+  return { points, badgeCode, topN, prizeRewardCode };
+}
+
+export function mapGrantedRewards(value: unknown): ZoneEventGrantedRewardResponse[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.flatMap(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return [];
+    }
+    const rec = item as Record<string, unknown>;
+    const name = asString(rec.name);
+    const code = asString(rec.code);
+    if (!name && !code && asNumber(rec.pointAmount) == null) {
+      return [];
+    }
+    return [
+      {
+        grantId: asString(rec.grantId) || undefined,
+        rewardType: asString(rec.rewardType) || undefined,
+        code: code || undefined,
+        name: name || undefined,
+        pointAmount: asNumber(rec.pointAmount) ?? undefined,
+        grantReason: asString(rec.grantReason) || undefined,
+        grantedAt: asString(rec.grantedAt) || undefined,
+      },
+    ];
+  });
+}
+
+export function mapNewlyEarnedTitles(value: unknown): EquippedTitleResponse[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(mapEquippedTitle)
+    .filter((item): item is EquippedTitleResponse => item != null);
+}
+
 function mapSharedFields(dto: {
   eventId: string;
   zone: { zoneId: string };
@@ -198,6 +254,8 @@ export function mapZoneEventSummary(dto: ZoneEventSummaryResponse): ZoneEvent | 
     ...mapped,
     myParticipationStatus: dto.myParticipationStatus ?? undefined,
     myOpenParticipationId: asString(dto.myOpenParticipationId) || undefined,
+    successCount: asNumber(dto.successCount) ?? undefined,
+    baseReward: mapRewardSummary(dto.baseReward),
     authTargets: mapBriefAuthTarget(mapped.id, mapped.typeCode ?? mapped.type, dto.authTarget),
   };
 }
@@ -211,6 +269,10 @@ export function mapZoneEventDetail(dto: ZoneEventDetailResponse): ZoneEvent | nu
   return {
     ...mapped,
     myRemainingAttempts: dto.myRemainingAttempts ?? undefined,
+    successCount: asNumber(dto.successCount) ?? undefined,
+    successLimitPerUser: dto.successLimitPerUser ?? undefined,
+    baseReward: mapRewardSummary(dto.baseReward),
+    excellenceReward: mapRewardSummary(dto.excellenceReward),
     authTargets: mapDetailAuthTarget(mapped.id, mapped.typeCode ?? mapped.type, dto.authTarget),
   };
 }
@@ -359,6 +421,7 @@ export function mapAlbumComment(
     id,
     authorId: asString(dto.authorId),
     authorNickname: asString(dto.authorNickname) || '여행자',
+    equippedTitle: mapEquippedTitle(dto.equippedTitle),
     content: asString(dto.content),
     createdAt: asString(dto.createdAt) || new Date().toISOString(),
   };

@@ -69,6 +69,10 @@ export const TRAVEL_SURVEY_ENDPOINTS = {
 
 export const USER_ENDPOINTS = {
   me: '/api/v1/users/me',
+  rewards: '/api/v1/users/me/rewards',
+  pointLedger: '/api/v1/users/me/point-ledger',
+  zoneSubscriptions: '/api/v1/users/me/zone-subscriptions',
+  notificationSettings: '/api/v1/users/me/notification-settings',
 } as const;
 
 export const PLACES_ENDPOINTS = {

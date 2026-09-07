@@ -124,8 +124,20 @@ export type ZoneEventParticipationSubmitRequest = {
 
 export type ZoneEventSubmitResultResponse = {
   participation: ZoneEventParticipationResponse;
-  rewards?: unknown;
+  rewards?: ZoneEventGrantedRewardResponse[] | null;
   pointBalance?: number;
+  newlyEarnedTitles?: EquippedTitleResponse[] | null;
+  titleProgress?: unknown;
+};
+
+export type ZoneEventGrantedRewardResponse = {
+  grantId?: string | null;
+  rewardType?: string | null;
+  code?: string | null;
+  name?: string | null;
+  pointAmount?: number | null;
+  grantReason?: string | null;
+  grantedAt?: string | null;
 };
 
 export type ZoneEventHistoryEventBriefResponse = {

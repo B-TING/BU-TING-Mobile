@@ -16,6 +16,7 @@ type EventParticipationState = {
     status: EventParticipationStatus,
     patch?: Partial<Pick<EventParticipationRecord, 'localImageUri' | 'submittedAt'>>,
   ) => void;
+  removeRecord: (id: string) => void;
   beginParticipation: (
     event: ZoneEvent,
     targetId: string | null | undefined,
@@ -81,6 +82,10 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         records: state.records.map(item =>
           item.id === id ? { ...item, ...patch, status } : item,
         ),
+      })),
+    removeRecord: id =>
+      set(state => ({
+        records: state.records.filter(item => item.id !== id),
       })),
     beginParticipation: (event, targetId, participationId) => {
       if (!isPhase1AuthEvent(event) || !participationId) {
