@@ -12,6 +12,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EventAlbumCard } from '../../components/eventZone/EventAlbumCard';
+import { EventChip } from '../../components/eventZone/EventChip';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import {
   AppModal,
@@ -363,8 +364,15 @@ export function EventAlbumScreen({ navigation, route }: Props) {
                 const isMineComment = Boolean(userId) && comment.authorId === userId;
                 return (
                   <View key={comment.id} className="gap-1">
+                    <View className="flex-row flex-wrap items-center gap-1">
+                      <Text className="text-[13px] font-bold" style={{ color: BRAND_TEXT }}>
+                        {comment.authorNickname}
+                      </Text>
+                      {comment.equippedTitle ? (
+                        <EventChip label={comment.equippedTitle.titleName} variant="title" />
+                      ) : null}
+                    </View>
                     <Text className="text-[13px] leading-5" style={{ color: BRAND_TEXT }}>
-                      <Text className="font-bold">{comment.authorNickname} </Text>
                       {comment.content}
                     </Text>
                     {isMineComment ? (

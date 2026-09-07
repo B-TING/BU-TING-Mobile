@@ -9,6 +9,7 @@ import {
 import type { NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EventChip } from '../components/eventZone/EventChip';
 import { NicknameEditModal } from '../components/mypage/NicknameEditModal';
 import { AccountSettingsModal } from '../components/mypage/AccountSettingsModal';
 import {
@@ -123,6 +124,7 @@ export function MyPageScreen({ navigation }: Props) {
     handleDeleteAccount,
     handlePressRecord,
     handleNotificationSettings,
+    equippedTitle,
   } = useMyPageScreen({ navigation });
 
   return (
@@ -153,12 +155,21 @@ export function MyPageScreen({ navigation }: Props) {
               </View>
 
               <View className="min-w-0 flex-1 pt-1">
-                <View className="flex-row items-center">
+                <View className="flex-row flex-wrap items-center gap-1.5">
                   <Text
-                    className="mr-1.5 shrink text-2xl font-bold text-brand-text"
+                    className="shrink text-2xl font-bold text-brand-text"
                     numberOfLines={1}>
                     {nickname}
                   </Text>
+                  {equippedTitle ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={copy.zoneTitles}
+                      onPress={() => navigation.navigate('EventTitles')}
+                      className="active:opacity-80">
+                      <EventChip label={equippedTitle.titleName} variant="title" />
+                    </Pressable>
+                  ) : null}
                   <Pressable
                     onPress={() => setNicknameModalOpen(true)}
                     className="h-6 w-6 items-center justify-center active:opacity-70"

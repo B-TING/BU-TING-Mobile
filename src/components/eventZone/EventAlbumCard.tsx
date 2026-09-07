@@ -181,10 +181,19 @@ export function EventAlbumCard({
         {post.comments.length > 0 ? (
           <View className="gap-1.5 border-t pt-2" style={{ borderTopColor: BRAND_BORDER }}>
             {post.comments.slice(-2).map(comment => (
-              <Text key={comment.id} className="text-[12px] leading-[17px]" style={{ color: BRAND_TEXT }}>
-                <Text className="font-bold">{comment.authorNickname} </Text>
-                {comment.content}
-              </Text>
+              <View key={comment.id} className="gap-0.5">
+                <View className="flex-row flex-wrap items-center gap-1">
+                  <Text className="text-[12px] font-bold" style={{ color: BRAND_TEXT }}>
+                    {comment.authorNickname}
+                  </Text>
+                  {comment.equippedTitle ? (
+                    <EventChip label={comment.equippedTitle.titleName} variant="title" />
+                  ) : null}
+                </View>
+                <Text className="text-[12px] leading-[17px]" style={{ color: BRAND_TEXT }}>
+                  {comment.content}
+                </Text>
+              </View>
             ))}
           </View>
         ) : null}
