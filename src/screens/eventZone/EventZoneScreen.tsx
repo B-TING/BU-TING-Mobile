@@ -66,6 +66,11 @@ export function EventZoneScreen({ navigation }: Props) {
     handleOpenAlbum,
     handleOpenTitles,
     handleJoinMission,
+    handleOpenRoundAlbum,
+    handleRoundSlotPress,
+    roundSlots,
+    roundStatusLabel,
+    roundRemainingLabel,
   } = useEventZoneScreen({ navigation });
 
   const sheetBottomInset = Math.max(12, insets.bottom);
@@ -231,6 +236,19 @@ export function EventZoneScreen({ navigation }: Props) {
               onAlbumPress={handleOpenAlbum}
               titlesLabel={copy.zoneTitles}
               onTitlesPress={handleOpenTitles}
+              roundSlots={roundSlots}
+              roundSection={
+                roundSlots.length > 0
+                  ? {
+                      title: copy.roundStatusTitle,
+                      statusLabel: roundStatusLabel,
+                      remainingLabel: roundRemainingLabel,
+                      albumLabel: copy.roundAlbum,
+                      onPressAlbum: handleOpenRoundAlbum,
+                      onPressSlot: handleRoundSlotPress,
+                    }
+                  : undefined
+              }
               embedded
             />
           </View>

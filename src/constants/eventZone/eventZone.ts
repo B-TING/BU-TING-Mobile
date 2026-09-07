@@ -431,6 +431,15 @@ export const EVENT_ZONE_COPY: Record<
     participationHistory: string;
     eventAlbum: string;
     zoneTitles: string;
+    roundStatusTitle: string;
+    roundStatusOpen: string;
+    roundStatusUpcoming: string;
+    roundSlotOpen: string;
+    roundSlotRest: string;
+    roundSlotUpcoming: string;
+    roundAlbum: string;
+    roundEndsIn: (remaining: string) => string;
+    roundStartsIn: (remaining: string) => string;
     eventToast: (zoneName: string, eventTitle: string) => string;
   }
 > = {
@@ -464,6 +473,15 @@ export const EVENT_ZONE_COPY: Record<
     participationHistory: '참여 이력',
     eventAlbum: '앨범',
     zoneTitles: '칭호',
+    roundStatusTitle: '회차 현황',
+    roundStatusOpen: '진행 중',
+    roundStatusUpcoming: '다음 회차',
+    roundSlotOpen: 'OPEN',
+    roundSlotRest: 'REST',
+    roundSlotUpcoming: '예정',
+    roundAlbum: '회차 앨범',
+    roundEndsIn: remaining => `종료까지 ${remaining}`,
+    roundStartsIn: remaining => `시작까지 ${remaining}`,
     eventToast: (zoneName, eventTitle) => `${zoneName}에 ${eventTitle} 이벤트 발생!`,
   },
   en: {
@@ -496,6 +514,15 @@ export const EVENT_ZONE_COPY: Record<
     participationHistory: 'Participation history',
     eventAlbum: 'Album',
     zoneTitles: 'Titles',
+    roundStatusTitle: 'Round status',
+    roundStatusOpen: 'Open now',
+    roundStatusUpcoming: 'Next round',
+    roundSlotOpen: 'OPEN',
+    roundSlotRest: 'REST',
+    roundSlotUpcoming: 'Soon',
+    roundAlbum: 'Round album',
+    roundEndsIn: remaining => `${remaining} left`,
+    roundStartsIn: remaining => `Starts in ${remaining}`,
     eventToast: (zoneName, eventTitle) => `${eventTitle} started in ${zoneName}!`,
   },
   ja: {
@@ -528,6 +555,15 @@ export const EVENT_ZONE_COPY: Record<
     participationHistory: '参加履歴',
     eventAlbum: 'アルバム',
     zoneTitles: '称号',
+    roundStatusTitle: '回次状況',
+    roundStatusOpen: '開催中',
+    roundStatusUpcoming: '次の回次',
+    roundSlotOpen: 'OPEN',
+    roundSlotRest: 'REST',
+    roundSlotUpcoming: '予定',
+    roundAlbum: '回次アルバム',
+    roundEndsIn: remaining => `終了まで ${remaining}`,
+    roundStartsIn: remaining => `開始まで ${remaining}`,
     eventToast: (zoneName, eventTitle) => `${zoneName}で${eventTitle}が始まりました!`,
   },
   zh: {
@@ -560,6 +596,15 @@ export const EVENT_ZONE_COPY: Record<
     participationHistory: '参与记录',
     eventAlbum: '相册',
     zoneTitles: '称号',
+    roundStatusTitle: '轮次状态',
+    roundStatusOpen: '进行中',
+    roundStatusUpcoming: '下一轮',
+    roundSlotOpen: 'OPEN',
+    roundSlotRest: 'REST',
+    roundSlotUpcoming: '即将开始',
+    roundAlbum: '本轮相册',
+    roundEndsIn: remaining => `剩余 ${remaining}`,
+    roundStartsIn: remaining => `${remaining}后开始`,
     eventToast: (zoneName, eventTitle) => `${zoneName}开始了${eventTitle}!`,
   },
 };

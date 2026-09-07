@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { EventActionButton } from './EventActionButton';
-import { EventChip } from './EventChip';
+import { EventChip, type EventChipVariant } from './EventChip';
 import {
   BRAND_BORDER,
   BRAND_MUTED,
@@ -22,6 +22,8 @@ type EventZoneCardProps = {
   joinLabel: string;
   isEvent?: boolean;
   eventChipLabel?: string;
+  slotChipLabel?: string;
+  slotChipVariant?: EventChipVariant;
   onPress: () => void;
   onJoin: () => void;
 };
@@ -34,6 +36,8 @@ export function EventZoneCard({
   joinLabel,
   isEvent = false,
   eventChipLabel,
+  slotChipLabel,
+  slotChipVariant = 'muted',
   onPress,
   onJoin,
 }: EventZoneCardProps) {
@@ -55,6 +59,9 @@ export function EventZoneCard({
             numberOfLines={1}>
             {zoneName}
           </Text>
+          {slotChipLabel ? (
+            <EventChip label={slotChipLabel} variant={slotChipVariant} />
+          ) : null}
           {isEvent && eventChipLabel ? <EventChip label={eventChipLabel} variant="event" /> : null}
         </View>
         {summary ? (

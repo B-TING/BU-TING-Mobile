@@ -267,6 +267,8 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRoundContinue: string;
     albumTitle: string;
     albumSubtitle: string;
+    albumRoundTitle: string;
+    albumRoundSubtitle: string;
     albumEmpty: string;
     albumSortLatest: string;
     albumSortMostLiked: string;
@@ -416,6 +418,8 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRoundContinue: '계속!',
     albumTitle: '이벤트 앨범',
     albumSubtitle: '승인된 인증 피드',
+    albumRoundTitle: '회차 앨범',
+    albumRoundSubtitle: '이번 회차 인증 피드',
     albumEmpty: '아직 공개된 인증이 없어요.',
     albumSortLatest: '최신',
     albumSortMostLiked: '좋아요',
@@ -563,6 +567,8 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRoundContinue: 'Continue!',
     albumTitle: 'Event album',
     albumSubtitle: 'Approved check-in feed',
+    albumRoundTitle: 'Round album',
+    albumRoundSubtitle: 'This round’s check-in feed',
     albumEmpty: 'No public check-ins yet.',
     albumSortLatest: 'Latest',
     albumSortMostLiked: 'Most liked',
@@ -710,6 +716,8 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRoundContinue: '続行！',
     albumTitle: 'イベントアルバム',
     albumSubtitle: '承認済み認証フィード',
+    albumRoundTitle: '回次アルバム',
+    albumRoundSubtitle: '今ラウンドの認証フィード',
     albumEmpty: 'まだ公開された認証がありません。',
     albumSortLatest: '新着',
     albumSortMostLiked: 'いいね',
@@ -854,6 +862,8 @@ export const EVENT_GAME_COPY: Record<
     mukjjippaRoundContinue: '继续！',
     albumTitle: '活动相册',
     albumSubtitle: '已通过认证的动态',
+    albumRoundTitle: '本轮相册',
+    albumRoundSubtitle: '本轮认证动态',
     albumEmpty: '还没有公开的认证。',
     albumSortLatest: '最新',
     albumSortMostLiked: '最多赞',

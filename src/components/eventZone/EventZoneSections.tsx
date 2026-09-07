@@ -11,6 +11,11 @@ import { AppIcon } from '../shared/icons/AppIcon';
 import { EventZoneCard } from './EventZoneCard';
 import { EventMissionCard } from './EventMissionCard';
 import {
+  EventRoundStatusCard,
+  roundSlotChipVariant,
+  type EventRoundSlotItem,
+} from './EventRoundStatusCard';
+import {
   BRAND_BORDER,
   BRAND_HANDLE,
   BRAND_MUTED,
@@ -130,6 +135,15 @@ type EventZoneChatListProps = {
   titlesLabel?: string;
   onTitlesPress?: () => void;
   surpriseMissionBadge?: string;
+  roundSlots?: EventRoundSlotItem[];
+  roundSection?: {
+    title: string;
+    statusLabel: string;
+    remainingLabel?: string;
+    albumLabel: string;
+    onPressAlbum: () => void;
+    onPressSlot: (slot: EventRoundSlotItem) => void;
+  };
   embedded?: boolean;
 };
 
@@ -151,6 +165,8 @@ export function EventZoneChatList({
   titlesLabel,
   onTitlesPress,
   surpriseMissionBadge,
+  roundSlots,
+  roundSection,
   embedded = false,
 }: EventZoneChatListProps) {
   return (
@@ -236,10 +252,22 @@ export function EventZoneChatList({
           gap: 10,
         }}
         showsVerticalScrollIndicator={false}>
+        {roundSection && roundSlots && roundSlots.length > 0 ? (
+          <EventRoundStatusCard
+            title={roundSection.title}
+            statusLabel={roundSection.statusLabel}
+            remainingLabel={roundSection.remainingLabel}
+            albumLabel={roundSection.albumLabel}
+            slots={roundSlots}
+            onPressAlbum={roundSection.onPressAlbum}
+            onPressSlot={roundSection.onPressSlot}
+          />
+        ) : null}
         {rooms.map(room => {
           const zone = EVENT_ZONE_BY_ID[room.zoneId];
           const activeEvent = activeEventsByZone[room.zoneId];
           const isEventRoom = activeEvent != null;
+          const slot = roundSlots?.find(item => item.zoneId === room.zoneId);
 
           const landmarkPills = zone.landmarks
             .slice(0, 2)
@@ -257,6 +285,10 @@ export function EventZoneChatList({
               joinLabel={joinLabel}
               isEvent={isEventRoom}
               eventChipLabel={surpriseMissionBadge}
+              slotChipLabel={slot?.statusLabel}
+              slotChipVariant={
+                slot ? roundSlotChipVariant(slot.slotStatus) : undefined
+              }
               onPress={() => onRoomPress(room.zoneId)}
               onJoin={() => onJoinPress(room.id)}
             />

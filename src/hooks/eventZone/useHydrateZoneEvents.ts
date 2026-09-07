@@ -48,7 +48,7 @@ async function hydrateActiveZoneEvents(
     store.setLoading(true);
     try {
       const [round, ...lists] = await Promise.all([
-        fetchCurrentZoneEventRound(accessToken),
+        fetchCurrentZoneEventRound(accessToken).catch(() => undefined),
         ...EVENT_ZONES.map(zone => fetchActiveZoneEvents(zone.id, accessToken)),
       ]);
       useZoneEventStore.getState().setCurrentRound(mapCurrentZoneEventRound(round));

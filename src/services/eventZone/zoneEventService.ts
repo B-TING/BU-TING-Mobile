@@ -133,7 +133,10 @@ export async function fetchCurrentZoneEventRound(
 ): Promise<ZoneEventRoundStatusResponse | undefined> {
   return apiGet<ZoneEventRoundStatusResponse>(
     url(ZONE_EVENT_ENDPOINTS.currentRound),
-    queryOptions(accessToken),
+    {
+      ...queryOptions(accessToken),
+      emptyOnStatus: [404],
+    },
   );
 }
 

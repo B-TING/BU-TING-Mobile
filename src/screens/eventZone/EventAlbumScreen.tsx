@@ -250,8 +250,8 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
       <View className="border-b border-[#E2E8F0] bg-white px-2">
         <EventNavHeader
-          title={copy.albumTitle}
-          subtitle={copy.albumSubtitle}
+          title={route.params?.roundId ? copy.albumRoundTitle : copy.albumTitle}
+          subtitle={route.params?.roundId ? copy.albumRoundSubtitle : copy.albumSubtitle}
           onBack={goBack}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
           rightAccessory={

@@ -18,6 +18,7 @@ export { EventLandmarkRow } from './EventLandmarkRow';
 export { EventMissionCard } from './EventMissionCard';
 export { EventNavHeader } from './EventNavHeader';
 export { EventRemainingLabel } from './EventRemainingLabel';
+export { EventRoundStatusCard } from './EventRoundStatusCard';
 export { EventStatRow, EventStatCell } from './EventStatRow';
 export { EventStatusBadge } from './EventStatusBadge';
 export { EventZoneCard } from './EventZoneCard';

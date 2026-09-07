@@ -7,6 +7,7 @@ import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 import { ALPHA_FEATURE_LABELS } from '../../constants/common/alphaFeatureBlocks';
 import {
   EVENT_ZONE_BY_ID,
+  EVENT_ZONES,
   allZoneChatRooms,
   eventZoneName,
   getChatRoomByZoneId,
@@ -21,6 +22,11 @@ import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useZoneEventStore } from '../../stores';
 import type { EventZoneId } from '../../types/eventZone';
+import type { EventRoundSlotItem } from '../../components/eventZone/EventRoundStatusCard';
+import {
+  formatZoneEventRemaining,
+  useRemainingUntil,
+} from '../../utils/eventZone/zoneEventRemaining';
 import { FOCUS_ANIMATION_MS } from '../../utils/eventZone/useZoneMapCamera';
 
 type EventZoneNavigation = NativeStackNavigationProp<RootStackParamList, 'EventZone'>;
@@ -49,6 +55,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   const isSlotDimmed = highlightZoneId != null;
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
+  const currentRound = useZoneEventStore(s => s.currentRound);
   const { refresh: refreshZoneEvents } = useHydrateZoneEvents(isFocused);
   const eventZoneIds = useMemo(() => {
     if (!canQueryZoneEvents()) {
@@ -160,6 +167,57 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     return event;
   }, [activeEventsByZone, focusZoneId]);
 
+  const roundSlots = useMemo((): EventRoundSlotItem[] => {
+    if (!canQueryZoneEvents() || !currentRound) {
+      return [];
+    }
+    const byZone = new Map(currentRound.zones.map(slot => [slot.zoneId, slot]));
+    return EVENT_ZONES.map(zone => {
+      const slot = byZone.get(zone.id);
+      const slotStatus = slot?.slotStatus || 'REST';
+      const statusLabel =
+        slotStatus === 'OPEN'
+          ? copy.roundSlotOpen
+          : slotStatus === 'UPCOMING'
+            ? copy.roundSlotUpcoming
+            : copy.roundSlotRest;
+      return {
+        zoneId: zone.id,
+        zoneName: eventZoneName(zone, language),
+        slotStatus,
+        statusLabel,
+        eventId: slot?.eventId,
+      };
+    });
+  }, [copy.roundSlotOpen, copy.roundSlotRest, copy.roundSlotUpcoming, currentRound, language]);
+
+  const roundCountdownIso = useMemo(() => {
+    if (!currentRound) {
+      return undefined;
+    }
+    const hasOpen = currentRound.zones.some(slot => slot.slotStatus === 'OPEN');
+    return hasOpen ? currentRound.endsAt : currentRound.startsAt;
+  }, [currentRound]);
+
+  const roundRemainingMs = useRemainingUntil(roundCountdownIso);
+  const roundRemainingLabel = useMemo(() => {
+    if (!currentRound || roundRemainingMs <= 0) {
+      return undefined;
+    }
+    const remaining = formatZoneEventRemaining(roundRemainingMs, language);
+    const hasOpen = currentRound.zones.some(slot => slot.slotStatus === 'OPEN');
+    return hasOpen ? copy.roundEndsIn(remaining) : copy.roundStartsIn(remaining);
+  }, [copy, currentRound, language, roundRemainingMs]);
+
+  const roundStatusLabel = useMemo(() => {
+    if (!currentRound) {
+      return '';
+    }
+    return currentRound.zones.some(slot => slot.slotStatus === 'OPEN')
+      ? copy.roundStatusOpen
+      : copy.roundStatusUpcoming;
+  }, [copy.roundStatusOpen, copy.roundStatusUpcoming, currentRound]);
+
   const currentZone = currentZoneId ? EVENT_ZONE_BY_ID[currentZoneId] : null;
   const selectedZone = focusZoneId ? EVENT_ZONE_BY_ID[focusZoneId] : null;
   const { memberCounts: liveMemberCounts } = useAllZoneChatMemberCounts();
@@ -205,6 +263,24 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     }
     navigation.navigate('EventAlbum');
   };
+
+  const handleOpenRoundAlbum = useCallback(() => {
+    if (!currentRound?.roundId) {
+      return;
+    }
+    navigation.navigate('EventAlbum', { roundId: currentRound.roundId });
+  }, [currentRound?.roundId, navigation]);
+
+  const handleRoundSlotPress = useCallback(
+    (slot: EventRoundSlotItem) => {
+      if (slot.slotStatus === 'OPEN' && slot.eventId) {
+        navigation.navigate('EventGameDetail', { eventId: slot.eventId });
+        return;
+      }
+      selectZone(slot.zoneId);
+    },
+    [navigation, selectZone],
+  );
 
   const handleOpenTitles = () => {
     navigation.navigate('EventTitles');
@@ -257,7 +333,12 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     handleOpenGameDetail,
     handleOpenParticipationHistory,
     handleOpenAlbum,
+    handleOpenRoundAlbum,
     handleOpenTitles,
     handleJoinMission,
+    handleRoundSlotPress,
+    roundSlots,
+    roundStatusLabel,
+    roundRemainingLabel,
   };
 }
