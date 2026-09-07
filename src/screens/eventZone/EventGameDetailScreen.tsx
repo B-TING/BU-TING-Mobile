@@ -31,6 +31,7 @@ import {
   EVENT_ZONE_BY_ID,
   eventZoneName,
 } from '../../constants/eventZone/eventZone';
+import type { ZoneEventRewardSummary } from '../../types/eventZone';
 import {
   listEventAuthTargets,
   resolveEventAuthTarget,
@@ -124,6 +125,33 @@ const TONE_STYLE: Record<
   info: { bg: FEEDBACK_INFO_BG, border: FEEDBACK_INFO_BORDER, title: FEEDBACK_INFO },
   event: { bg: EVENT_PINK_BG, border: EVENT_PINK_BORDER, title: EVENT_PINK_DARK },
 };
+
+function formatRewardSummary(
+  reward: ZoneEventRewardSummary | undefined,
+  copy: {
+    submitRewardPoints: (n: number) => string;
+    rewardBadge: (code: string) => string;
+    rewardTopN: (n: number) => string;
+  },
+): string | null {
+  if (!reward) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (reward.points != null) {
+    parts.push(copy.submitRewardPoints(reward.points));
+  }
+  if (reward.badgeCode) {
+    parts.push(copy.rewardBadge(reward.badgeCode));
+  }
+  if (reward.topN != null) {
+    parts.push(copy.rewardTopN(reward.topN));
+  }
+  if (reward.prizeRewardCode) {
+    parts.push(reward.prizeRewardCode);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
 
 // ─── Screen ────────────────────────────────────────────────────────
 export function EventGameDetailScreen({ navigation, route }: Props) {
@@ -223,11 +251,18 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     participation?.status === 'approved' ||
     participation?.status === 'rejected';
 
+  const remainingAttempts = event.myRemainingAttempts;
+  const attemptsExhausted =
+    remainingAttempts === 0 && participation?.status !== 'in_progress';
+  const baseRewardTitle = formatRewardSummary(event.baseReward, copy);
+  const excellenceRewardTitle = formatRewardSummary(event.excellenceReward, copy);
+
   const canCapture =
     remainingMs > 0 &&
     !checking &&
     !joining &&
     !participationBlocked &&
+    !attemptsExhausted &&
     effectiveTargetId != null &&
     (participation == null || participation.status === 'in_progress');
 
@@ -237,6 +272,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     if (participation?.status === 'approved') return copy.statusCompleted;
     if (participation?.status === 'rejected') return copy.statusRejected;
     if (participation?.status === 'in_progress') return copy.continueCapture;
+    if (attemptsExhausted) return copy.remainingAttemptsNone;
     if (effectiveTargetId == null) return copy.selectTargetRequired;
     return copy.participate;
   })();
@@ -372,9 +408,50 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
           <EventCallout tone="info" title={copy.pendingReviewTitle} body={copy.pendingReviewMessage} />
         ) : participation?.status === 'approved' ? (
           <EventCallout tone="event" title={copy.statusCompleted} body={copy.pendingReviewMessage} />
+        ) : attemptsExhausted ? (
+          <EventCallout
+            tone="warning"
+            title={copy.remainingAttemptsNone}
+            body={
+              event.successLimitPerUser != null
+                ? copy.successLimitHint(event.successLimitPerUser)
+                : copy.rewardHint
+            }
+          />
         ) : null}
 
         <EventInfoCard label={copy.rulesTitle} title={typeLabel} body={rulesText} tone="default" />
+
+        {baseRewardTitle ? (
+          <EventInfoCard
+            label={copy.baseRewardLabel}
+            title={baseRewardTitle}
+            body={copy.rewardAfterReview}
+            tone="event"
+          />
+        ) : null}
+
+        {excellenceRewardTitle ? (
+          <EventInfoCard
+            label={copy.excellenceRewardLabel}
+            title={excellenceRewardTitle}
+            body={copy.excellenceRewardHint}
+            tone="success"
+          />
+        ) : null}
+
+        {remainingAttempts != null ? (
+          <EventInfoCard
+            label={copy.remainingAttemptsLabel}
+            title={copy.remainingAttemptsValue(remainingAttempts)}
+            body={
+              event.successLimitPerUser != null
+                ? copy.successLimitHint(event.successLimitPerUser)
+                : undefined
+            }
+            tone={remainingAttempts === 0 ? 'warning' : 'default'}
+          />
+        ) : null}
 
         {event.slotCode ? (
           <EventInfoCard

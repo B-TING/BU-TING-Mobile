@@ -188,6 +188,16 @@ export const EVENT_GAME_COPY: Record<
     rulesTitle: string;
     rewardTitle: string;
     rewardHint: string;
+    baseRewardLabel: string;
+    excellenceRewardLabel: string;
+    rewardBadge: (code: string) => string;
+    rewardTopN: (n: number) => string;
+    rewardAfterReview: string;
+    excellenceRewardHint: string;
+    remainingAttemptsLabel: string;
+    remainingAttemptsValue: (n: number) => string;
+    remainingAttemptsNone: string;
+    successLimitHint: (n: number) => string;
     participate: string;
     placeAuthRules: string;
     objectSightRules: string;
@@ -318,7 +328,17 @@ export const EVENT_GAME_COPY: Record<
     rejectedHint: '관리자 검수 결과 반려되었어요.',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
-    rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다. (목업)',
+    rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다.',
+    baseRewardLabel: '기본 보상',
+    excellenceRewardLabel: '우수 보상',
+    rewardBadge: code => `배지 ${code}`,
+    rewardTopN: n => `좋아요 TOP ${n}`,
+    rewardAfterReview: '제출 직후가 아니라, 관리자 승인 뒤에 지급돼요.',
+    excellenceRewardHint: '회차 좋아요 순위에 따라 정산 후 지급돼요.',
+    remainingAttemptsLabel: '남은 시도',
+    remainingAttemptsValue: n => `${n}회`,
+    remainingAttemptsNone: '성공 한도에 도달했어요',
+    successLimitHint: n => `인당 ${n}회까지 성공할 수 있어요.`,
     participate: '이벤트 참여',
     placeAuthRules:
       '목표 장소 반경 안에서만 촬영·제출할 수 있어요. GPS는 1차 통과이고, 최종 성공은 관리자 이미지 검수 후 확정됩니다.',
@@ -456,7 +476,17 @@ export const EVENT_GAME_COPY: Record<
     rejectedHint: 'Your submission was rejected after review.',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
-    rewardHint: 'Earn zone badges and points on success. (Mock)',
+    rewardHint: 'Earn zone badges and points on success.',
+    baseRewardLabel: 'Base reward',
+    excellenceRewardLabel: 'Excellence reward',
+    rewardBadge: code => `Badge ${code}`,
+    rewardTopN: n => `Top ${n} likes`,
+    rewardAfterReview: 'Granted after admin review, not right after submit.',
+    excellenceRewardHint: 'Settled from this round’s like ranking.',
+    remainingAttemptsLabel: 'Attempts left',
+    remainingAttemptsValue: n => `${n} left`,
+    remainingAttemptsNone: 'Success limit reached',
+    successLimitHint: n => `Up to ${n} successes per person.`,
     participate: 'Join event',
     placeAuthRules:
       'You can only shoot and submit inside the target radius. GPS is the first gate; final success is after admin image review.',
@@ -593,7 +623,17 @@ export const EVENT_GAME_COPY: Record<
     rejectedHint: '管理者の審査で却下されました。',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
-    rewardHint: '成功時にエリアバッジとポイントを獲得（モック）',
+    rewardHint: '成功時にエリアバッジとポイントを獲得します。',
+    baseRewardLabel: '基本報酬',
+    excellenceRewardLabel: '優秀報酬',
+    rewardBadge: code => `バッジ ${code}`,
+    rewardTopN: n => `いいね TOP ${n}`,
+    rewardAfterReview: '提出直後ではなく、管理者承認後に付与されます。',
+    excellenceRewardHint: '回次のいいね順位に応じて精算されます。',
+    remainingAttemptsLabel: '残り挑戦',
+    remainingAttemptsValue: n => `${n}回`,
+    remainingAttemptsNone: '成功上限に達しました',
+    successLimitHint: n => `1人あたり${n}回まで成功できます。`,
     participate: 'イベント参加',
     placeAuthRules:
       '目標地点の半径内でのみ撮影・提出できます。GPSは一次通過で、最終成功は管理者の画像審査後に確定します。',
@@ -730,7 +770,17 @@ export const EVENT_GAME_COPY: Record<
     rejectedHint: '管理员审核未通过。',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
-    rewardHint: '成功后获得区域徽章和积分。（模拟）',
+    rewardHint: '成功后可获得区域徽章和积分。',
+    baseRewardLabel: '基础奖励',
+    excellenceRewardLabel: '优秀奖励',
+    rewardBadge: code => `徽章 ${code}`,
+    rewardTopN: n => `点赞 TOP ${n}`,
+    rewardAfterReview: '不是提交后立刻发放，需管理员审核通过。',
+    excellenceRewardHint: '按本轮点赞排名结算后发放。',
+    remainingAttemptsLabel: '剩余次数',
+    remainingAttemptsValue: n => `${n}次`,
+    remainingAttemptsNone: '已达成功上限',
+    successLimitHint: n => `每人最多成功 ${n} 次。`,
     participate: '参与活动',
     placeAuthRules:
       '仅可在目标点半径内拍摄并提交。GPS为第一关，最终成功需管理员图片审核通过。',
