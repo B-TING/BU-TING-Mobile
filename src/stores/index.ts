@@ -63,3 +63,7 @@ export {
 export { useFestivalStore } from './useFestivalStore';
 export { usePlaceDetailCacheStore } from './usePlaceDetailCacheStore';
 export { useLocationConsentStore } from './useLocationConsentStore';
+export {
+  useNotificationSettingsStore,
+  type NotificationPreferenceKey,
+} from './useNotificationSettingsStore';

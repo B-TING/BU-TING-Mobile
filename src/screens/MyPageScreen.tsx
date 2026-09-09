@@ -123,7 +123,6 @@ export function MyPageScreen({ navigation }: Props) {
     handleSaveNickname,
     handleDeleteAccount,
     handlePressRecord,
-    handleNotificationSettings,
     equippedTitle,
   } = useMyPageScreen({ navigation });
 
@@ -311,7 +310,8 @@ export function MyPageScreen({ navigation }: Props) {
               <SettingsRow
                 icon="bell"
                 label={copy.notificationSettings}
-                onPress={handleNotificationSettings}
+                onPress={() => navigation.navigate('NotificationSettings')}
+                testID={TEST_ID.mypage.notifications}
               />
               <SettingsRow
                 icon="globe"

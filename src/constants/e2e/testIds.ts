@@ -70,6 +70,14 @@ export const TEST_ID = {
     logout: 'mypage.logout',
     preferences: 'mypage.preferences',
     nickname: 'mypage.nickname',
+    notifications: 'mypage.notifications',
+  },
+  notificationSettings: {
+    screen: 'notificationSettings.screen',
+    master: 'notificationSettings.master',
+    eventMission: 'notificationSettings.eventMission',
+    eventReview: 'notificationSettings.eventReview',
+    zoneChat: 'notificationSettings.zoneChat',
   },
   planWizard: {
     screen: 'planWizard.screen',

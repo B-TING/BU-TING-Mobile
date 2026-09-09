@@ -286,10 +286,6 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     [navigation, showUnavailable],
   );
 
-  const handleNotificationSettings = useCallback(() => {
-    alert({ title: copy.notificationUnavailable });
-  }, [alert, copy.notificationUnavailable]);
-
   const providerLabel = user ? copy.providers[user.provider] : '—';
 
   return {
@@ -322,7 +318,6 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     handleSaveNickname,
     handleDeleteAccount,
     handlePressRecord,
-    handleNotificationSettings,
     equippedTitle,
   };
 }
