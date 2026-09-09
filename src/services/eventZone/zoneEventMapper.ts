@@ -450,6 +450,9 @@ export function mapParticipationToRecord(
   if (!participationId || !eventId || !isEventZoneId(zoneId) || !eventType) {
     return null;
   }
+  if (asString(dto.status) === 'CANCELLED') {
+    return null;
+  }
   const joinedAt = asString(dto.joinedAt) || new Date().toISOString();
   const completedAt = asString(dto.completedAt) || undefined;
   return {

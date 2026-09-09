@@ -40,6 +40,7 @@ import {
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useEventAuthRadiusGate } from '../../hooks/eventZone/useEventAuthRadiusGate';
 import { useJoinZoneEvent } from '../../hooks/eventZone/useJoinZoneEvent';
+import { useCancelZoneEvent } from '../../hooks/eventZone/useCancelZoneEvent';
 import { useHydrateMyEventParticipations, useHydrateZoneEventDetail } from '../../hooks/eventZone/useHydrateZoneEvents';
 import { useLocationCache } from '../../hooks/location/useLocationCache';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -162,6 +163,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const zoneCopy = useCopy('eventZone');
   const { checking, assertWithinRadius } = useEventAuthRadiusGate();
   const { accessToken, joining, join } = useJoinZoneEvent();
+  const { cancelling, cancel } = useCancelZoneEvent();
   const { alert } = useAppAlert();
   useLocationCache();
 
@@ -261,13 +263,20 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     remainingMs > 0 &&
     !checking &&
     !joining &&
+    !cancelling &&
     !participationBlocked &&
     !attemptsExhausted &&
     effectiveTargetId != null &&
     (participation == null || participation.status === 'in_progress');
 
+  const canCancel =
+    Boolean(accessToken) &&
+    isServerParticipationId(participation?.id) &&
+    (participation?.status === 'in_progress' || participation?.status === 'pending_review');
+
   const participateLabel = (() => {
     if (checking || joining) return copy.checkingLocation;
+    if (cancelling) return copy.cancelling;
     if (participation?.status === 'pending_review') return copy.pendingReviewTitle;
     if (participation?.status === 'approved') return copy.statusCompleted;
     if (participation?.status === 'rejected') return copy.statusRejected;
@@ -350,6 +359,35 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       return;
     }
     goToCamera(result.participationId);
+  };
+
+  const handleCancel = () => {
+    if (!canCancel || cancelling || !participation) {
+      return;
+    }
+    alert({
+      title: copy.cancelConfirmTitle,
+      message: copy.cancelConfirmMessage,
+      buttons: [
+        { label: copy.cancelKeep, variant: 'secondary', onPress: () => {} },
+        {
+          label: copy.cancelParticipation,
+          variant: 'danger',
+          onPress: () => {
+            void (async () => {
+              const result = await cancel(event.id, participation.id);
+              if (result.status === 'unauthenticated') {
+                navigation.navigate('Login');
+                return;
+              }
+              if (result.status === 'error') {
+                alert({ title: copy.cancelFailed });
+              }
+            })();
+          },
+        },
+      ],
+    });
   };
 
   const statItems = [
@@ -517,7 +555,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       </ScrollView>
 
       <View
-        className="border-t border-[#E2E8F0] bg-white px-4 pt-3"
+        className="gap-2 border-t border-[#E2E8F0] bg-white px-4 pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}>
         <EventActionButton
           label={participateLabel}
@@ -525,6 +563,14 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
           disabled={!canCapture}
           onPress={handleParticipate}
         />
+        {canCancel ? (
+          <EventActionButton
+            label={cancelling ? copy.cancelling : copy.cancelParticipation}
+            variant="ghost"
+            disabled={cancelling || joining}
+            onPress={handleCancel}
+          />
+        ) : null}
       </View>
 
       <Modal

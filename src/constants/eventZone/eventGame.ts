@@ -183,7 +183,15 @@ export const EVENT_GAME_COPY: Record<
     historyEmpty: string;
     historySubmittedAt: (timestamp: string) => string;
     historyStartedAt: (timestamp: string) => string;
+    historyFilterEmpty: string;
+    historyFilterAll: string;
     continueCapture: string;
+    cancelParticipation: string;
+    cancelConfirmTitle: string;
+    cancelConfirmMessage: string;
+    cancelKeep: string;
+    cancelFailed: string;
+    cancelling: string;
     rejectedHint: string;
     rulesTitle: string;
     rewardTitle: string;
@@ -326,7 +334,15 @@ export const EVENT_GAME_COPY: Record<
     historyEmpty: '아직 참여한 이벤트가 없어요.',
     historySubmittedAt: timestamp => `제출 ${timestamp}`,
     historyStartedAt: timestamp => `시작 ${timestamp}`,
+    historyFilterEmpty: '조건에 맞는 이력이 없어요.',
+    historyFilterAll: '전체',
     continueCapture: '촬영 이어하기',
+    cancelParticipation: '참여 취소',
+    cancelConfirmTitle: '참여를 취소할까요?',
+    cancelConfirmMessage: '취소하면 이 미션은 처음부터 다시 시작해야 해요.',
+    cancelKeep: '유지',
+    cancelFailed: '참여를 취소하지 못했어요. 다시 시도해 주세요.',
+    cancelling: '취소 중…',
     rejectedHint: '관리자 검수 결과 반려되었어요.',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
@@ -476,7 +492,15 @@ export const EVENT_GAME_COPY: Record<
     historyEmpty: 'No event participation yet.',
     historySubmittedAt: timestamp => `Submitted ${timestamp}`,
     historyStartedAt: timestamp => `Started ${timestamp}`,
+    historyFilterEmpty: 'No participation matches these filters.',
+    historyFilterAll: 'All',
     continueCapture: 'Continue capture',
+    cancelParticipation: 'Cancel participation',
+    cancelConfirmTitle: 'Cancel this participation?',
+    cancelConfirmMessage: 'You will need to start this mission from the beginning.',
+    cancelKeep: 'Keep',
+    cancelFailed: 'Could not cancel. Please try again.',
+    cancelling: 'Cancelling…',
     rejectedHint: 'Your submission was rejected after review.',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
@@ -625,7 +649,15 @@ export const EVENT_GAME_COPY: Record<
     historyEmpty: 'まだ参加したイベントがありません。',
     historySubmittedAt: timestamp => `提出 ${timestamp}`,
     historyStartedAt: timestamp => `開始 ${timestamp}`,
+    historyFilterEmpty: '条件に合う履歴がありません。',
+    historyFilterAll: 'すべて',
     continueCapture: '撮影を続ける',
+    cancelParticipation: '参加をキャンセル',
+    cancelConfirmTitle: '参加をキャンセルしますか？',
+    cancelConfirmMessage: 'キャンセルすると、このミッションは最初からやり直す必要があります。',
+    cancelKeep: '続ける',
+    cancelFailed: 'キャンセルできませんでした。もう一度お試しください。',
+    cancelling: 'キャンセル中…',
     rejectedHint: '管理者の審査で却下されました。',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
@@ -774,7 +806,15 @@ export const EVENT_GAME_COPY: Record<
     historyEmpty: '还没有参与过活动。',
     historySubmittedAt: timestamp => `提交 ${timestamp}`,
     historyStartedAt: timestamp => `开始 ${timestamp}`,
+    historyFilterEmpty: '没有符合条件的记录。',
+    historyFilterAll: '全部',
     continueCapture: '继续拍摄',
+    cancelParticipation: '取消参与',
+    cancelConfirmTitle: '要取消这次参与吗？',
+    cancelConfirmMessage: '取消后需要从头开始这个任务。',
+    cancelKeep: '保留',
+    cancelFailed: '无法取消，请再试一次。',
+    cancelling: '取消中…',
     rejectedHint: '管理员审核未通过。',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
