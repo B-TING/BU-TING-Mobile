@@ -18,6 +18,7 @@ import { EventGameCameraScreen } from '../screens/eventZone/EventGameCameraScree
 import { EventParticipationHistoryScreen } from '../screens/eventZone/EventParticipationHistoryScreen';
 import { EventAlbumScreen } from '../screens/eventZone/EventAlbumScreen';
 import { EventTitlesScreen } from '../screens/eventZone/EventTitlesScreen';
+import { EventRewardsScreen } from '../screens/eventZone/EventRewardsScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
@@ -133,6 +134,7 @@ export function RootNavigator() {
         />
         <Stack.Screen name="EventAlbum" component={EventAlbumScreen} />
         <Stack.Screen name="EventTitles" component={EventTitlesScreen} />
+        <Stack.Screen name="EventRewards" component={EventRewardsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

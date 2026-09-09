@@ -304,6 +304,11 @@ export function MyPageScreen({ navigation }: Props) {
                 onPress={() => navigation.navigate('EventTitles')}
               />
               <SettingsRow
+                icon="ticket"
+                label={copy.myRewards}
+                onPress={() => navigation.navigate('EventRewards')}
+              />
+              <SettingsRow
                 icon="bell"
                 label={copy.notificationSettings}
                 onPress={handleNotificationSettings}

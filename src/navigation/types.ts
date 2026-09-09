@@ -45,6 +45,7 @@ export type RootStackParamList = {
   EventParticipationHistory: undefined;
   EventAlbum: { zoneId?: EventZoneId; eventId?: string; roundId?: string } | undefined;
   EventTitles: undefined;
+  EventRewards: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

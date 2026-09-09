@@ -13,6 +13,7 @@ export const MY_PAGE_COPY: Record<
     editProfile: string;
     editPreferences: string;
     zoneTitles: string;
+    myRewards: string;
     settings: string;
     notificationSettings: string;
     languageSettings: string;
@@ -79,6 +80,7 @@ export const MY_PAGE_COPY: Record<
     editProfile: '프로필 편집',
     editPreferences: '여행 취향 수정',
     zoneTitles: '구역 칭호',
+    myRewards: '내 보상',
     settings: '설정',
     notificationSettings: '알림 설정',
     languageSettings: '언어 설정',
@@ -149,6 +151,7 @@ export const MY_PAGE_COPY: Record<
     editProfile: 'Edit profile',
     editPreferences: 'Edit travel preferences',
     zoneTitles: 'Zone titles',
+    myRewards: 'My rewards',
     settings: 'Settings',
     notificationSettings: 'Notifications',
     languageSettings: 'Language',
@@ -219,6 +222,7 @@ export const MY_PAGE_COPY: Record<
     editProfile: 'プロフィール編集',
     editPreferences: '旅行の好みを編集',
     zoneTitles: 'エリア称号',
+    myRewards: 'マイ報酬',
     settings: '設定',
     notificationSettings: '通知設定',
     languageSettings: '言語設定',
@@ -289,6 +293,7 @@ export const MY_PAGE_COPY: Record<
     editProfile: '编辑资料',
     editPreferences: '修改旅行偏好',
     zoneTitles: '区域称号',
+    myRewards: '我的奖励',
     settings: '设置',
     notificationSettings: '通知设置',
     languageSettings: '语言设置',
