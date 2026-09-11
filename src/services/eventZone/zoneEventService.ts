@@ -171,14 +171,16 @@ export async function fetchMyZoneEventParticipations(
   return Array.isArray(data) ? data : [];
 }
 
-const OPEN_PARTICIPATION_STATUSES = new Set(['JOINED', 'SUBMITTED', 'UNDER_REVIEW']);
+/** JOINED 재개 + FAIL 재제출. SUBMITTED/UNDER_REVIEW는 카메라로 보내지 않는다. */
+const RESUMABLE_PARTICIPATION_STATUSES = new Set(['JOINED', 'FAIL']);
 
 export async function resolveOpenParticipationId(
   accessToken: string,
   eventId: string,
 ): Promise<string | undefined> {
   const list = await fetchMyZoneEventParticipations(accessToken, eventId);
-  return list.find(item => OPEN_PARTICIPATION_STATUSES.has(item.status ?? ''))?.participationId;
+  return list.find(item => RESUMABLE_PARTICIPATION_STATUSES.has(item.status ?? ''))
+    ?.participationId;
 }
 
 /** DELETE /api/v1/zone-events/{eventId}/participations/{participationId} */

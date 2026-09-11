@@ -50,6 +50,10 @@ import {
   requestCameraPermission,
 } from '../../utils/media/mediaPermissions';
 import { pickReviewMedia, type MediaPickAsset } from '../../utils/media/pickMedia';
+import {
+  isRetakeRequiredSubmitError,
+  zoneEventSubmitErrorCopy,
+} from '../../utils/eventZone/zoneEventSubmitError';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameCamera'>;
 
@@ -125,6 +129,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   const [previewAsset, setPreviewAsset] = useState<MediaPickAsset | null>(null);
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [submitExtras, setSubmitExtras] = useState<SubmitExtras | null>(null);
+  const [usedFileKeys, setUsedFileKeys] = useState<string[]>([]);
   const [permissionPrompt, setPermissionPrompt] = useState<
     null | 'request' | 'blocked'
   >(null);
@@ -280,11 +285,21 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
     setPhase('submitting');
     try {
       const uploaded = await uploadFile(accessToken, toUploadInput(previewAsset));
+      if (usedFileKeys.includes(uploaded.fileKey)) {
+        handleRetake();
+        alert({
+          title: copy.captureFailed,
+          message: copy.submitMediaAlreadyUsed,
+        });
+        return;
+      }
+      setUsedFileKeys(keys => [...keys, uploaded.fileKey]);
       const result = await submitZoneEventParticipation(
         accessToken,
         eventId,
         participationId,
         {
+          targetId,
           mediaFileKey: uploaded.fileKey,
           latitude: coords.lat,
           longitude: coords.lng,
@@ -320,7 +335,14 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
           });
           return;
         }
-        alert({ title: copy.captureFailed, message: error.message });
+        const message = zoneEventSubmitErrorCopy(error, copy);
+        if (isRetakeRequiredSubmitError(error)) {
+          handleRetake();
+        }
+        alert({
+          title: message === copy.submitDeadlinePassed ? copy.deadlinePassed : copy.captureFailed,
+          message,
+        });
         return;
       }
       alert({

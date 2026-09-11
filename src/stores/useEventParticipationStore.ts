@@ -25,8 +25,8 @@ type EventParticipationState = {
   submitForReview: (
     event: ZoneEvent,
     localImageUri: string,
-    targetId: string | null | undefined,
-    status: EventParticipationStatus,
+    targetId?: string | null,
+    status?: EventParticipationStatus,
   ) => void;
   getByEventId: (eventId: string) => EventParticipationRecord | undefined;
   replaceRecords: (records: EventParticipationRecord[]) => void;
@@ -46,6 +46,35 @@ function isPhase1AuthEvent(
   event: ZoneEvent,
 ): event is ZoneEvent & { type: 'PLACE_AUTH' | 'OBJECT_AUTH' } {
   return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
+}
+
+const BLOCKED_SERVER_STATUSES = new Set(['SUBMITTED', 'UNDER_REVIEW', 'SUCCESS']);
+
+function isCameraReentryBlocked(
+  event: ZoneEvent,
+  existing: EventParticipationRecord | undefined,
+  participationId: string,
+): boolean {
+  const mine = event.myParticipation;
+  if (mine?.status === 'FAIL') {
+    return mine.canResubmit !== true || participationId !== mine.participationId;
+  }
+  if (mine?.status === 'JOINED') {
+    return false;
+  }
+  if (mine?.status && BLOCKED_SERVER_STATUSES.has(mine.status)) {
+    return true;
+  }
+
+  if (existing?.status === 'pending_review' || existing?.status === 'approved') {
+    return true;
+  }
+  if (existing?.status === 'rejected') {
+    const sameId = participationId === existing.id;
+    const allowed = sameId && existing.canResubmit === true;
+    return !allowed;
+  }
+  return false;
 }
 
 /** 제출/생성 시각 기준 최신순. React에서는 records 구독 + useMemo로 사용. */
@@ -93,14 +122,13 @@ export const useEventParticipationStore = create<EventParticipationState>()(
       }
 
       const existing = get().getByEventId(event.id);
-      if (
-        existing &&
-        existing.status !== 'in_progress'
-      ) {
+      if (isCameraReentryBlocked(event, existing, participationId)) {
         return 'blocked';
       }
 
       const now = new Date().toISOString();
+      const canResubmit =
+        event.myParticipation?.canResubmit === true || existing?.canResubmit === true;
       get().upsertRecord({
         id: participationId,
         eventId: event.id,
@@ -112,10 +140,13 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         localImageUri: existing?.localImageUri,
         createdAt: existing?.createdAt ?? now,
         submittedAt: existing?.submittedAt,
+        rejectionReason: existing?.rejectionReason,
+        canResubmit,
+        submissions: existing?.submissions,
       });
       return 'ok';
     },
-    submitForReview: (event, localImageUri, targetId, status) => {
+    submitForReview: (event, localImageUri, targetId, status = 'pending_review') => {
       if (!isPhase1AuthEvent(event)) {
         return;
       }
@@ -133,6 +164,9 @@ export const useEventParticipationStore = create<EventParticipationState>()(
         localImageUri,
         createdAt: existing?.createdAt ?? now,
         submittedAt: now,
+        rejectionReason: existing?.rejectionReason,
+        canResubmit: status === 'rejected' ? existing?.canResubmit : false,
+        submissions: existing?.submissions,
       });
     },
     getByEventId: eventId =>

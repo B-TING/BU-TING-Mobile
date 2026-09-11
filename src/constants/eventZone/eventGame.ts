@@ -53,9 +53,9 @@ export function isCameraEventGame(event: ZoneEvent): boolean {
   return event.type === 'PLACE_AUTH' || event.type === 'OBJECT_AUTH';
 }
 
-/** 슬롯 내 인증 타겟 목록 (authTargets 우선, 없으면 레거시 단일 필드 폴백) */
+/** 슬롯 내 인증 타겟 목록 (authTargets 우선. 빈 배열이면 가짜 ID를 만들지 않음) */
 export function listEventAuthTargets(event: ZoneEvent): ZoneEventAuthTarget[] {
-  if (event.authTargets != null && event.authTargets.length > 0) {
+  if (Array.isArray(event.authTargets)) {
     return event.authTargets;
   }
 
@@ -193,6 +193,16 @@ export const EVENT_GAME_COPY: Record<
     cancelFailed: string;
     cancelling: string;
     rejectedHint: string;
+    resubmit: string;
+    resubmitHint: string;
+    deadlineLabel: string;
+    deadlineUntil: (formatted: string) => string;
+    deadlinePassed: string;
+    submitMediaAlreadyUsed: string;
+    submitMediaStale: string;
+    submitMediaForbidden: string;
+    submitDeadlinePassed: string;
+    historyCanResubmit: string;
     rulesTitle: string;
     rewardTitle: string;
     rewardHint: string;
@@ -344,6 +354,16 @@ export const EVENT_GAME_COPY: Record<
     cancelFailed: '참여를 취소하지 못했어요. 다시 시도해 주세요.',
     cancelling: '취소 중…',
     rejectedHint: '관리자 검수 결과 반려되었어요.',
+    resubmit: '다시 제출',
+    resubmitHint: '같은 참여로 다시 제출할 수 있어요. 장소를 바꿔도 돼요.',
+    deadlineLabel: '마감',
+    deadlineUntil: formatted => `마감 ${formatted}`,
+    deadlinePassed: '마감되어 참여·재제출할 수 없어요',
+    submitMediaAlreadyUsed: '이미 제출한 사진은 다시 쓸 수 없어요. 새로 촬영해 주세요.',
+    submitMediaStale: '업로드한 지 너무 오래됐어요. 다시 촬영해 주세요.',
+    submitMediaForbidden: '본인이 올린 사진만 제출할 수 있어요. 다시 촬영해 주세요.',
+    submitDeadlinePassed: '마감되어 제출할 수 없어요.',
+    historyCanResubmit: '재제출 가능',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
     rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다.',
@@ -502,6 +522,16 @@ export const EVENT_GAME_COPY: Record<
     cancelFailed: 'Could not cancel. Please try again.',
     cancelling: 'Cancelling…',
     rejectedHint: 'Your submission was rejected after review.',
+    resubmit: 'Submit again',
+    resubmitHint: 'You can resubmit on the same participation. You may pick a different place.',
+    deadlineLabel: 'Deadline',
+    deadlineUntil: formatted => `Deadline ${formatted}`,
+    deadlinePassed: 'The deadline has passed. You cannot join or resubmit.',
+    submitMediaAlreadyUsed: 'That photo was already submitted. Please take a new one.',
+    submitMediaStale: 'The upload expired. Please take a new photo.',
+    submitMediaForbidden: 'You can only submit a photo you uploaded. Please retake it.',
+    submitDeadlinePassed: 'The deadline has passed. You cannot submit.',
+    historyCanResubmit: 'Can resubmit',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
     rewardHint: 'Earn zone badges and points on success.',
@@ -659,6 +689,16 @@ export const EVENT_GAME_COPY: Record<
     cancelFailed: 'キャンセルできませんでした。もう一度お試しください。',
     cancelling: 'キャンセル中…',
     rejectedHint: '管理者の審査で却下されました。',
+    resubmit: '再提出',
+    resubmitHint: '同じ参加のまま再提出できます。場所を変えても構いません。',
+    deadlineLabel: '締切',
+    deadlineUntil: formatted => `締切 ${formatted}`,
+    deadlinePassed: '締切を過ぎたため、参加・再提出できません',
+    submitMediaAlreadyUsed: '提出済みの写真は再利用できません。撮り直してください。',
+    submitMediaStale: 'アップロードから時間が経ちすぎました。撮り直してください。',
+    submitMediaForbidden: 'ご自身がアップロードした写真のみ提出できます。撮り直してください。',
+    submitDeadlinePassed: '締切を過ぎたため提出できません。',
+    historyCanResubmit: '再提出できます',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
     rewardHint: '成功時にエリアバッジとポイントを獲得します。',
@@ -816,6 +856,16 @@ export const EVENT_GAME_COPY: Record<
     cancelFailed: '无法取消，请再试一次。',
     cancelling: '取消中…',
     rejectedHint: '管理员审核未通过。',
+    resubmit: '再次提交',
+    resubmitHint: '可在同一参与记录上再次提交，也可以换地点。',
+    deadlineLabel: '截止',
+    deadlineUntil: formatted => `截止 ${formatted}`,
+    deadlinePassed: '已截止，无法参与或再次提交',
+    submitMediaAlreadyUsed: '该照片已提交过，请重新拍摄。',
+    submitMediaStale: '上传时间过久，请重新拍摄。',
+    submitMediaForbidden: '只能提交本人上传的照片，请重新拍摄。',
+    submitDeadlinePassed: '已截止，无法提交。',
+    historyCanResubmit: '可再次提交',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
     rewardHint: '成功后可获得区域徽章和积分。',

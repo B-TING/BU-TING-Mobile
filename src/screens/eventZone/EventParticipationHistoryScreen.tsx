@@ -121,15 +121,22 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
             : copy.historyStartedAt(timestamp)
           : undefined;
 
+        const noteParts = [
+          item.rejectionReason,
+          item.canResubmit ? copy.historyCanResubmit : undefined,
+        ].filter((part): part is string => Boolean(part));
+
         return (
           <EventHistoryCard
             title={item.eventTitleKo}
             zoneName={eventZoneName(zone, language)}
             result={typeLabel}
+            note={noteParts.length > 0 ? noteParts.join(' · ') : undefined}
             status={item.status}
             statusLabel={statusLabel}
             timestamp={timestampLabel}
             resultTone={resultToneForStatus(item.status)}
+            noteTone={item.rejectionReason ? 'danger' : item.canResubmit ? 'warning' : 'muted'}
             onPress={() =>
               navigation.navigate('EventGameDetail', { eventId: item.eventId })
             }

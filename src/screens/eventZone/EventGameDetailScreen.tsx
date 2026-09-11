@@ -52,10 +52,12 @@ import {
 import { getCachedCoordinates } from '../../stores/useLocationStore';
 import { useAppAlert } from '../../components/shared/modals';
 import { zoneEventTypeCode } from '../../constants/eventZone/zoneEvents';
+import { isServerTargetId, mapParticipationStatus } from '../../services/eventZone/zoneEventMapper';
 import {
   formatZoneEventRemaining,
   useZoneEventRemaining,
 } from '../../utils/eventZone/zoneEventRemaining';
+import type { AppLanguage } from '../../types/user';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventGameDetail'>;
 
@@ -64,6 +66,21 @@ function isServerParticipationId(id: string | undefined): id is string {
     typeof id === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
   );
+}
+
+function formatDeadline(iso: string, language: AppLanguage): string {
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) {
+    return iso;
+  }
+  const locale =
+    language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US';
+  return new Date(at).toLocaleString(locale, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 // ─── 반경 체크 결과 모달 ────────────────────────────────────────────
@@ -184,24 +201,33 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const remainingMs = useZoneEventRemaining(event);
 
   const authTargets = useMemo(
-    () => (event ? listEventAuthTargets(event) : []),
+    () => (event ? listEventAuthTargets(event).filter(item => isServerTargetId(item.targetId)) : []),
     [event],
   );
 
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
 
+  const canResubmit = Boolean(
+    event?.myParticipation?.canResubmit ?? participation?.canResubmit,
+  );
+  const serverParticipationId = isServerParticipationId(event?.myParticipation?.participationId)
+    ? event.myParticipation.participationId
+    : isServerParticipationId(participation?.id)
+      ? participation.id
+      : undefined;
+
   const effectiveTargetId = useMemo(() => {
-    if (participation?.targetId) {
-      return participation.targetId;
-    }
-    if (selectedTargetId) {
+    if (selectedTargetId && isServerTargetId(selectedTargetId)) {
       return selectedTargetId;
+    }
+    if (!canResubmit && participation?.targetId && isServerTargetId(participation.targetId)) {
+      return participation.targetId;
     }
     if (authTargets.length === 1) {
       return authTargets[0].targetId;
     }
     return null;
-  }, [authTargets, participation?.targetId, selectedTargetId]);
+  }, [authTargets, canResubmit, participation?.targetId, selectedTargetId]);
 
   if ((!event || !isPhase1EventGame(event)) && detailLoading) {
     return (
@@ -233,31 +259,38 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   const remainingText = formatZoneEventRemaining(remainingMs, language);
   const typeLabel =
     zoneEventTypeCode(event) === 'PLACE_AUTH' ? copy.typePlaceAuth : copy.typeObjectSight;
+  const displayStatus = event.myParticipation
+    ? mapParticipationStatus(event.myParticipation.status)
+    : participation?.status;
   const targetLocked =
-    participation != null &&
-    (participation.status === 'pending_review' ||
-      participation.status === 'approved' ||
-      participation.status === 'rejected' ||
-      (participation.status === 'in_progress' && participation.targetId != null));
+    displayStatus != null &&
+    !canResubmit &&
+    (displayStatus === 'pending_review' ||
+      displayStatus === 'approved' ||
+      displayStatus === 'rejected' ||
+      (displayStatus === 'in_progress' && participation?.targetId != null));
 
   const statusLabel = (() => {
-    if (!participation) return copy.statusNotJoined;
-    if (participation.status === 'pending_review') return copy.statusPendingReview;
-    if (participation.status === 'approved') return copy.statusCompleted;
-    if (participation.status === 'rejected') return copy.statusRejected;
+    if (!displayStatus) return copy.statusNotJoined;
+    if (displayStatus === 'pending_review') return copy.statusPendingReview;
+    if (displayStatus === 'approved') return copy.statusCompleted;
+    if (displayStatus === 'rejected' && canResubmit) return copy.resubmit;
+    if (displayStatus === 'rejected') return copy.statusRejected;
     return copy.statusInProgress;
   })();
 
   const participationBlocked =
-    participation?.status === 'pending_review' ||
-    participation?.status === 'approved' ||
-    participation?.status === 'rejected';
+    displayStatus === 'pending_review' ||
+    displayStatus === 'approved' ||
+    (displayStatus === 'rejected' && !canResubmit);
 
   const remainingAttempts = event.myRemainingAttempts;
   const attemptsExhausted =
-    remainingAttempts === 0 && participation?.status !== 'in_progress';
+    remainingAttempts === 0 && displayStatus !== 'in_progress' && !canResubmit;
   const baseRewardTitle = formatRewardSummary(event.baseReward, copy);
   const excellenceRewardTitle = formatRewardSummary(event.excellenceReward, copy);
+  const deadlineText = event.deadline ? formatDeadline(event.deadline, language) : null;
+  const deadlinePassed = remainingMs <= 0;
 
   const canCapture =
     remainingMs > 0 &&
@@ -266,23 +299,25 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     !cancelling &&
     !participationBlocked &&
     !attemptsExhausted &&
-    effectiveTargetId != null &&
-    (participation == null || participation.status === 'in_progress');
+    isServerTargetId(effectiveTargetId) &&
+    (displayStatus == null || displayStatus === 'in_progress' || canResubmit);
 
   const canCancel =
     Boolean(accessToken) &&
-    isServerParticipationId(participation?.id) &&
-    (participation?.status === 'in_progress' || participation?.status === 'pending_review');
+    isServerParticipationId(serverParticipationId) &&
+    (displayStatus === 'in_progress' || displayStatus === 'pending_review');
 
   const participateLabel = (() => {
     if (checking || joining) return copy.checkingLocation;
     if (cancelling) return copy.cancelling;
-    if (participation?.status === 'pending_review') return copy.pendingReviewTitle;
-    if (participation?.status === 'approved') return copy.statusCompleted;
-    if (participation?.status === 'rejected') return copy.statusRejected;
-    if (participation?.status === 'in_progress') return copy.continueCapture;
+    if (deadlinePassed) return copy.deadlinePassed;
+    if (displayStatus === 'pending_review') return copy.pendingReviewTitle;
+    if (displayStatus === 'approved') return copy.statusCompleted;
+    if (displayStatus === 'rejected' && canResubmit) return copy.resubmit;
+    if (displayStatus === 'rejected') return copy.statusRejected;
+    if (displayStatus === 'in_progress') return copy.continueCapture;
     if (attemptsExhausted) return copy.remainingAttemptsNone;
-    if (effectiveTargetId == null) return copy.selectTargetRequired;
+    if (!isServerTargetId(effectiveTargetId)) return copy.selectTargetRequired;
     return copy.participate;
   })();
 
@@ -290,7 +325,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     event.type === 'PLACE_AUTH' ? copy.placeAuthRules : copy.objectSightRules;
 
   const handleParticipate = async () => {
-    if (!canCapture || !effectiveTargetId) return;
+    if (!canCapture || !isServerTargetId(effectiveTargetId)) return;
     if (!accessToken) {
       navigation.navigate('Login');
       return;
@@ -305,11 +340,16 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
     );
     if (!within) return;
 
-    const openServerId = isServerParticipationId(event.myOpenParticipationId)
-      ? event.myOpenParticipationId
-      : isServerParticipationId(participation?.id) && participation?.status === 'in_progress'
-        ? participation.id
-        : undefined;
+    const resumeId =
+      canResubmit && serverParticipationId
+        ? serverParticipationId
+        : isServerParticipationId(event.myOpenParticipationId) &&
+            (participation?.status === 'in_progress' ||
+              event.myParticipation?.status === 'JOINED')
+          ? event.myOpenParticipationId
+          : isServerParticipationId(participation?.id) && participation?.status === 'in_progress'
+            ? participation.id
+            : undefined;
 
     const goToCamera = (participationId: string) => {
       if (beginParticipation(event, effectiveTargetId, participationId) === 'blocked') {
@@ -322,8 +362,8 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       });
     };
 
-    if (openServerId) {
-      goToCamera(openServerId);
+    if (resumeId) {
+      goToCamera(resumeId);
       return;
     }
 
@@ -334,7 +374,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    const result = await join(event.id, coords);
+    const result = await join(event.id, coords, effectiveTargetId);
     if (result.status === 'unauthenticated') {
       navigation.navigate('Login');
       return;
@@ -362,7 +402,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
   };
 
   const handleCancel = () => {
-    if (!canCancel || cancelling || !participation) {
+    if (!canCancel || cancelling || !serverParticipationId) {
       return;
     }
     alert({
@@ -375,7 +415,7 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
           variant: 'danger',
           onPress: () => {
             void (async () => {
-              const result = await cancel(event.id, participation.id);
+              const result = await cancel(event.id, serverParticipationId);
               if (result.status === 'unauthenticated') {
                 navigation.navigate('Login');
                 return;
@@ -440,11 +480,23 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         />
         <EventStatRow items={statItems} />
 
-        {participation?.status === 'rejected' ? (
-          <EventCallout tone="warning" title={copy.statusRejected} body={copy.rejectedHint} />
-        ) : participation?.status === 'pending_review' ? (
+        {deadlineText ? (
+          <EventCallout
+            tone={deadlinePassed ? 'warning' : 'info'}
+            title={copy.deadlineLabel}
+            body={deadlinePassed ? copy.deadlinePassed : copy.deadlineUntil(deadlineText)}
+          />
+        ) : null}
+
+        {displayStatus === 'rejected' ? (
+          <EventCallout
+            tone="warning"
+            title={copy.statusRejected}
+            body={participation?.rejectionReason || copy.rejectedHint}
+          />
+        ) : displayStatus === 'pending_review' ? (
           <EventCallout tone="info" title={copy.pendingReviewTitle} body={copy.pendingReviewMessage} />
-        ) : participation?.status === 'approved' ? (
+        ) : displayStatus === 'approved' ? (
           <EventCallout tone="event" title={copy.statusCompleted} body={copy.pendingReviewMessage} />
         ) : attemptsExhausted ? (
           <EventCallout
@@ -456,6 +508,10 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
                 : copy.rewardHint
             }
           />
+        ) : null}
+
+        {canResubmit && displayStatus === 'rejected' ? (
+          <EventCallout tone="info" title={copy.resubmit} body={copy.resubmitHint} />
         ) : null}
 
         <EventInfoCard label={copy.rulesTitle} title={typeLabel} body={rulesText} tone="default" />

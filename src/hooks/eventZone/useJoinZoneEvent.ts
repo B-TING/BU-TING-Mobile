@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { isServerTargetId } from '../../services/eventZone/zoneEventMapper';
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import type { EventZoneCoordinate } from '../../types/eventZone';
 import {
@@ -19,14 +20,22 @@ export function useJoinZoneEvent() {
   const [joining, setJoining] = useState(false);
 
   const join = useCallback(
-    async (eventId: string, coords: EventZoneCoordinate): Promise<JoinZoneEventResult> => {
+    async (
+      eventId: string,
+      coords: EventZoneCoordinate,
+      targetId: string,
+    ): Promise<JoinZoneEventResult> => {
       if (!accessToken) {
         return { status: 'unauthenticated' };
+      }
+      if (!isServerTargetId(targetId)) {
+        return { status: 'error', message: 'Zone event target is required' };
       }
 
       setJoining(true);
       try {
         const participation = await joinZoneEvent(accessToken, eventId, {
+          targetId,
           latitude: coords.lat,
           longitude: coords.lng,
         });

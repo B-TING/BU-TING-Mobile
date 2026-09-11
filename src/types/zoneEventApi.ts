@@ -117,6 +117,7 @@ export type ZoneEventRoundStatusResponse = {
 };
 
 export type ZoneEventParticipationJoinRequest = {
+  targetId: string;
   latitude: number;
   longitude: number;
 };
@@ -138,6 +139,7 @@ export type ZoneEventParticipationResponse = {
 };
 
 export type ZoneEventParticipationSubmitRequest = {
+  targetId: string;
   mediaFileKey: string;
   content?: string | null;
   latitude: number;

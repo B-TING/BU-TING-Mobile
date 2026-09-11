@@ -8,10 +8,12 @@ type EventHistoryCardProps = {
   zoneName: string;
   /** 하단 보조 텍스트 (예: "50P · 배지 지급", "검수 중", 타임스탬프 등) */
   result?: string;
+  note?: string;
   status: EventParticipationStatus;
   statusLabel: string;
   timestamp?: string;
   resultTone?: 'primary' | 'warning' | 'danger' | 'muted';
+  noteTone?: 'primary' | 'warning' | 'danger' | 'muted';
   onPress: () => void;
 };
 
@@ -27,10 +29,12 @@ export function EventHistoryCard({
   title,
   zoneName,
   result,
+  note,
   status,
   statusLabel,
   timestamp,
   resultTone = 'muted',
+  noteTone = 'muted',
   onPress,
 }: EventHistoryCardProps) {
   return (
@@ -50,6 +54,13 @@ export function EventHistoryCard({
           className="text-[12px] font-bold leading-[17px]"
           style={{ color: RESULT_COLOR[resultTone] }}>
           {result}
+        </Text>
+      ) : null}
+      {note ? (
+        <Text
+          className="text-[12px] leading-[17px]"
+          style={{ color: RESULT_COLOR[noteTone] }}>
+          {note}
         </Text>
       ) : null}
       {timestamp ? (

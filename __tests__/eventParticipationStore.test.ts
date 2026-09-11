@@ -19,11 +19,12 @@ describe('useEventParticipationStore', () => {
 
   it('tracks in_progress then pending_review for one event', () => {
     expect(
-      useEventParticipationStore.getState().beginParticipation(baseEvent, 't1'),
+      useEventParticipationStore.getState().beginParticipation(baseEvent, 't1', 'p-1'),
     ).toBe('ok');
     const inProgress = useEventParticipationStore.getState().getByEventId(baseEvent.id);
     expect(inProgress?.status).toBe('in_progress');
     expect(inProgress?.targetId).toBe('t1');
+    expect(inProgress?.id).toBe('p-1');
 
     useEventParticipationStore
       .getState()
@@ -36,7 +37,62 @@ describe('useEventParticipationStore', () => {
 
   it('blocks new participation after pending review', () => {
     useEventParticipationStore.getState().submitForReview(baseEvent, 'file://photo.jpg');
-    expect(useEventParticipationStore.getState().beginParticipation(baseEvent)).toBe('blocked');
+    expect(
+      useEventParticipationStore.getState().beginParticipation(baseEvent, 't1', 'p-1'),
+    ).toBe('blocked');
+  });
+
+  it('allows camera reentry on rejected participation when canResubmit', () => {
+    const event: ZoneEvent = {
+      ...baseEvent,
+      myParticipation: {
+        participationId: 'p-fail',
+        status: 'FAIL',
+        canResubmit: true,
+      },
+    };
+    useEventParticipationStore.getState().upsertRecord({
+      id: 'p-fail',
+      eventId: event.id,
+      zoneId: event.zoneId,
+      eventType: 'PLACE_AUTH',
+      eventTitleKo: event.titleKo,
+      targetId: 't1',
+      status: 'rejected',
+      canResubmit: true,
+      createdAt: '2026-09-01T00:00:00.000Z',
+    });
+
+    expect(
+      useEventParticipationStore.getState().beginParticipation(event, 't2', 'p-fail'),
+    ).toBe('ok');
+    const resumed = useEventParticipationStore.getState().getByEventId(event.id);
+    expect(resumed?.id).toBe('p-fail');
+    expect(resumed?.status).toBe('in_progress');
+    expect(resumed?.targetId).toBe('t2');
+  });
+
+  it('blocks camera reentry after success', () => {
+    const event: ZoneEvent = {
+      ...baseEvent,
+      myParticipation: {
+        participationId: 'p-ok',
+        status: 'SUCCESS',
+        canResubmit: false,
+      },
+    };
+    useEventParticipationStore.getState().upsertRecord({
+      id: 'p-ok',
+      eventId: event.id,
+      zoneId: event.zoneId,
+      eventType: 'PLACE_AUTH',
+      eventTitleKo: event.titleKo,
+      status: 'approved',
+      createdAt: '2026-09-01T00:00:00.000Z',
+    });
+    expect(
+      useEventParticipationStore.getState().beginParticipation(event, 't1', 'p-ok'),
+    ).toBe('blocked');
   });
 
   it('lists records newest first', () => {
