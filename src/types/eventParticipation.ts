@@ -20,4 +20,19 @@ export type EventParticipationRecord = {
   localImageUri?: string;
   createdAt: string;
   submittedAt?: string;
+  rejectionReason?: string;
+  canResubmit?: boolean;
+  submissions?: EventParticipationSubmission[];
+};
+
+export type EventParticipationSubmission = {
+  submissionId: string;
+  attemptNo?: number;
+  targetId?: string;
+  placeName?: string;
+  mediaUrl?: string;
+  reviewStatus?: string;
+  rejectionReason?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
 };

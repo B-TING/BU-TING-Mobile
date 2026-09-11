@@ -33,6 +33,24 @@ export type ZoneEventAuthTargetDetailResponse = {
   radiusM?: number | null;
 };
 
+export type ZoneEventMyParticipationResponse = {
+  participationId: string;
+  status?: string | null;
+  canResubmit?: boolean;
+};
+
+export type ZoneEventSubmissionHistoryItemResponse = {
+  submissionId: string;
+  attemptNo?: number | null;
+  targetId?: string | null;
+  placeName?: string | null;
+  mediaUrl?: string | null;
+  reviewStatus?: string | null;
+  rejectionReason?: string | null;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+};
+
 export type ZoneEventSummaryResponse = {
   eventId: string;
   zone: ZoneEventApiZoneRef;
@@ -70,10 +88,15 @@ export type ZoneEventDetailResponse = {
   roundId?: string | null;
   baseReward?: ZoneEventRewardSummaryResponse | null;
   excellenceReward?: ZoneEventRewardSummaryResponse | null;
+  /** 하위 호환. 신규는 targets */
   authTarget?: ZoneEventAuthTargetDetailResponse | null;
+  targets?: ZoneEventAuthTargetDetailResponse[] | null;
+  slotCode?: string | null;
+  deadline?: string | null;
   successCount?: number;
   successLimitPerUser?: number | null;
   myRemainingAttempts?: number | null;
+  myParticipation?: ZoneEventMyParticipationResponse | null;
   round?: unknown;
 };
 
@@ -124,6 +147,8 @@ export type ZoneEventParticipationSubmitRequest = {
 
 export type ZoneEventSubmitResultResponse = {
   participation: ZoneEventParticipationResponse;
+  submissionId?: string | null;
+  attemptNo?: number | null;
   rewards?: ZoneEventGrantedRewardResponse[] | null;
   pointBalance?: number;
   newlyEarnedTitles?: EquippedTitleResponse[] | null;
@@ -162,6 +187,9 @@ export type ZoneEventHistoryItemResponse = {
   visibility?: string | null;
   joinedAt?: string | null;
   completedAt?: string | null;
+  rejectionReason?: string | null;
+  canResubmit?: boolean;
+  submissions?: ZoneEventSubmissionHistoryItemResponse[] | null;
 };
 
 export type ZoneEventHistoryPageResponse = {

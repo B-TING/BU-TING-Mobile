@@ -1,5 +1,9 @@
 import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
-import type { EventParticipationRecord, EventParticipationStatus } from '../../types/eventParticipation';
+import type {
+  EventParticipationRecord,
+  EventParticipationStatus,
+  EventParticipationSubmission,
+} from '../../types/eventParticipation';
 import type {
   EventZoneId,
   ZoneEvent,
@@ -11,21 +15,28 @@ import type { EventAlbumComment, EventAlbumPost } from '../../types/eventAlbum';
 import type { EquippedTitleResponse } from '../../types/zoneTitleApi';
 import type {
   ZoneEventAlbumItemResponse,
-  ZoneEventAuthTargetBriefResponse,
   ZoneEventAuthTargetDetailResponse,
   ZoneEventCommentResponse,
   ZoneEventDetailResponse,
   ZoneEventGrantedRewardResponse,
   ZoneEventHistoryItemResponse,
+  ZoneEventMyParticipationResponse,
   ZoneEventParticipationResponse,
   ZoneEventRewardSummaryResponse,
   ZoneEventRoundStatusResponse,
+  ZoneEventSubmissionHistoryItemResponse,
   ZoneEventSubmitResultResponse,
   ZoneEventSummaryResponse,
 } from '../../types/zoneEventApi';
 
 const DEFAULT_AUTH_RADIUS_M = 150;
 const EVENT_ZONE_ID_SET = new Set<string>(EVENT_ZONES.map(zone => zone.id));
+const SERVER_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isServerTargetId(value: string | null | undefined): value is string {
+  return typeof value === 'string' && SERVER_UUID.test(value);
+}
 
 export function isEventZoneId(value: string | null | undefined): value is EventZoneId {
   return typeof value === 'string' && EVENT_ZONE_ID_SET.has(value);
@@ -87,66 +98,82 @@ function mapTypeCode(typeCode: string): ZoneEventType {
   return 'PLACE_AUTH';
 }
 
-function mapBriefAuthTarget(
-  eventId: string,
-  typeCode: string,
-  dto: ZoneEventAuthTargetBriefResponse | null | undefined,
-): ZoneEventAuthTarget[] {
-  if (!dto) {
-    return [];
-  }
-  const latitude = asNumber(dto.latitude);
-  const longitude = asNumber(dto.longitude);
-  if (latitude == null || longitude == null) {
-    return [];
-  }
-  const kind = typeCode === 'OBJECT_AUTH' ? 'OBJECT' : 'PLACE';
-  const placeNameKo = asString(dto.placeName) || '인증 장소';
-  return [
-    {
-      targetId: `${eventId}-target`,
-      kind,
-      placeNameKo,
-      latitude,
-      longitude,
-      radiusM: asNumber(dto.radiusM) ?? DEFAULT_AUTH_RADIUS_M,
-      objectLabelKo: kind === 'OBJECT' ? placeNameKo : undefined,
-    },
-  ];
-}
-
 function mapDetailAuthTarget(
-  eventId: string,
   typeCode: string,
   dto: ZoneEventAuthTargetDetailResponse | null | undefined,
-): ZoneEventAuthTarget[] {
-  if (!dto) {
-    return [];
+): ZoneEventAuthTarget | null {
+  const targetId = asString(dto?.targetId);
+  if (!isServerTargetId(targetId) || !dto) {
+    return null;
   }
   const latitude = asNumber(dto.latitude);
   const longitude = asNumber(dto.longitude);
   if (latitude == null || longitude == null) {
-    return [];
+    return null;
   }
   const kind =
     asString(dto.targetKind).toUpperCase() === 'OBJECT' || typeCode === 'OBJECT_AUTH'
       ? 'OBJECT'
       : 'PLACE';
   const placeNameKo = asString(dto.placeName) || '인증 장소';
-  return [
-    {
-      targetId: asString(dto.targetId) || `${eventId}-target`,
-      kind,
-      placeNameKo,
-      landmarkId: asString(dto.landmarkId) || undefined,
-      latitude,
-      longitude,
-      radiusM: asNumber(dto.radiusM) ?? DEFAULT_AUTH_RADIUS_M,
-      objectLabelKo: kind === 'OBJECT' ? placeNameKo : undefined,
-      guideText: asString(dto.guideText) || undefined,
-      exampleImageUrl: asString(dto.exampleImageUrl) || undefined,
-    },
-  ];
+  return {
+    targetId,
+    kind,
+    placeNameKo,
+    landmarkId: asString(dto.landmarkId) || undefined,
+    latitude,
+    longitude,
+    radiusM: asNumber(dto.radiusM) ?? DEFAULT_AUTH_RADIUS_M,
+    objectLabelKo: kind === 'OBJECT' ? placeNameKo : undefined,
+    guideText: asString(dto.guideText) || undefined,
+    exampleImageUrl: asString(dto.exampleImageUrl) || undefined,
+  };
+}
+
+function mapDetailAuthTargets(
+  typeCode: string,
+  targets: ZoneEventAuthTargetDetailResponse[] | null | undefined,
+  fallback: ZoneEventAuthTargetDetailResponse | null | undefined,
+): ZoneEventAuthTarget[] {
+  const source =
+    Array.isArray(targets) && targets.length > 0 ? targets : fallback ? [fallback] : [];
+  return source
+    .map(item => mapDetailAuthTarget(typeCode, item))
+    .filter((item): item is ZoneEventAuthTarget => item != null);
+}
+
+function mapMyParticipation(
+  dto: ZoneEventMyParticipationResponse | null | undefined,
+): ZoneEvent['myParticipation'] | undefined {
+  const participationId = asString(dto?.participationId);
+  if (!participationId) {
+    return undefined;
+  }
+  return {
+    participationId,
+    status: asString(dto?.status) || undefined,
+    canResubmit: Boolean(dto?.canResubmit),
+  };
+}
+
+function mapSubmissionHistoryItem(
+  dto: ZoneEventSubmissionHistoryItemResponse,
+): EventParticipationSubmission | null {
+  const submissionId = asString(dto.submissionId);
+  if (!submissionId) {
+    return null;
+  }
+  return {
+    submissionId,
+    attemptNo: asNumber(dto.attemptNo) ?? undefined,
+    targetId: asString(dto.targetId) || undefined,
+    placeName: asString(dto.placeName) || undefined,
+    mediaUrl: asString(dto.mediaUrl) || undefined,
+    reviewStatus: asString(dto.reviewStatus) || undefined,
+    rejectionReason: asString(dto.rejectionReason) || undefined,
+    submittedAt: asString(dto.submittedAt) || undefined,
+    reviewedAt: asString(dto.reviewedAt) || undefined,
+  };
 }
 
 function mapRewardSummary(
@@ -207,6 +234,8 @@ export function mapZoneEventSubmitResult(
 ): ZoneEventSubmitResultResponse {
   return {
     participation: dto.participation,
+    submissionId: asString(dto.submissionId) || undefined,
+    attemptNo: asNumber(dto.attemptNo) ?? undefined,
     rewards: mapGrantedRewards(dto.rewards),
     pointBalance: asNumber(dto.pointBalance) ?? undefined,
     newlyEarnedTitles: mapNewlyEarnedTitles(dto.newlyEarnedTitles),
@@ -269,7 +298,7 @@ export function mapZoneEventSummary(dto: ZoneEventSummaryResponse): ZoneEvent | 
     myOpenParticipationId: asString(dto.myOpenParticipationId) || undefined,
     successCount: asNumber(dto.successCount) ?? undefined,
     baseReward: mapRewardSummary(dto.baseReward),
-    authTargets: mapBriefAuthTarget(mapped.id, mapped.typeCode ?? mapped.type, dto.authTarget),
+    authTargets: [],
   };
 }
 
@@ -286,7 +315,17 @@ export function mapZoneEventDetail(dto: ZoneEventDetailResponse): ZoneEvent | nu
     successLimitPerUser: dto.successLimitPerUser ?? undefined,
     baseReward: mapRewardSummary(dto.baseReward),
     excellenceReward: mapRewardSummary(dto.excellenceReward),
-    authTargets: mapDetailAuthTarget(mapped.id, mapped.typeCode ?? mapped.type, dto.authTarget),
+    slotCode: asString(dto.slotCode) || undefined,
+    deadline: asString(dto.deadline) || asString(dto.endsAt) || undefined,
+    myParticipation: mapMyParticipation(dto.myParticipation),
+    myOpenParticipationId:
+      asString(dto.myParticipation?.participationId) || undefined,
+    myParticipationStatus: asString(dto.myParticipation?.status) || undefined,
+    authTargets: mapDetailAuthTargets(
+      mapped.typeCode ?? mapped.type,
+      dto.targets,
+      dto.authTarget,
+    ),
   };
 }
 
@@ -379,15 +418,23 @@ export function mapHistoryItemToRecord(
   }
   const joinedAt = asString(dto.joinedAt) || new Date().toISOString();
   const completedAt = asString(dto.completedAt) || undefined;
+  const submissions = (dto.submissions ?? [])
+    .map(mapSubmissionHistoryItem)
+    .filter((item): item is EventParticipationSubmission => item != null);
+  const latestTargetId = submissions.find(item => item.targetId)?.targetId;
   return {
     id: participationId,
     eventId,
     zoneId,
     eventType,
     eventTitleKo: asString(dto.event?.title) || eventType,
+    targetId: latestTargetId,
     status: mapParticipationStatus(dto.status),
     createdAt: joinedAt,
     submittedAt: completedAt,
+    rejectionReason: asString(dto.rejectionReason) || undefined,
+    canResubmit: Boolean(dto.canResubmit),
+    submissions: submissions.length > 0 ? submissions : undefined,
   };
 }
 

@@ -137,7 +137,14 @@ export type ZoneEvent = {
   roundId?: string;
   myParticipationStatus?: string;
   myOpenParticipationId?: string;
+  myParticipation?: {
+    participationId: string;
+    status?: string;
+    canResubmit: boolean;
+  };
   myRemainingAttempts?: number | null;
+  /** 신규 참여·재제출 마감 (endsAt과 동일) */
+  deadline?: string;
   successCount?: number;
   successLimitPerUser?: number | null;
   baseReward?: ZoneEventRewardSummary;
