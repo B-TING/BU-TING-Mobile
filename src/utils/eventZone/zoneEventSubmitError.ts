@@ -22,10 +22,10 @@ export function zoneEventSubmitErrorCopy(
   if (error.status === 403 || matches(message, [/forbidden/i, /본인이 업로드/, /ご自身/, /本人上传/])) {
     return copy.submitMediaForbidden;
   }
-  if (matches(message, [/already.?used/i, /사용된 파일/, /使用された/, /用于其他提交/])) {
+  if (matches(message, [/already.+used/i, /사용된 파일/, /使用された/, /用于其他提交/])) {
     return copy.submitMediaAlreadyUsed;
   }
-  if (matches(message, [/stale/i, /오래된 파일/, /時間が経ち/, /上传时间过久/])) {
+  if (matches(message, [/stale/i, /too long ago/i, /오래된 파일/, /時間が経ち/, /上传时间过久/])) {
     return copy.submitMediaStale;
   }
   if (
@@ -42,7 +42,7 @@ export function isRetakeRequiredSubmitError(error: ZoneEventServiceError): boole
   return (
     error.status === 400 ||
     error.status === 403 ||
-    /already.?used|stale|forbidden|사용된|오래된|ご自身|使用|过久|本人上传/i.test(
+    /already.+used|stale|too long ago|forbidden|사용된|오래된|ご自身|使用|过久|本人上传/i.test(
       error.message ?? '',
     )
   );
