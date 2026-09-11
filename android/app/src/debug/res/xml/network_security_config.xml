@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  debug 전용. 로컬 API (http://192.168.x.x:8080) cleartext 허용.
+  release는 main의 network_security_config(기본 차단)를 사용합니다.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">visitkorea.or.kr</domain>
+        <domain includeSubdomains="true">knto.or.kr</domain>
+    </domain-config>
+</network-security-config>

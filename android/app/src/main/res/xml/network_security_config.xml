@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Release 빌드는 RN 기본값 usesCleartextTraffic=false.
-  한국관광공사(Tour API) 이미지 URL은 http:// 이라 도메인별 cleartext만 허용합니다.
+  Release: cleartext 기본 차단.
+  한국관광공사(Tour API) 이미지 URL은 http:// 이라 도메인별 cleartext만 허용.
+  로컬 API(http://LAN IP)는 debug 전용 network_security_config 참고
+  (android/app/src/debug/res/xml/network_security_config.xml).
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />

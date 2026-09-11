@@ -175,8 +175,8 @@ describe('listOfflineViewablePlans', () => {
     const active = makePlan({
       planId: 'active',
       travelStatus: 'PLANNED',
-      startDate: '2026-09-01',
-      endDate: '2026-09-03',
+      startDate: '2099-09-01',
+      endDate: '2099-09-03',
       createdAt: '2026-08-01T00:00:00.000Z',
       itinerary: [dayWithRoute()],
     });

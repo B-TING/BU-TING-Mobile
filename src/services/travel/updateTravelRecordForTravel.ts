@@ -20,7 +20,9 @@ export type UpdateTravelRecordInput = {
   status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   /** 현재 서버 상태 */
   currentStatus: TravelRecordStatus;
+  /** 미전달 시 서버가 imageUrls[0]으로 대표 지정 */
   coverImageUrl?: string | null;
+  imageUrls?: string[] | null;
   overallRating: number;
 };
 
@@ -41,6 +43,7 @@ export async function updateTravelRecordForTravel(
     status,
     currentStatus,
     coverImageUrl,
+    imageUrls,
     overallRating,
   } = input;
 
@@ -49,12 +52,17 @@ export async function updateTravelRecordForTravel(
   }
 
   try {
-    let dto = await updateMyTravelRecord(accessToken, travelRecordId, {
+    const updateBody: Parameters<typeof updateMyTravelRecord>[2] = {
       title,
       content: content || null,
-      coverImageUrl: coverImageUrl ?? null,
       overallRating: overallRatingToApi(overallRating),
-    });
+      imageUrls: imageUrls ?? [],
+    };
+    if (coverImageUrl !== undefined) {
+      updateBody.coverImageUrl = coverImageUrl;
+    }
+
+    let dto = await updateMyTravelRecord(accessToken, travelRecordId, updateBody);
 
     if (status === 'HIDDEN' && currentStatus === 'PUBLISHED') {
       dto = await hideMyTravelRecord(accessToken, travelRecordId);

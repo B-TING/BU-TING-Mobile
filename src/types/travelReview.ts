@@ -111,6 +111,8 @@ export type TravelRecord = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  /** 여행기 사진 URL 목록 (상세). 없으면 빈 배열 */
+  imageUrls: string[];
   /** 서버 종합 평점 (피드/목록). 없으면 placeReviews 평균 사용 */
   overallRating: number | null;
   travelStartDate: string | null;

@@ -32,7 +32,9 @@ export type PublishTravelRecordInput = {
   title: string;
   content: string;
   status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
+  /** 미전달 시 서버가 imageUrls[0]으로 대표 지정 */
   coverImageUrl?: string | null;
+  imageUrls?: string[] | null;
   overallRating: number;
 };
 
@@ -110,8 +112,17 @@ async function resolveOrCreateDraft(
 export async function publishTravelRecordForTravel(
   input: PublishTravelRecordInput,
 ): Promise<TravelRecord> {
-  const { accessToken, plan, authorNickname, title, content, status, coverImageUrl, overallRating } =
-    input;
+  const {
+    accessToken,
+    plan,
+    authorNickname,
+    title,
+    content,
+    status,
+    coverImageUrl,
+    imageUrls,
+    overallRating,
+  } = input;
 
   if (!accessToken?.trim()) {
     throw new PublishTravelRecordError('로그인이 필요합니다.');
@@ -132,12 +143,17 @@ export async function publishTravelRecordForTravel(
       title,
     );
 
-    await updateTravelRecordDraft(accessToken, travelId, draft.travelRecordId, {
+    const draftBody: Parameters<typeof updateTravelRecordDraft>[3] = {
       title,
       content: content || null,
-      coverImageUrl: coverImageUrl ?? draft.coverImageUrl ?? null,
       overallRating: overallRatingToApi(overallRating),
-    });
+      imageUrls: imageUrls ?? [],
+    };
+    if (coverImageUrl !== undefined) {
+      draftBody.coverImageUrl = coverImageUrl;
+    }
+
+    await updateTravelRecordDraft(accessToken, travelId, draft.travelRecordId, draftBody);
 
     let dto = await publishTravelRecord(
       accessToken,

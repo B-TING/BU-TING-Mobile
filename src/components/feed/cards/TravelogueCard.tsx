@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ICON_COLOR_PRIMARY } from '../../../constants/icons';
@@ -26,6 +26,10 @@ export function TravelogueCard({ travelRecord, onPress }: TravelogueCardProps) {
   const date = travelRecord.publishedAt
     ? new Date(travelRecord.publishedAt).toLocaleDateString()
     : '';
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [coverUri]);
 
   return (
     <Pressable
