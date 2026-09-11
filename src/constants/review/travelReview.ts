@@ -70,6 +70,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPrivate: string;
     visibilityPublicHint: string;
     visibilityPrivateHint: string;
+    coverImageLabel: string;
+    coverImageHint: string;
+    coverImageAuto: string;
     publish: string;
     saveTravelogue: string;
     published: string;
@@ -217,6 +220,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPrivate: '비공개',
     visibilityPublicHint: '다른 여행자들이 피드에서 볼 수 있어요',
     visibilityPrivateHint: '나만 볼 수 있어요. 피드에는 표시되지 않아요',
+    coverImageLabel: '대표 이미지',
+    coverImageHint: '선택하지 않으면 첫 번째 사진이 대표로 사용돼요',
+    coverImageAuto: '자동',
     publish: '게시하기',
     saveTravelogue: '저장하기',
     published: '게시됨',
@@ -367,6 +373,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPrivate: 'Private',
     visibilityPublicHint: 'Visible to other travelers in the feed',
     visibilityPrivateHint: 'Only you can see this. It won\'t appear in the feed',
+    coverImageLabel: 'Cover image',
+    coverImageHint: 'If you skip this, the first photo becomes the cover',
+    coverImageAuto: 'Auto',
     publish: 'Publish',
     saveTravelogue: 'Save',
     published: 'Published',
@@ -517,6 +526,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPrivate: '非公開',
     visibilityPublicHint: '他の旅行者がフィードで閲覧できます',
     visibilityPrivateHint: '自分だけが閲覧できます。フィードには表示されません',
+    coverImageLabel: 'カバー画像',
+    coverImageHint: '未選択の場合は最初の写真がカバーになります',
+    coverImageAuto: '自動',
     publish: '公開する',
     saveTravelogue: '保存する',
     published: '公開済み',
@@ -663,6 +675,9 @@ export const TRAVEL_REVIEW_COPY: Record<
     visibilityPrivate: '私密',
     visibilityPublicHint: '其他旅行者可在动态中看到',
     visibilityPrivateHint: '仅自己可见，不会出现在动态中',
+    coverImageLabel: '封面图片',
+    coverImageHint: '不选择时将使用第一张照片作为封面',
+    coverImageAuto: '自动',
     publish: '发布',
     saveTravelogue: '保存',
     published: '已发布',

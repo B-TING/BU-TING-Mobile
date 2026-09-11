@@ -100,6 +100,7 @@ function makeRecord(overrides?: Partial<TravelRecord>): TravelRecord {
     title: '부산 2박 3일',
     content: null,
     coverImageUrl: null,
+    imageUrls: [],
     overallRating: null,
     travelStartDate: '2026-08-01',
     travelEndDate: '2026-08-02',

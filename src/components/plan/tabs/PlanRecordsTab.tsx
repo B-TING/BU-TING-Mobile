@@ -34,7 +34,6 @@ import { selectReusableAccessToken } from '../../../stores/useAuthStore';
 import type { AppLanguage } from '../../../types/user';
 import type { RouteItem, TravelPlan } from '../../../types/travelPlan';
 import type { PlaceReview, TravelRecord, TravelRecordStatus } from '../../../types/travelReview';
-import { toStoredMediaUrl } from '../../../utils/media/pickMedia';
 import {
   collectPlanRoutes,
   getReviewForPlace,
@@ -277,6 +276,8 @@ export function PlanRecordsTab({
     content: string;
     overallRating: number;
     status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
+    coverImageUrl?: string;
+    imageUrls: string[];
   }) => {
     if (!accessToken?.trim()) {
       alert({
@@ -288,13 +289,6 @@ export function PlanRecordsTab({
 
     setPublishing(true);
     try {
-      const firstImage = reviews.flatMap(r => r.media ?? []).find(m => m.type === 'image');
-      // 표지: 가능하면 Presigned URL 유지 (서명 제거 시 피드 Image 403)
-      const coverImageUrl = firstImage?.uri
-        ? firstImage.uri.length <= 1000
-          ? firstImage.uri
-          : toStoredMediaUrl(firstImage.uri)
-        : null;
       const editingExisting =
         composeMode === 'edit' &&
         publishedTravelRecord &&
@@ -310,8 +304,10 @@ export function PlanRecordsTab({
           content: payload.content,
           status: payload.status,
           currentStatus: publishedTravelRecord.status,
-          coverImageUrl:
-            coverImageUrl ?? publishedTravelRecord.coverImageUrl ?? null,
+          ...(payload.coverImageUrl !== undefined
+            ? { coverImageUrl: payload.coverImageUrl }
+            : {}),
+          imageUrls: payload.imageUrls,
           overallRating: payload.overallRating,
         });
         setPublishedTravelRecord(updated);
@@ -329,7 +325,10 @@ export function PlanRecordsTab({
           title: payload.title,
           content: payload.content,
           status: payload.status,
-          coverImageUrl,
+          ...(payload.coverImageUrl !== undefined
+            ? { coverImageUrl: payload.coverImageUrl }
+            : {}),
+          imageUrls: payload.imageUrls,
           overallRating: payload.overallRating,
         });
         setPublishedTravelRecord(published);
@@ -526,6 +525,12 @@ export function PlanRecordsTab({
         }
         initialOverallRating={
           composeMode === 'edit' ? publishedTravelRecord?.overallRating : undefined
+        }
+        initialCoverImageUrl={
+          composeMode === 'edit' ? publishedTravelRecord?.coverImageUrl : undefined
+        }
+        initialImageUrls={
+          composeMode === 'edit' ? publishedTravelRecord?.imageUrls : undefined
         }
         totalDurationLabel={totalDurationLabel}
         publishing={publishing}

@@ -405,6 +405,8 @@ export function useTravelogueDetailBody({
     content: string;
     overallRating: number;
     status: 'PUBLISHED' | 'HIDDEN';
+    coverImageUrl?: string;
+    imageUrls: string[];
   }) => {
     if (!accessToken?.trim() || !travelRecord.travelId) {
       alert({
@@ -424,7 +426,10 @@ export function useTravelogueDetailBody({
         content: payload.content,
         status: payload.status,
         currentStatus: travelRecord.status,
-        coverImageUrl: travelRecord.coverImageUrl,
+        ...(payload.coverImageUrl !== undefined
+          ? { coverImageUrl: payload.coverImageUrl }
+          : {}),
+        imageUrls: payload.imageUrls,
         overallRating: payload.overallRating,
       });
       onTravelRecordChange({

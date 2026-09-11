@@ -187,6 +187,15 @@ export async function loadTravelRecordDetail(
     };
   }
 
+  if (record.imageUrls.length > 0) {
+    const resolvedImageUrls = await Promise.all(
+      record.imageUrls.map(uri =>
+        resolveDisplayMediaUrl(uri, { accessToken }),
+      ),
+    );
+    record = { ...record, imageUrls: resolvedImageUrls };
+  }
+
   const placeReviews = await fetchPlaceReviewsForRecord({
     travelRecord: record,
     accessToken,

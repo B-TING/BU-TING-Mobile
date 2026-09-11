@@ -11,6 +11,16 @@ import type { RouteItem, TravelPlan } from '../../types/travelPlan';
 import { createId } from '../common/id';
 import { sortedRoutes } from '../plan/planItinerary';
 
+function toTravelogueStoredUrl(uri: string): string {
+  try {
+    const parsed = new URL(uri);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    const withoutQuery = uri.split('?')[0] ?? uri;
+    return withoutQuery.split('#')[0] ?? withoutQuery;
+  }
+}
+
 export function averageRating(reviews: PlaceReview[]): number {
   if (reviews.length === 0) {
     return 0;
@@ -279,21 +289,87 @@ export function collectTravelRecordImages(travelRecord: TravelRecord): ReviewMed
 /** 피드/상세 캐러셀용 — 이미지 + 영상 */
 export function collectTravelRecordMedia(travelRecord: TravelRecord): ReviewMedia[] {
   const mediaItems: ReviewMedia[] = [];
+  const seen = new Set<string>();
+  const pushImage = (uri: string, mediaId: string) => {
+    const trimmed = uri.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      return;
+    }
+    seen.add(trimmed);
+    mediaItems.push({ mediaId, type: 'image', uri: trimmed });
+  };
+
   travelRecord.placeReviews.forEach(review => {
     (review.media ?? []).forEach(media => {
-      if (media.type === 'image' || media.type === 'video') {
-        mediaItems.push(media);
+      if (media.type === 'image') {
+        pushImage(media.uri, media.mediaId);
+      } else if (media.type === 'video') {
+        const key = media.uri.trim();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          mediaItems.push(media);
+        }
       }
     });
   });
-  if (mediaItems.length === 0 && travelRecord.coverImageUrl) {
-    mediaItems.push({
-      mediaId: `cover-${travelRecord.travelRecordId}`,
-      type: 'image',
-      uri: travelRecord.coverImageUrl,
-    });
+
+  (travelRecord.imageUrls ?? []).forEach((uri, index) => {
+    pushImage(uri, `record-image-${travelRecord.travelRecordId}-${index}`);
+  });
+
+  if (mediaItems.filter(m => m.type === 'image').length === 0 && travelRecord.coverImageUrl) {
+    pushImage(
+      travelRecord.coverImageUrl,
+      `cover-${travelRecord.travelRecordId}`,
+    );
   }
   return mediaItems;
+}
+
+export type TravelogueCoverCandidate = {
+  /** UI 표시용 (presigned 가능) */
+  displayUri: string;
+  /** API 전송용 (maxLength 1000, 서명 쿼리 제거) */
+  storedUrl: string;
+};
+
+/** 게시 시 imageUrls / 대표 선택 후보 */
+export function collectTravelogueCoverCandidates(
+  placeReviews: PlaceReview[],
+  extras?: {
+    imageUrls?: string[] | null;
+    coverImageUrl?: string | null;
+  },
+): TravelogueCoverCandidate[] {
+  const candidates: TravelogueCoverCandidate[] = [];
+  const seen = new Set<string>();
+
+  const push = (displayUri: string) => {
+    const trimmed = displayUri.trim();
+    if (!trimmed) {
+      return;
+    }
+    const storedUrl = toTravelogueStoredUrl(trimmed);
+    if (!storedUrl || seen.has(storedUrl)) {
+      return;
+    }
+    seen.add(storedUrl);
+    candidates.push({ displayUri: trimmed, storedUrl });
+  };
+
+  placeReviews.forEach(review => {
+    (review.media ?? []).forEach(media => {
+      if (media.type === 'image') {
+        push(media.uri);
+      }
+    });
+  });
+  (extras?.imageUrls ?? []).forEach(push);
+  if (extras?.coverImageUrl) {
+    push(extras.coverImageUrl);
+  }
+
+  return candidates;
 }
 
 /** @deprecated Use collectTravelRecordImages */

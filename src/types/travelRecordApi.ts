@@ -19,12 +19,14 @@ export type TravelRecordCreateRequest = {
   title?: string | null;
   content?: string | null;
   coverImageUrl?: string | null;
+  imageUrls?: string[] | null;
 };
 
 export type TravelRecordUpdateRequest = {
   title?: string | null;
   content?: string | null;
   coverImageUrl?: string | null;
+  imageUrls?: string[] | null;
   overallRating?: number | null;
 };
 
@@ -109,6 +111,8 @@ export type TravelRecordResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  /** 여행기 사진 URL 목록 (상세 응답) */
+  imageUrls?: string[] | null;
   overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
@@ -129,6 +133,7 @@ export type TravelRecordFeedResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  imageUrls?: string[] | null;
   overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
@@ -152,6 +157,7 @@ export type TravelRecordManageResponse = {
   title: string | null;
   content: string | null;
   coverImageUrl: string | null;
+  imageUrls?: string[] | null;
   overallRating?: number | null;
   travelStartDate: string | null;
   travelEndDate: string | null;
@@ -257,6 +263,13 @@ function mapDays(days: TravelRecordDayDto[] | undefined): TravelRecordDay[] {
   }));
 }
 
+function normalizeImageUrls(value: string[] | null | undefined): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return [];
+  }
+  return value.map(item => item.trim()).filter(Boolean);
+}
+
 /** API 상세 응답 → 앱 TravelRecord */
 export function mapTravelRecordResponse(
   dto: TravelRecordResponse,
@@ -274,6 +287,7 @@ export function mapTravelRecordResponse(
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    imageUrls: normalizeImageUrls(dto.imageUrls),
     overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,
@@ -297,6 +311,7 @@ export function mapTravelRecordFeedItem(dto: TravelRecordFeedResponse): TravelRe
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    imageUrls: normalizeImageUrls(dto.imageUrls),
     overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,
@@ -333,6 +348,7 @@ export function mapTravelRecordManageItem(
     title: dto.title,
     content: dto.content,
     coverImageUrl: dto.coverImageUrl,
+    imageUrls: normalizeImageUrls(dto.imageUrls),
     overallRating: normalizeOverallRating(dto.overallRating),
     travelStartDate: dto.travelStartDate,
     travelEndDate: dto.travelEndDate,

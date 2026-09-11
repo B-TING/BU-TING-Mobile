@@ -523,6 +523,8 @@ function TravelogueDetailBody({
               travelRecord.status === 'HIDDEN' ? 'HIDDEN' : 'PUBLISHED'
             }
             initialOverallRating={travelRecord.overallRating}
+            initialCoverImageUrl={travelRecord.coverImageUrl}
+            initialImageUrls={travelRecord.imageUrls}
             publishing={publishing}
             onClose={() => {
               if (!publishing) {

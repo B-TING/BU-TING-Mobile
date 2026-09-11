@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import type { CopyFor } from '../../../i18n';
@@ -7,12 +7,25 @@ import type { PlaceReview, TravelRecordStatus } from '../../../types/travelRevie
 import {
   buildDefaultContent,
   buildDefaultTravelRecordTitle,
+  collectTravelogueCoverCandidates,
   defaultComposeOverallRating,
 } from '../../../utils/review/travelReview';
+import { toStoredMediaUrl } from '../../../utils/media/pickMedia';
+import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
 import { StarRating } from '../../shared/rating/StarRating';
 import { AppModal, AppModalActions } from '../../shared/modals';
 
 type Copy = CopyFor<'travelReview'>;
+
+export type TravelogueComposePublishPayload = {
+  title: string;
+  content: string;
+  overallRating: number;
+  status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
+  /** 선택 시에만 전달. 미선택이면 필드 생략 → 서버가 imageUrls[0] 사용 */
+  coverImageUrl?: string;
+  imageUrls: string[];
+};
 
 type TravelogueComposeModalProps = {
   visible: boolean;
@@ -27,16 +40,13 @@ type TravelogueComposeModalProps = {
   initialContent?: string | null;
   initialStatus?: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
   initialOverallRating?: number | null;
+  initialCoverImageUrl?: string | null;
+  initialImageUrls?: string[] | null;
   mode?: 'create' | 'edit';
   totalDurationLabel?: string | null;
   publishing?: boolean;
   onClose: () => void;
-  onPublish: (payload: {
-    title: string;
-    content: string;
-    overallRating: number;
-    status: Extract<TravelRecordStatus, 'PUBLISHED' | 'HIDDEN'>;
-  }) => void | Promise<void>;
+  onPublish: (payload: TravelogueComposePublishPayload) => void | Promise<void>;
 };
 
 export function TravelogueComposeModal({
@@ -51,6 +61,8 @@ export function TravelogueComposeModal({
   initialContent,
   initialStatus,
   initialOverallRating,
+  initialCoverImageUrl,
+  initialImageUrls,
   mode = 'create',
   totalDurationLabel,
   publishing = false,
@@ -62,6 +74,17 @@ export function TravelogueComposeModal({
   const [content, setContent] = useState('');
   const [overallRating, setOverallRating] = useState(0);
   const [isPublic, setIsPublic] = useState(true);
+  /** null = 자동(서버 첫 장). string = 사용자가 고른 storedUrl */
+  const [selectedCoverUrl, setSelectedCoverUrl] = useState<string | null>(null);
+
+  const coverCandidates = useMemo(
+    () =>
+      collectTravelogueCoverCandidates(placeReviews, {
+        imageUrls: initialImageUrls,
+        coverImageUrl: initialCoverImageUrl,
+      }),
+    [placeReviews, initialImageUrls, initialCoverImageUrl],
+  );
 
   useEffect(() => {
     if (!visible) {
@@ -75,11 +98,21 @@ export function TravelogueComposeModal({
       );
       setContent(initialContent ?? '');
       setIsPublic(initialStatus !== 'HIDDEN');
+      const initialStored = initialCoverImageUrl?.trim()
+        ? toStoredMediaUrl(initialCoverImageUrl.trim())
+        : null;
+      const matched =
+        initialStored &&
+        coverCandidates.some(item => item.storedUrl === initialStored)
+          ? initialStored
+          : null;
+      setSelectedCoverUrl(matched);
       return;
     }
     setTitle(defaultTitle ?? buildDefaultTravelRecordTitle(destinationLabel, language));
     setContent(buildDefaultContent(placeReviews, language));
     setIsPublic(true);
+    setSelectedCoverUrl(null);
   }, [
     visible,
     isEdit,
@@ -87,10 +120,12 @@ export function TravelogueComposeModal({
     initialContent,
     initialStatus,
     initialOverallRating,
+    initialCoverImageUrl,
     defaultTitle,
     destinationLabel,
     language,
     placeReviews,
+    coverCandidates,
   ]);
 
   const handlePublish = () => {
@@ -98,14 +133,18 @@ export function TravelogueComposeModal({
     if (!trimmedTitle || publishing || overallRating < 1) {
       return;
     }
-    void Promise.resolve(
-      onPublish({
-        title: trimmedTitle,
-        content: content.trim(),
-        overallRating,
-        status: isPublic ? 'PUBLISHED' : 'HIDDEN',
-      }),
-    )
+    const imageUrls = coverCandidates.map(item => item.storedUrl);
+    const payload: TravelogueComposePublishPayload = {
+      title: trimmedTitle,
+      content: content.trim(),
+      overallRating,
+      status: isPublic ? 'PUBLISHED' : 'HIDDEN',
+      imageUrls,
+    };
+    if (selectedCoverUrl) {
+      payload.coverImageUrl = selectedCoverUrl;
+    }
+    void Promise.resolve(onPublish(payload))
       .then(() => {
         onClose();
       })
@@ -180,6 +219,54 @@ export function TravelogueComposeModal({
           </Text>
         </View>
         <Text className="mb-4 text-[10px] text-brand-muted">{copy.overallRatingHint}</Text>
+
+        {coverCandidates.length > 0 ? (
+          <View className="mb-4">
+            <Text className="mb-1 text-xs font-bold text-brand-muted">
+              {copy.coverImageLabel}
+            </Text>
+            <Text className="mb-2 text-[10px] text-brand-muted">{copy.coverImageHint}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-2 pr-2">
+                <Pressable
+                  onPress={() => setSelectedCoverUrl(null)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: selectedCoverUrl == null }}
+                  className={`h-20 w-20 items-center justify-center rounded-xl border-2 ${
+                    selectedCoverUrl == null
+                      ? 'border-brand-primary bg-brand-selected'
+                      : 'border-brand-border bg-white'
+                  }`}>
+                  <Text
+                    className={`text-center text-[11px] font-bold ${
+                      selectedCoverUrl == null ? 'text-brand-primary' : 'text-brand-muted'
+                    }`}>
+                    {copy.coverImageAuto}
+                  </Text>
+                </Pressable>
+                {coverCandidates.map(item => {
+                  const selected = selectedCoverUrl === item.storedUrl;
+                  return (
+                    <Pressable
+                      key={item.storedUrl}
+                      onPress={() => setSelectedCoverUrl(item.storedUrl)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      className={`h-20 w-20 overflow-hidden rounded-xl border-2 ${
+                        selected ? 'border-brand-primary' : 'border-brand-border'
+                      }`}>
+                      <ResolvedRemoteImage
+                        uri={item.displayUri}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        ) : null}
 
         <Text className="mb-2 text-xs font-bold text-brand-muted">{copy.visibilityLabel}</Text>
         <View className="mb-2 flex-row gap-2">
