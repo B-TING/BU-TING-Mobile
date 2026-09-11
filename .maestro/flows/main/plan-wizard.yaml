@@ -13,7 +13,9 @@ tags:
 - tapOn:
     id: planWizard.titleInput
 - inputText: E2E 여행
-- hideKeyboard
+# hideKeyboard는 Android BACK이라 위저드를 닫을 수 있음. 제목 탭으로 키보드만 내린다
+- tapOn:
+    id: planWizard.step.title
 - tapOn:
     id: planWizard.next
 

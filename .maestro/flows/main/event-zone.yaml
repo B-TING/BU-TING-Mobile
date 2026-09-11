@@ -4,8 +4,10 @@ tags:
   - main
 ---
 - runFlow: ../../shared/enter-main.yaml
+# 지도 중앙은 채팅 패널이라 왼쪽만 탭
 - tapOn:
     id: home.eventZoneMap
+    point: 15%, 50%
 - runFlow: ../../shared/dismiss-optional.yaml
 - extendedWaitUntil:
     visible:

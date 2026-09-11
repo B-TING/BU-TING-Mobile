@@ -1,3 +1,5 @@
+import { LogBox } from 'react-native';
+
 import { TEST_ID } from '../../constants/e2e/testIds';
 import { useAppStore } from '../../stores/useAppStore';
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -28,6 +30,9 @@ export function enterE2ESession(): boolean {
   if (!__DEV__) {
     return false;
   }
+
+  // 가짜 토큰 401 LogBox가 FAB·탭·다음 버튼을 가린다
+  LogBox.ignoreAllLogs(true);
 
   const app = useAppStore.getState();
   if (!app.language) {

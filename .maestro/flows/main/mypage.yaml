@@ -21,6 +21,11 @@ tags:
     id: mypage.language
 - assertVisible:
     id: mypage.account
+- scrollUntilVisible:
+    element:
+      id: mypage.logout
+    direction: DOWN
+    timeout: 8000
 - assertVisible:
     id: mypage.logout
 - tapOn:
