@@ -72,6 +72,53 @@ describe('useEventParticipationStore', () => {
     expect(resumed?.targetId).toBe('t2');
   });
 
+  it('blocks camera reentry when FAIL cannot resubmit', () => {
+    const event: ZoneEvent = {
+      ...baseEvent,
+      myParticipation: {
+        participationId: 'p-fail',
+        status: 'FAIL',
+        canResubmit: false,
+      },
+    };
+    useEventParticipationStore.getState().upsertRecord({
+      id: 'p-fail',
+      eventId: event.id,
+      zoneId: event.zoneId,
+      eventType: 'PLACE_AUTH',
+      eventTitleKo: event.titleKo,
+      status: 'rejected',
+      canResubmit: false,
+      createdAt: '2026-09-01T00:00:00.000Z',
+    });
+    expect(
+      useEventParticipationStore.getState().beginParticipation(event, 't1', 'p-fail'),
+    ).toBe('blocked');
+  });
+
+  it('blocks camera reentry while under review', () => {
+    const event: ZoneEvent = {
+      ...baseEvent,
+      myParticipation: {
+        participationId: 'p-review',
+        status: 'UNDER_REVIEW',
+        canResubmit: false,
+      },
+    };
+    useEventParticipationStore.getState().upsertRecord({
+      id: 'p-review',
+      eventId: event.id,
+      zoneId: event.zoneId,
+      eventType: 'PLACE_AUTH',
+      eventTitleKo: event.titleKo,
+      status: 'pending_review',
+      createdAt: '2026-09-01T00:00:00.000Z',
+    });
+    expect(
+      useEventParticipationStore.getState().beginParticipation(event, 't1', 'p-review'),
+    ).toBe('blocked');
+  });
+
   it('blocks camera reentry after success', () => {
     const event: ZoneEvent = {
       ...baseEvent,
