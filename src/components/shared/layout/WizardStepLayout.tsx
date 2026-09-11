@@ -17,6 +17,7 @@ type WizardStepLayoutProps = {
   children: ReactNode;
   footer: ReactNode;
   testID?: string;
+  stepTestID?: string;
 };
 
 export function WizardStepLayout({
@@ -31,6 +32,7 @@ export function WizardStepLayout({
   children,
   footer,
   testID = TEST_ID.planWizard.screen,
+  stepTestID,
 }: WizardStepLayoutProps) {
   const insets = useSafeAreaInsets();
   const progress = (stepIndex + 1) / totalSteps;
@@ -63,7 +65,9 @@ export function WizardStepLayout({
       </View>
 
       <View className="flex-1 pt-4">
-        <Text className="mb-2 text-[26px] font-bold leading-[34px] text-brand-text">
+        <Text
+          testID={stepTestID}
+          className="mb-2 text-[26px] font-bold leading-[34px] text-brand-text">
           {title}
         </Text>
         <Text className="mb-7 text-[15px] leading-[22px] text-brand-muted">

@@ -95,6 +95,7 @@ export function PlanWizardScreen(props: Props) {
               {copy.startDate}
             </Text>
             <TextInput
+              testID={TEST_ID.planWizard.startDateInput}
               className="mb-4 rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text"
               value={answers.startDate}
               onChangeText={startDate => setAnswers(p => ({ ...p, startDate }))}
@@ -105,6 +106,7 @@ export function PlanWizardScreen(props: Props) {
               {copy.endDate}
             </Text>
             <TextInput
+              testID={TEST_ID.planWizard.endDateInput}
               className="rounded-2xl border-2 border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text"
               value={answers.endDate}
               onChangeText={endDate => setAnswers(p => ({ ...p, endDate }))}
@@ -121,6 +123,7 @@ export function PlanWizardScreen(props: Props) {
             </Text>
             <View className="flex-row gap-6">
               <Pressable
+                testID={TEST_ID.planWizard.companionMinus}
                 className="h-14 w-14 items-center justify-center rounded-full bg-brand-primary active:opacity-90"
                 onPress={() =>
                   setAnswers(p => ({
@@ -131,6 +134,7 @@ export function PlanWizardScreen(props: Props) {
                 <AppIcon name="minus" size={24} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
               </Pressable>
               <Pressable
+                testID={TEST_ID.planWizard.companionPlus}
                 className="h-14 w-14 items-center justify-center rounded-full bg-brand-primary active:opacity-90"
                 onPress={() =>
                   setAnswers(p => ({
@@ -149,6 +153,7 @@ export function PlanWizardScreen(props: Props) {
             {COMPANION_TYPE_OPTIONS.map(opt => (
               <OptionCard
                 key={opt.id}
+                testID={TEST_ID.planWizard.option('companionType', opt.id)}
                 label={opt.label[language]}
                 selected={answers.companionTypes.includes(opt.id)}
                 onPress={() => toggleCompanionType(opt.id)}
@@ -162,6 +167,7 @@ export function PlanWizardScreen(props: Props) {
             {TRAVEL_STYLE_OPTIONS.map(opt => (
               <OptionCard
                 key={opt.id}
+                testID={TEST_ID.planWizard.option('travelStyle', opt.id)}
                 label={opt.label[language]}
                 selected={answers.travelStyleIds.includes(opt.id)}
                 compact
@@ -177,6 +183,7 @@ export function PlanWizardScreen(props: Props) {
             {TRAVEL_CONSTRAINT_OPTIONS.map(opt => (
               <OptionCard
                 key={opt.id}
+                testID={TEST_ID.planWizard.option('constraints', opt.id)}
                 label={opt.label[language]}
                 selected={isConstraintSelected(opt.id)}
                 onPress={() => toggleConstraint(opt.id)}
@@ -201,6 +208,7 @@ export function PlanWizardScreen(props: Props) {
               ))
             )}
             <Pressable
+              testID={TEST_ID.planWizard.pickPlace}
               onPress={() => openPlaceMapPick('attractions')}
               accessibilityRole="button"
               accessibilityLabel={copy.pickPlace}
@@ -215,6 +223,7 @@ export function PlanWizardScreen(props: Props) {
             {BUSAN_FOODS.map(opt => (
               <OptionCard
                 key={opt.id}
+                testID={TEST_ID.planWizard.option('foods', opt.id)}
                 label={opt.label[language]}
                 selected={answers.foodIds.includes(opt.id)}
                 compact
@@ -227,6 +236,7 @@ export function PlanWizardScreen(props: Props) {
         return (
           <ScrollView showsVerticalScrollIndicator={false}>
             <OptionCard
+              testID={TEST_ID.planWizard.accBooked}
               label={copy.accBooked}
               selected={answers.accommodationMode === 'booked'}
               onPress={() =>
@@ -238,6 +248,7 @@ export function PlanWizardScreen(props: Props) {
               }
             />
             <OptionCard
+              testID={TEST_ID.planWizard.accArea}
               label={copy.accArea}
               selected={answers.accommodationMode === 'area_only'}
               onPress={() =>
@@ -266,6 +277,7 @@ export function PlanWizardScreen(props: Props) {
                   <Text className="mb-3 text-sm text-brand-muted">{copy.accSearchPlaceholder}</Text>
                 )}
                 <Pressable
+                  testID={TEST_ID.planWizard.pickStay}
                   onPress={() => openPlaceMapPick('accommodation')}
                   accessibilityRole="button"
                   accessibilityLabel={copy.pickStay}
@@ -278,6 +290,7 @@ export function PlanWizardScreen(props: Props) {
                 {ACCOMMODATION_AREAS.map(area => (
                   <OptionCard
                     key={area.id}
+                    testID={TEST_ID.planWizard.option('accommodationArea', area.id)}
                     label={area.label[language]}
                     selected={answers.accommodationAreaIds.includes(area.id)}
                     compact
@@ -292,6 +305,7 @@ export function PlanWizardScreen(props: Props) {
         return (
           <>
             <OptionCard
+              testID={TEST_ID.planWizard.generationAuto}
               label={copy.modeAuto}
               selected={answers.generationMode === 'auto'}
               onPress={() => selectGenerationMode('auto')}
@@ -306,6 +320,7 @@ export function PlanWizardScreen(props: Props) {
               </Text>
             ) : null}
             <OptionCard
+              testID={TEST_ID.planWizard.generationManual}
               label={copy.modeManual}
               selected={answers.generationMode === 'manual'}
               onPress={() => selectGenerationMode('manual')}
@@ -338,6 +353,7 @@ export function PlanWizardScreen(props: Props) {
       stepLabel={stepLabel}
       title={stepConfig.title[language]}
       subtitle={stepConfig.subtitle[language]}
+      stepTestID={TEST_ID.planWizard.step(stepConfig.id)}
       backLabel={copy.back}
       onBack={goBack}
       footer={

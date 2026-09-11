@@ -1,5 +1,5 @@
 appId: com.butingmobile
-name: Plan wizard — open from home CTA
+name: Plan wizard — golden path to last step
 tags:
   - main
 ---
@@ -8,22 +8,103 @@ tags:
     id: home.heroCta
 - extendedWaitUntil:
     visible:
-      id: planWizard.screen
+      id: planWizard.step.title
     timeout: 10000
-- assertVisible:
-    id: planWizard.titleInput
 - tapOn:
     id: planWizard.titleInput
 - inputText: E2E 여행
+- hideKeyboard
 - tapOn:
     id: planWizard.next
-- assertVisible:
-    id: planWizard.screen
-- tapOn:
-    id: planWizard.back
-- tapOn:
-    id: planWizard.back
+
 - extendedWaitUntil:
     visible:
-      id: home.screen
+      id: planWizard.step.dates
+    timeout: 8000
+- assertVisible:
+    id: planWizard.startDateInput
+- assertVisible:
+    id: planWizard.endDateInput
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.companions
+- tapOn:
+    id: planWizard.companionPlus
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.companionType
+- tapOn:
+    id: planWizard.option.companionType.solo
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.travelStyle
+- tapOn:
+    id: planWizard.option.travelStyle.culture
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.constraints
+- tapOn:
+    id: planWizard.option.constraints.none
+- tapOn:
+    id: planWizard.next
+
+# 관광지 검색은 진입만. 결과 선택은 장소 API에 의존해서 제외
+- assertVisible:
+    id: planWizard.step.attractions
+- tapOn:
+    id: planWizard.pickPlace
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: placeSearch.screen
+    timeout: 20000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: planWizard.step.attractions
     timeout: 10000
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.foods
+- tapOn:
+    id: planWizard.option.foods.milmyeon
+- tapOn:
+    id: planWizard.next
+
+- assertVisible:
+    id: planWizard.step.accommodation
+- tapOn:
+    id: planWizard.accommodation.area
+- scrollUntilVisible:
+    element:
+      id: planWizard.option.accommodationArea.haeundae
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: planWizard.option.accommodationArea.haeundae
+- tapOn:
+    id: planWizard.next
+
+# 완료(API 생성)는 e2e 가짜 토큰이라 제외. 수동 모드까지가 골든 패스
+- assertVisible:
+    id: planWizard.step.generationMode
+- scrollUntilVisible:
+    element:
+      id: planWizard.generation.manual
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: planWizard.generation.manual
+- assertVisible:
+    id: planWizard.next

@@ -47,6 +47,14 @@ describe('E2E test IDs', () => {
   it('builds testID props for Maestro', () => {
     expect(e2e(TEST_ID.home.screen)).toEqual({ testID: 'home.screen' });
   });
+
+  it('builds plan wizard step and option selectors', () => {
+    expect(TEST_ID.planWizard.step('title')).toBe('planWizard.step.title');
+    expect(TEST_ID.planWizard.option('companionType', 'solo')).toBe(
+      'planWizard.option.companionType.solo',
+    );
+    expect(TEST_ID.planWizard.generationManual).toBe('planWizard.generation.manual');
+  });
 });
 
 describe('enterE2ESession', () => {
