@@ -1,0 +1,110 @@
+name: Maestro Smoke
+
+# PR에는 넣지 않음. 에뮬레이터 비용·시간은 rel 컷에서만 쓴다.
+on:
+  push:
+    branches:
+      - 'rel/**'
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  maestro-smoke:
+    name: e2e:smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare local env for postinstall sync
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare Gradle properties for CI
+        working-directory: android
+        run: cp gradle.properties.ci gradle.properties
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK (x86_64)
+        working-directory: android
+        env:
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: x86_64
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Start Metro
+        run: |
+          npx react-native start --host 0.0.0.0 > /tmp/metro.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -sf http://127.0.0.1:8081/status >/dev/null; then
+              echo "Metro ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Metro did not start"
+          cat /tmp/metro.log || true
+          exit 1
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Maestro smoke on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          ram-size: 3072M
+          disk-size: 8G
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -euo pipefail
+            adb reverse tcp:8081 tcp:8081
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm list packages | grep -q com.butingmobile
+            maestro --version
+            npm run e2e:smoke
+
+      - name: Upload Maestro recordings
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-smoke-${{ github.run_id }}
+          path: ~/.maestro/tests
+          if-no-files-found: ignore

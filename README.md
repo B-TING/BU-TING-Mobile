@@ -340,6 +340,8 @@ npm run e2e:smoke   # 언어·온보딩·로그인 UI + 홈/탭
 npm run e2e         # .maestro/flows 전체
 ```
 
+`rel/**` 푸시와 workflow_dispatch에서 GitHub Actions가 `e2e:smoke`를 돌립니다. PR에는 넣지 않습니다.
+
 OAuth 실로그인·결제·카메라 미션은 자동화하지 않습니다. 로그인 화면은 버튼 노출만 검증합니다.
 
 ### 에디터 (VS Code / Cursor)
