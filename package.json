@@ -1,6 +1,6 @@
 {
   "name": "BUTingMobile",
-  "version": "1.2.2a-alpha",
+  "version": "1.2.3-alpha",
   "private": true,
   "scripts": {
     "android": "node scripts/run-android.cjs",
