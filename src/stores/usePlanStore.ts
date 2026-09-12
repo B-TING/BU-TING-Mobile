@@ -8,6 +8,7 @@ import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/ro
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
+import { jsonEqual } from '../utils/common/jsonEqual';
 import { createId } from '../utils/common/id';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
@@ -90,11 +91,18 @@ export const usePlanStore = create<PlanState>()(
         })),
       upsertPlan: plan =>
         set(state => {
-          const exists = state.plans.some(p => p.planId === plan.planId);
+          const existing = state.plans.find(p => p.planId === plan.planId);
+          if (existing && jsonEqual(existing, plan)) {
+            return state;
+          }
+          const nextPlan =
+            existing && jsonEqual(existing.itinerary, plan.itinerary)
+              ? { ...plan, itinerary: existing.itinerary }
+              : plan;
           return {
-            plans: exists
-              ? state.plans.map(p => (p.planId === plan.planId ? plan : p))
-              : [...state.plans, plan],
+            plans: existing
+              ? state.plans.map(p => (p.planId === plan.planId ? nextPlan : p))
+              : [...state.plans, nextPlan],
           };
         }),
       setActivePlan: planId => set({ activePlanId: planId }),

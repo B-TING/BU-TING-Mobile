@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef } from 'react';
 
+import { jsonEqual } from '../../utils/common/jsonEqual';
 import type { DailyItinerary } from '../../types/travelPlan';
 import {
   buildScheduleMapOverlays,
@@ -8,34 +9,19 @@ import {
 } from '../overlays/scheduleOverlays';
 
 /**
- * Polyline·Marker 좌표를 useState로 관리합니다.
- * 일정이 바뀌면 먼저 빈 배열로 지운 뒤(언마운트) 새 좌표를 주입합니다.
+ * 일정 오버레이. 내용이 같으면 이전 스냅샷을 재사용해 마커 깜빡임을 막는다.
  */
 export function useScheduleMapOverlays(
   itinerary: DailyItinerary[],
   selectedDayNumber?: number,
-) {
-  const [lines, setLines] = useState<ScheduleMapLineOverlay[]>([]);
-  const [markers, setMarkers] = useState<ScheduleMapMarkerOverlay[]>([]);
-
+): { lines: ScheduleMapLineOverlay[]; markers: ScheduleMapMarkerOverlay[] } {
   const overlaySnapshot = useMemo(
     () => buildScheduleMapOverlays(itinerary, selectedDayNumber),
     [itinerary, selectedDayNumber],
   );
-
-  useEffect(() => {
-    setLines([]);
-    setMarkers([]);
-
-    const frame = requestAnimationFrame(() => {
-      setLines(overlaySnapshot.lines);
-      setMarkers(overlaySnapshot.markers);
-    });
-
-    return () => {
-      cancelAnimationFrame(frame);
-    };
-  }, [overlaySnapshot]);
-
-  return { lines, markers };
+  const stableRef = useRef(overlaySnapshot);
+  if (!jsonEqual(stableRef.current, overlaySnapshot)) {
+    stableRef.current = overlaySnapshot;
+  }
+  return stableRef.current;
 }
