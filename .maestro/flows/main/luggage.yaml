@@ -1,0 +1,19 @@
+appId: com.butingmobile
+name: Luggage storage
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.quickAccess.luggage
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: luggage.screen
+    timeout: 20000
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

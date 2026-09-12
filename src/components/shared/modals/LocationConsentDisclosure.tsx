@@ -1,6 +1,7 @@
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { appModalStyles } from './appModalStyles';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 
 export type LocationConsentDisclosureProps = {
   visible: boolean;
@@ -36,7 +37,7 @@ export function LocationConsentDisclosure({
       <View style={appModalStyles.overlayCenter}>
         <View style={appModalStyles.backdrop} pointerEvents="none" />
 
-        <View style={appModalStyles.alertCard}>
+        <View testID={TEST_ID.location.disclosure} style={appModalStyles.alertCard}>
           <Text className="text-center text-lg font-bold text-brand-text">
             {title}
           </Text>
@@ -50,12 +51,14 @@ export function LocationConsentDisclosure({
           <View className="mt-5 gap-2">
             <Pressable
               onPress={onAccept}
+              testID={TEST_ID.location.accept}
               className="items-center rounded-2xl bg-brand-primary py-3.5 active:opacity-90"
               accessibilityRole="button">
               <Text className="text-[15px] font-bold text-white">{acceptLabel}</Text>
             </Pressable>
             <Pressable
               onPress={onDecline}
+              testID={TEST_ID.location.decline}
               className="items-center py-2.5 active:opacity-80"
               accessibilityRole="button">
               <Text className="text-sm font-semibold text-brand-muted">

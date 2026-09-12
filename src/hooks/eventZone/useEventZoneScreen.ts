@@ -1,26 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useFeatureUnavailableAlert } from '../../components/shared/modals';
-import {
-  ALPHA_FEATURE_LABELS,
-  isAlphaFeatureBlocked,
-} from '../../constants/common/alphaFeatureBlocks';
+import { ALPHA_FEATURE_LABELS } from '../../constants/common/alphaFeatureBlocks';
 import {
   EVENT_ZONE_BY_ID,
+  EVENT_ZONES,
   allZoneChatRooms,
   eventZoneName,
   getChatRoomByZoneId,
 } from '../../constants/eventZone/eventZone';
-import { buildRandomMockZoneEvent } from '../../constants/eventZone/zoneEvents';
+import { isPhase1EventGame } from '../../constants/eventZone/eventGame';
+import { isZoneEventActive } from '../../constants/eventZone/zoneEvents';
+import { canQueryZoneEvents, useHydrateZoneEvents } from './useHydrateZoneEvents';
+import { useLocationCache } from '../location/useLocationCache';
 import { useCurrentEventZone } from '../useCurrentEventZone';
 import { useAllZoneChatMemberCounts } from '../useZoneChatRoomSummary';
 import { useAppLanguage, useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { useZoneEventStore } from '../../stores';
 import type { EventZoneId } from '../../types/eventZone';
+import type { EventRoundSlotItem } from '../../components/eventZone/EventRoundStatusCard';
+import {
+  formatZoneEventRemaining,
+  useRemainingUntil,
+} from '../../utils/eventZone/zoneEventRemaining';
 import { FOCUS_ANIMATION_MS } from '../../utils/eventZone/useZoneMapCamera';
 
 type EventZoneNavigation = NativeStackNavigationProp<RootStackParamList, 'EventZone'>;
@@ -31,8 +36,10 @@ type UseEventZoneScreenParams = {
 
 export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   const isFocused = useIsFocused();
+  useLocationCache();
   const language = useAppLanguage();
   const copy = useCopy('eventZone');
+  const gameCopy = useCopy('eventGame');
   const { showUnavailable } = useFeatureUnavailableAlert();
   const { zoneId: currentZoneId, usedFallback } = useCurrentEventZone();
 
@@ -47,18 +54,15 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   const isSlotDimmed = highlightZoneId != null;
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
-  const triggerEvent = useZoneEventStore(s => s.triggerEvent);
+  const currentRound = useZoneEventStore(s => s.currentRound);
+  useHydrateZoneEvents(isFocused);
   const eventZoneIds = useMemo(() => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
+    if (!canQueryZoneEvents()) {
       return [] as EventZoneId[];
     }
     return Object.keys(activeEventsByZone) as EventZoneId[];
   }, [activeEventsByZone]);
   const chatRooms = useMemo(() => allZoneChatRooms(), []);
-
-  const [toastText, setToastText] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelPendingSelection = useCallback(() => {
     if (selectionTimerRef.current != null) {
@@ -85,48 +89,84 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     cancelPendingSelection();
   }, [cancelPendingSelection]);
 
-  const showToast = (text: string) => {
-    setToastText(text);
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-    }
-    Animated.timing(toastOpacity, {
-      toValue: 1,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastOpacity, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => setToastText(null));
-    }, 3000);
-  };
-
   useEffect(() => {
     return () => {
       cancelPendingSelection();
-      if (toastTimer.current) {
-        clearTimeout(toastTimer.current);
-      }
     };
   }, [cancelPendingSelection]);
 
-  const handleTriggerEvent = () => {
-    if (isAlphaFeatureBlocked('zoneEvent')) {
-      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
-      return;
+  const currentZoneGameEvent = useMemo(() => {
+    if (!currentZoneId) {
+      return undefined;
     }
-    const event = buildRandomMockZoneEvent();
-    triggerEvent(event);
-    showToast(
-      copy.eventToast(
-        eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
-        event.titleKo,
-      ),
-    );
-  };
+    const event = activeEventsByZone[currentZoneId];
+    if (!event || !isPhase1EventGame(event) || !isZoneEventActive(event)) {
+      return undefined;
+    }
+    return event;
+  }, [activeEventsByZone, currentZoneId]);
+
+  const selectedZoneGameEvent = useMemo(() => {
+    if (!focusZoneId) {
+      return undefined;
+    }
+    const event = activeEventsByZone[focusZoneId];
+    if (!event || !isPhase1EventGame(event) || !isZoneEventActive(event)) {
+      return undefined;
+    }
+    return event;
+  }, [activeEventsByZone, focusZoneId]);
+
+  const roundSlots = useMemo((): EventRoundSlotItem[] => {
+    if (!canQueryZoneEvents() || !currentRound) {
+      return [];
+    }
+    const byZone = new Map(currentRound.zones.map(slot => [slot.zoneId, slot]));
+    return EVENT_ZONES.map(zone => {
+      const slot = byZone.get(zone.id);
+      const slotStatus = slot?.slotStatus || 'REST';
+      const statusLabel =
+        slotStatus === 'OPEN'
+          ? copy.roundSlotOpen
+          : slotStatus === 'UPCOMING'
+            ? copy.roundSlotUpcoming
+            : copy.roundSlotRest;
+      return {
+        zoneId: zone.id,
+        zoneName: eventZoneName(zone, language),
+        slotStatus,
+        statusLabel,
+        eventId: slot?.eventId,
+      };
+    });
+  }, [copy.roundSlotOpen, copy.roundSlotRest, copy.roundSlotUpcoming, currentRound, language]);
+
+  const roundCountdownIso = useMemo(() => {
+    if (!currentRound) {
+      return undefined;
+    }
+    const hasOpen = currentRound.zones.some(slot => slot.slotStatus === 'OPEN');
+    return hasOpen ? currentRound.endsAt : currentRound.startsAt;
+  }, [currentRound]);
+
+  const roundRemainingMs = useRemainingUntil(roundCountdownIso);
+  const roundRemainingLabel = useMemo(() => {
+    if (!currentRound || roundRemainingMs <= 0) {
+      return undefined;
+    }
+    const remaining = formatZoneEventRemaining(roundRemainingMs, language);
+    const hasOpen = currentRound.zones.some(slot => slot.slotStatus === 'OPEN');
+    return hasOpen ? copy.roundEndsIn(remaining) : copy.roundStartsIn(remaining);
+  }, [copy, currentRound, language, roundRemainingMs]);
+
+  const roundStatusLabel = useMemo(() => {
+    if (!currentRound) {
+      return '';
+    }
+    return currentRound.zones.some(slot => slot.slotStatus === 'OPEN')
+      ? copy.roundStatusOpen
+      : copy.roundStatusUpcoming;
+  }, [copy.roundStatusOpen, copy.roundStatusUpcoming, currentRound]);
 
   const currentZone = currentZoneId ? EVENT_ZONE_BY_ID[currentZoneId] : null;
   const selectedZone = focusZoneId ? EVENT_ZONE_BY_ID[focusZoneId] : null;
@@ -157,7 +197,56 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventZoneChat', { roomId });
   };
 
-  const zoneEventBlocked = isAlphaFeatureBlocked('zoneEvent');
+  const handleOpenGameDetail = (eventId: string) => {
+    navigation.navigate('EventGameDetail', { eventId });
+  };
+
+  const handleOpenParticipationHistory = () => {
+    navigation.navigate('EventParticipationHistory');
+  };
+
+  const handleOpenAlbum = useCallback(() => {
+    navigation.navigate('EventAlbum', {
+      allZones: true,
+      ...(currentRound?.roundId ? { roundId: currentRound.roundId } : {}),
+    });
+  }, [currentRound?.roundId, navigation]);
+
+  const handleOpenRoundAlbum = useCallback(() => {
+    if (currentRound?.roundId) {
+      navigation.navigate('EventAlbum', {
+        allZones: true,
+        roundId: currentRound.roundId,
+      });
+      return;
+    }
+    handleOpenAlbum();
+  }, [currentRound?.roundId, handleOpenAlbum, navigation]);
+
+  const handleRoundSlotPress = useCallback(
+    (slot: EventRoundSlotItem) => {
+      if (slot.slotStatus === 'OPEN' && slot.eventId) {
+        navigation.navigate('EventGameDetail', { eventId: slot.eventId });
+        return;
+      }
+      selectZone(slot.zoneId);
+    },
+    [navigation, selectZone],
+  );
+
+  const handleOpenTitles = () => {
+    navigation.navigate('EventTitles');
+  };
+
+  const handleJoinMission = () => {
+    if (selectedZoneGameEvent) {
+      handleOpenGameDetail(selectedZoneGameEvent.id);
+      return;
+    }
+    showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
+  };
+
+  const zoneEventBlocked = !canQueryZoneEvents();
   const selectedActiveEvent =
     zoneEventBlocked || !focusZoneId ? undefined : activeEventsByZone[focusZoneId];
   const listActiveEventsByZone = zoneEventBlocked ? {} : activeEventsByZone;
@@ -165,6 +254,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
   return {
     language,
     copy,
+    gameCopy,
     isFocused,
     focusZoneId,
     highlightZoneId,
@@ -180,15 +270,24 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     selectedLiveMemberCount,
     eventZoneIds,
     chatRooms,
-    toastText,
-    toastOpacity,
     liveMemberCounts,
     selectedActiveEvent,
     listActiveEventsByZone,
+    currentZoneGameEvent,
+    selectedZoneGameEvent,
     selectZone,
     handleCloseExpanded,
-    handleTriggerEvent,
     handleEnterChat,
     handleJoinChat,
+    handleOpenGameDetail,
+    handleOpenParticipationHistory,
+    handleOpenAlbum,
+    handleOpenRoundAlbum,
+    handleOpenTitles,
+    handleJoinMission,
+    handleRoundSlotPress,
+    roundSlots,
+    roundStatusLabel,
+    roundRemainingLabel,
   };
 }

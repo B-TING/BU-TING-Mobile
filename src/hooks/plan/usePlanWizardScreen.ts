@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { useFeatureUnavailableAlert } from '../../components/shared/modals';
+import { useAppAlert, useFeatureUnavailableAlert } from '../../components/shared/modals';
 import {
   TRAVEL_CONSTRAINT_NONE_ID,
   dayCountBetween,
@@ -49,6 +48,7 @@ export function usePlanWizardScreen({
 }: NativeStackScreenProps<RootStackParamList, 'PlanWizard'>) {
   const language = useAppLanguage();
   const copy = useCopy('planWizard');
+  const { alert } = useAppAlert();
   const { showUnavailable } = useFeatureUnavailableAlert();
   const user = useAuthStore(selectAuthUser);
   const accessToken = useAuthStore(selectReusableAccessToken);
@@ -252,6 +252,13 @@ export function usePlanWizardScreen({
     });
   };
 
+  const leaveWizard = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { tab: 'home' } }],
+    });
+  };
+
   const wizardMembers = (): PlanMember[] => [
     {
       userId: user?.userId ?? 'local-user',
@@ -267,14 +274,14 @@ export function usePlanWizardScreen({
     }
 
     if (answers.generationMode === 'auto' && answers.selectedAttractions.length < 1) {
-      Alert.alert(copy.createAiNeedPlaces);
+      alert({ title: copy.createAiNeedPlaces });
       return;
     }
 
     setLoading(true);
     try {
       if (!accessToken) {
-        Alert.alert(copy.createManualError);
+        alert({ title: copy.createManualError });
         return;
       }
 
@@ -298,7 +305,12 @@ export function usePlanWizardScreen({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.createManualError;
-      Alert.alert(copy.createManualError, message);
+      if (answers.generationMode === 'auto') {
+        alert({ title: copy.createAiError, message });
+        leaveWizard();
+        return;
+      }
+      alert({ title: copy.createManualError, message });
     } finally {
       setLoading(false);
     }

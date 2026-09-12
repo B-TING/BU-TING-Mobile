@@ -62,7 +62,15 @@ const STATUS_OVERLAY_CLASS: Record<TravelStatusDto, string> = {
   COMPLETED: 'rgba(15, 23, 42, 0.58)',
 };
 
-function statusLabel(travelStatus: TravelStatusDto, copy: ActivePlanHeroBannerProps['copy']): string {
+const DAY_KO = '\uC77C';
+const ARROW = '\u2192';
+const DOT = '\u00B7';
+const EMDASH = '\u2014';
+
+function statusLabel(
+  travelStatus: TravelStatusDto,
+  copy: ActivePlanHeroBannerProps['copy'],
+): string {
   if (travelStatus === 'PLANNED') {
     return copy.plannedLabel;
   }
@@ -72,7 +80,10 @@ function statusLabel(travelStatus: TravelStatusDto, copy: ActivePlanHeroBannerPr
   return copy.inProgressLabel;
 }
 
-function ddayText(startDate: string, copy: ActivePlanHeroBannerProps['copy']): string {
+function ddayText(
+  startDate: string,
+  copy: ActivePlanHeroBannerProps['copy'],
+): string {
   const d = calcTripDday(startDate);
   if (d > 0) {
     return copy.dday(d);
@@ -90,16 +101,16 @@ function metaLine(
   copy: ActivePlanHeroBannerProps['copy'],
 ): string {
   const dayCount = dayCountBetween(plan.startDate, plan.endDate);
-  const daySuffix = language === 'ko' ? '일' : ' days';
-  const period = `${plan.startDate} → ${plan.endDate} · ${dayCount}${daySuffix}`;
+  const daySuffix = language === 'ko' ? DAY_KO : ' days';
+  const period = `${plan.startDate} ${ARROW} ${plan.endDate} ${DOT} ${dayCount}${daySuffix}`;
 
   if (travelStatus === 'PLANNED') {
-    return `${period} · ${ddayText(plan.startDate, copy)}`;
+    return `${period} ${DOT} ${ddayText(plan.startDate, copy)}`;
   }
   if (travelStatus === 'COMPLETED') {
-    return `${period} · ${copy.completedTripHint}`;
+    return `${period} ${DOT} ${copy.completedTripHint}`;
   }
-  return `${period} · ${ddayText(plan.startDate, copy)}`;
+  return `${period} ${DOT} ${ddayText(plan.startDate, copy)}`;
 }
 
 export function ActivePlanHeroBanner({
@@ -116,19 +127,28 @@ export function ActivePlanHeroBanner({
 }: ActivePlanHeroBannerProps) {
   const showNextStop = travelStatus === 'IN_PROGRESS' && upcoming != null;
   const ctaLabel =
-    travelStatus === 'COMPLETED' ? copy.viewCompletedItinerary : copy.viewItinerary;
-  const showHeaderActions = Boolean(onCreatePress) || (canSwitchPlans && onSwitchPress);
+    travelStatus === 'COMPLETED'
+      ? copy.viewCompletedItinerary
+      : copy.viewItinerary;
+  const showHeaderActions =
+    Boolean(onCreatePress) || (canSwitchPlans && onSwitchPress);
 
   return (
-    <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="mb-5 mt-5">
-      <View className="overflow-hidden rounded-2xl">
+    <GuideTarget id={GUIDE_TARGET.plannerHeroCta} className="mb-5">
+      <View>
         <Pressable
           onPress={onPress}
-          className="active:opacity-95"
+          className="overflow-hidden active:opacity-95"
           accessibilityRole="button">
-          <ImageBackground source={heroImage} style={styles.image} resizeMode="cover">
+          <ImageBackground
+            source={heroImage}
+            style={styles.image}
+            resizeMode="cover">
             <View
-              style={[styles.overlay, { backgroundColor: STATUS_OVERLAY_CLASS[travelStatus] }]}
+              style={[
+                styles.overlay,
+                { backgroundColor: STATUS_OVERLAY_CLASS[travelStatus] },
+              ]}
               className="justify-end p-5">
               <View
                 className={cn(
@@ -155,18 +175,23 @@ export function ActivePlanHeroBanner({
                   <Text className="mb-0.5 text-[11px] font-semibold text-white/80">
                     {copy.nextStop}
                   </Text>
-                  <Text className="text-sm font-bold text-white" numberOfLines={1}>
-                    {copy.dayLabel(upcoming.day.dayNumber)} ·{' '}
-                    {formatWeekdayDate(upcoming.day.date, language)} — {upcoming.route.placeName}
+                  <Text
+                    className="text-sm font-bold text-white"
+                    numberOfLines={1}>
+                    {copy.dayLabel(upcoming.day.dayNumber)} {DOT}{' '}
+                    {formatWeekdayDate(upcoming.day.date, language)} {EMDASH}{' '}
+                    {upcoming.route.placeName}
                   </Text>
                 </View>
               ) : null}
               <Text
                 className={cn(
                   'mt-3 text-sm font-bold',
-                  travelStatus === 'COMPLETED' ? 'text-white/85' : 'text-brand-secondary',
+                  travelStatus === 'COMPLETED'
+                    ? 'text-white/85'
+                    : 'text-brand-secondary',
                 )}>
-                {ctaLabel} →
+                {ctaLabel} {ARROW}
               </Text>
             </View>
           </ImageBackground>
@@ -183,7 +208,12 @@ export function ActivePlanHeroBanner({
                 <Text className="mr-0.5 text-[11px] font-bold text-white">
                   {copy.switchPlanCount(planCount)}
                 </Text>
-                <AppIcon name="chevronDown" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                <AppIcon
+                  name="chevronDown"
+                  size={14}
+                  color={ICON_COLOR_WHITE}
+                  strokeWidth={2.5}
+                />
               </Pressable>
             ) : null}
             {onCreatePress ? (
@@ -193,7 +223,12 @@ export function ActivePlanHeroBanner({
                 className="flex-row items-center rounded-full bg-white/20 px-2.5 py-1 active:opacity-80"
                 accessibilityRole="button"
                 accessibilityLabel={copy.createNewPlanA11y}>
-                <AppIcon name="plus" size={14} color={ICON_COLOR_WHITE} strokeWidth={2.5} />
+                <AppIcon
+                  name="plus"
+                  size={14}
+                  color={ICON_COLOR_WHITE}
+                  strokeWidth={2.5}
+                />
                 <Text className="ml-0.5 text-[11px] font-bold text-white">
                   {copy.createNewPlanChip}
                 </Text>
@@ -209,10 +244,10 @@ export function ActivePlanHeroBanner({
 const styles = StyleSheet.create({
   image: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 240,
   },
   overlay: {
     flex: 1,
-    minHeight: 200,
+    minHeight: 240,
   },
 });

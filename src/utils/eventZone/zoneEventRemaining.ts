@@ -60,7 +60,40 @@ export function formatZoneEventRemaining(ms: number, language: AppLanguage): str
   return `${mins}m ${secs}s left`;
 }
 
+export function remainingMsUntil(iso: string | undefined, now = Date.now()): number {
+  if (!iso) {
+    return 0;
+  }
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) {
+    return 0;
+  }
+  return Math.max(0, at - now);
+}
+
+/** ISO 시각까지 남은 시간(ms). 1초마다 갱신 */
+export function useRemainingUntil(iso: string | undefined): number {
+  const [remainingMs, setRemainingMs] = useState(() => remainingMsUntil(iso));
+
+  useEffect(() => {
+    if (!iso) {
+      setRemainingMs(0);
+      return;
+    }
+    const tick = () => setRemainingMs(remainingMsUntil(iso));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [iso]);
+
+  return remainingMs;
+}
+
 export function zoneEventRemainingMs(event: ZoneEvent, now = Date.now()): number {
+  if (typeof event.remainingSeconds === 'number' && event.fetchedAt != null) {
+    const elapsedSec = Math.floor((now - event.fetchedAt) / 1000);
+    return Math.max(0, (event.remainingSeconds - elapsedSec) * 1000);
+  }
   return Math.max(0, zoneEventEndsAt(event) - now);
 }
 

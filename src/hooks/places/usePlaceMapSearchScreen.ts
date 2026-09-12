@@ -10,6 +10,7 @@ import { useCopy } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { fetchPlaceDetail } from '../../services/places/placesApiService';
 import {
+  selectBookmarkedIdsForType,
   usePlaceBookmarkStore,
   usePlaceDetailCacheStore,
   usePlaceSearchStore,
@@ -28,6 +29,7 @@ import { usePlaceMapUserLocation } from '../usePlaceMapUserLocation';
 import { usePlaceMapKeywordSearch } from './usePlaceMapKeywordSearch';
 import { usePlaceMapSearchCooldown } from './usePlaceMapSearchCooldown';
 
+const EMPTY_PLACES: BusanPlace[] = [];
 type RouteParams = RootStackParamList['PlaceMapSearch'];
 
 export function usePlaceMapSearchScreen(routeParams: RouteParams) {
@@ -95,11 +97,11 @@ export function usePlaceMapSearchScreen(routeParams: RouteParams) {
 
   const cooldown = usePlaceMapSearchCooldown(lastSearchRequestedAt);
 
-  const bookmarkedIds = usePlaceBookmarkStore(s => s.getBookmarkedIdsForType(contentTypeId));
+  const bookmarkedIds = usePlaceBookmarkStore(selectBookmarkedIdsForType(contentTypeId));
   const togglePlaceBookmark = usePlaceBookmarkStore(s => s.togglePlaceBookmark);
   const isPlaceBookmarked = usePlaceBookmarkStore(s => s.isPlaceBookmarked);
 
-  const locationPlaces = useMemo(() => cacheEntry?.places ?? [], [cacheEntry]);
+  const locationPlaces = cacheEntry?.places ?? EMPTY_PLACES;
   const places = isKeywordMode ? keywordPlaces : locationPlaces;
   const placeDetailsById = isKeywordMode
     ? keywordDetailsById

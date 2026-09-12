@@ -6,16 +6,19 @@ type SkipButtonProps = {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary';
+  testID?: string;
 };
 
 export function SkipButton({
   label,
   onPress,
   variant = 'primary',
+  testID,
 }: SkipButtonProps) {
   return (
     <Pressable
       onPress={onPress}
+      testID={testID}
       hitSlop={12}
       className={cn(
         'rounded-lg px-4 py-2.5 active:opacity-75',

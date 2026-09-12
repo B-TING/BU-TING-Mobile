@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { ImportPlanModalPhase, ImportPlanModalProps } from './modals/ImportPlanModal';
+import type { ImportPlanModalPhase, ImportPlanModalProps } from '../../components/feed/modals/ImportPlanModal';
 import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
 import { dayCountBetween, isValidIsoDate } from '../../constants/plan/planWizard';
 import type { CopyFor } from '../../i18n';
-import { useFeatureUnavailableAlert } from '../shared/modals';
+import { useFeatureUnavailableAlert } from '../../components/shared/modals';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
 import type { RootStackParamList } from '../../navigation/types';
 import { cloneTravelFromRecord } from '../../services/travel/cloneTravelFromRecord';

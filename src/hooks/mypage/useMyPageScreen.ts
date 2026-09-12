@@ -21,6 +21,8 @@ import {
   hasAnsweredSurvey,
 } from '../../services/setup/travelSurveyMapper';
 import { deleteMyAccount, updateMyProfile, UserServiceError } from '../../services/user/userService';
+import { fetchMyZoneTitles } from '../../services/eventZone/zoneTitleService';
+import type { EquippedTitleResponse } from '../../types/zoneTitleApi';
 import {
   useAppStore,
   useAuthStore,
@@ -64,6 +66,7 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [recordsTab, setRecordsTab] = useState<'mine' | 'saved'>('mine');
+  const [equippedTitle, setEquippedTitle] = useState<EquippedTitleResponse | null>(null);
 
   const bookmarkedRecords = useTravelRecordBookmarkStore(s => s.bookmarkedRecords);
   const bookmarksLoading = useTravelRecordBookmarkStore(s => s.loading);
@@ -88,6 +91,19 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     setPlaceReviewCount(reviewCount);
     await hydrateBookmarks(accessToken);
   }, [accessToken, nickname, hydrateBookmarks]);
+
+  const loadEquippedTitle = useCallback(async () => {
+    if (!accessToken) {
+      setEquippedTitle(null);
+      return;
+    }
+    try {
+      const mine = await fetchMyZoneTitles(accessToken);
+      setEquippedTitle(mine.equipped ?? null);
+    } catch {
+      setEquippedTitle(null);
+    }
+  }, [accessToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +133,7 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadMyRecords();
+      await Promise.all([loadMyRecords(), loadEquippedTitle()]);
     } catch (error) {
       if (__DEV__) {
         const message =
@@ -127,10 +143,11 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     } finally {
       setRefreshing(false);
     }
-  }, [loadMyRecords]);
+  }, [loadMyRecords, loadEquippedTitle]);
 
   useFocusEffect(
     useCallback(() => {
+      void loadEquippedTitle();
       if (!accessToken || !user?.userId) {
         return;
       }
@@ -155,7 +172,7 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
       return () => {
         cancelled = true;
       };
-    }, [accessToken, user?.userId, language]),
+    }, [accessToken, user?.userId, language, loadEquippedTitle]),
   );
 
   const goToLogin = useCallback(() => {
@@ -269,10 +286,6 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     [navigation, showUnavailable],
   );
 
-  const handleNotificationSettings = useCallback(() => {
-    alert({ title: copy.notificationUnavailable });
-  }, [alert, copy.notificationUnavailable]);
-
   const providerLabel = user ? copy.providers[user.provider] : '—';
 
   return {
@@ -305,6 +318,6 @@ export function useMyPageScreen({ navigation }: UseMyPageScreenParams) {
     handleSaveNickname,
     handleDeleteAccount,
     handlePressRecord,
-    handleNotificationSettings,
+    equippedTitle,
   };
 }

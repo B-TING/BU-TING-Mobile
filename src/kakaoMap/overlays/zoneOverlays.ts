@@ -30,7 +30,7 @@ export function kakaoOverlaysFromEventZones(): KakaoMapPolygonOverlay[] {
     }
 
     return {
-      kind: 'polygon',
+      kind: 'polygon' as const,
       id: `event-zone-${zone.id}`,
       paths,
       fillColor: zone.baseColor,

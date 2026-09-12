@@ -8,6 +8,7 @@ import { isTourApiContentId, routeTypeToContentTypeId } from '../utils/places/ro
 import type { PlanWizardAnswers } from '../types/planWizard';
 import type { BudgetEntry, RouteItem, TravelLegMode, TravelPlan } from '../types/travelPlan';
 import { isPlanForCurrentApiServer } from '../utils/api/apiServerOrigin';
+import { jsonEqual } from '../utils/common/jsonEqual';
 import { createId } from '../utils/common/id';
 import { optimizeRouteOrder } from '../utils/plan/routeOptimize';
 import { getSelectableHomePlans } from '../utils/plan/selectableHomePlans';
@@ -16,6 +17,8 @@ import {
   selectLatestLocalPlan as pickLatestLocalPlan,
 } from '../utils/plan/selectLatestLocalPlan';
 import { isServerBackedPlan } from '../utils/plan/serverBackedPlan';
+
+export const EMPTY_BUDGET: BudgetEntry[] = [];
 
 type PlanState = {
   plans: TravelPlan[];
@@ -88,11 +91,18 @@ export const usePlanStore = create<PlanState>()(
         })),
       upsertPlan: plan =>
         set(state => {
-          const exists = state.plans.some(p => p.planId === plan.planId);
+          const existing = state.plans.find(p => p.planId === plan.planId);
+          if (existing && jsonEqual(existing, plan)) {
+            return state;
+          }
+          const nextPlan =
+            existing && jsonEqual(existing.itinerary, plan.itinerary)
+              ? { ...plan, itinerary: existing.itinerary }
+              : plan;
           return {
-            plans: exists
-              ? state.plans.map(p => (p.planId === plan.planId ? plan : p))
-              : [...state.plans, plan],
+            plans: existing
+              ? state.plans.map(p => (p.planId === plan.planId ? nextPlan : p))
+              : [...state.plans, nextPlan],
           };
         }),
       setActivePlan: planId => set({ activePlanId: planId }),
@@ -325,7 +335,7 @@ export const usePlanStore = create<PlanState>()(
             [planId]: entries,
           },
         })),
-      getBudgetForPlan: planId => get().budgetByPlan[planId] ?? [],
+      getBudgetForPlan: planId => get().budgetByPlan[planId] ?? EMPTY_BUDGET,
       completePlan: planId =>
         set(state => {
           // 완료 여행은 로컬(오프라인) 목록에서 제거
@@ -423,6 +433,12 @@ export function selectHomeFeaturedPlan(state: PlanState): TravelPlan | null {
 /** 홈에서 바꿀 수 있는 예정·진행·완료 서버 연동 여행 */
 export function selectSelectableHomePlans(state: PlanState): TravelPlan[] {
   return getSelectableHomePlans(state.plans);
+}
+
+/** 플랜 가계부 — 없으면 공유 EMPTY (매 호출 새 [] 금지) */
+export function selectBudgetForPlan(planId: string) {
+  return (state: PlanState): BudgetEntry[] =>
+    state.budgetByPlan?.[planId] ?? EMPTY_BUDGET;
 }
 
 /** 오프라인 열람용 — 현재 API origin · 일정 내용 우선, 활성 일정, 최근 생성 순 */

@@ -121,6 +121,9 @@ export function KakaoMapShell({
   const overlayKey = overlaysSignature(mergedOverlays);
   const pointsSyncKey = fitPointsToCamera ? regionSyncKey : null;
   const lastCameraKeyRef = useRef<string | null>(null);
+  const lastOverlayKeyRef = useRef<string | null>(null);
+  const mergedOverlaysRef = useRef(mergedOverlays);
+  mergedOverlaysRef.current = mergedOverlays;
 
   if (bootstrapHtmlRef.current === null && KAKAO_MAP_JS_KEY && points.length > 0) {
     const bootstrapCamera =
@@ -136,6 +139,7 @@ export function KakaoMapShell({
       bootstrapHtmlRef.current = null;
       mapReadyRef.current = false;
       lastCameraKeyRef.current = null;
+      lastOverlayKeyRef.current = null;
       setMapReady(false);
     }
   }, [points.length]);
@@ -200,17 +204,21 @@ export function KakaoMapShell({
     if (!mapReady) {
       return;
     }
+    if (lastOverlayKeyRef.current === overlayKey) {
+      return;
+    }
+    lastOverlayKeyRef.current = overlayKey;
 
-    syncMapOverlays(webViewRef, mergedOverlays);
+    syncMapOverlays(webViewRef, mergedOverlaysRef.current);
 
     const retryTimers = [150, 400].map(delay =>
-      setTimeout(() => syncMapOverlays(webViewRef, mergedOverlays), delay),
+      setTimeout(() => syncMapOverlays(webViewRef, mergedOverlaysRef.current), delay),
     );
 
     return () => {
       retryTimers.forEach(clearTimeout);
     };
-  }, [mapReady, overlayKey, mergedOverlays]);
+  }, [mapReady, overlayKey]);
 
   const handleWebViewMessage = (event: WebViewMessageEvent) => {
     try {

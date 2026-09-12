@@ -1,11 +1,12 @@
 import type { NavbarTab } from '../components/shared/navigation/Navbar';
+import type { EventZoneId } from '../types/eventZone';
 import type { PlaceContentTypeId } from '../types/placesApi';
 import type { WizardPickedPlace } from '../types/planWizard';
 
 export type WizardPlacePickKind = 'attractions' | 'accommodation';
 
 export type RootStackParamList = {
-  LanguageSelection: undefined;
+  LanguageSelection: { mode?: 'setup' | 'settings' } | undefined;
   Login: undefined;
   Onboarding: { mode?: 'setup' | 'edit' | 'account' } | undefined;
   MainTabs: { tab?: NavbarTab } | undefined;
@@ -37,6 +38,17 @@ export type RootStackParamList = {
   HelpDeskChat: undefined;
   EventZone: undefined;
   EventZoneChat: { roomId: string };
+  EventGameDetail: { eventId: string };
+  EventGameCamera: { eventId: string; targetId: string; participationId: string };
+  /** Phase 3+ — 네비 미등록 */
+  EventGameMukjjippa: { eventId: string };
+  EventParticipationHistory: undefined;
+  EventAlbum:
+    | { zoneId?: EventZoneId; eventId?: string; roundId?: string; allZones?: boolean }
+    | undefined;
+  EventTitles: undefined;
+  EventRewards: undefined;
+  NotificationSettings: undefined;
 };
 
 export type SetupPhase = 'language' | 'login' | 'onboarding' | 'main';

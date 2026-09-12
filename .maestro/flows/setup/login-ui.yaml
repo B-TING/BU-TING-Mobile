@@ -1,0 +1,36 @@
+appId: com.butingmobile
+name: Setup — login screen UI
+tags:
+  - smoke
+  - setup
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: language.screen
+    timeout: 45000
+- tapOn:
+    id: language.option.ko
+- tapOn:
+    id: language.continue
+- extendedWaitUntil:
+    visible:
+      id: onboarding.screen
+    timeout: 15000
+- tapOn:
+    id: onboarding.skipAll
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 20000
+- assertVisible:
+    id: login.google
+- assertVisible:
+    id: login.kakao
+- assertVisible:
+    id: login.rememberMe
+- assertVisible:
+    id: login.offline
+- assertVisible:
+    id: login.e2eEnter

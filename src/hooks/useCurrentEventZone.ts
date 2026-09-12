@@ -1,16 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useLocationConsent } from '../components/shared/modals';
 import { DEFAULT_USER_LOCATION_BUSAN } from '../constants/eventZone/eventZone';
+import { useLocationStore } from '../stores/useLocationStore';
 import type { EventZoneCoordinate, EventZoneId } from '../types/eventZone';
 import {
   isInsideBusanBounds,
   resolveEventZoneFromCoordinate,
 } from '../utils/eventZone/zoneResolver';
-import {
-  getCurrentCoordinates,
-  requestFineLocationPermission,
-} from '../utils/location/deviceLocation';
+import { acquireDeviceCoordinates } from '../utils/location/acquireDeviceCoordinates';
 
 export type CurrentEventZoneStatus = 'loading' | 'ready' | 'fallback';
 
@@ -24,84 +22,49 @@ export type CurrentEventZoneState = {
   status: CurrentEventZoneStatus;
 };
 
-function applyFallback(
-  setLocation: (v: EventZoneCoordinate) => void,
-  setZoneId: (v: EventZoneId | null) => void,
-  setUsedFallback: (v: boolean) => void,
-  setStatus: (v: CurrentEventZoneStatus) => void,
-) {
-  // 지도 폴백용 좌표만 부산역. 채팅 구역 소속은 부여하지 않음.
-  setLocation(DEFAULT_USER_LOCATION_BUSAN);
-  setZoneId(null);
-  setUsedFallback(true);
-  setStatus('fallback');
-}
-
 /**
  * 채팅 구역·홈 위젯용 현재 위치/구역.
+ * - LocationStore 캐시/폴링과 연동 (#182)
+ * - 좌표 확보는 `acquireDeviceCoordinates` 단일 파이프라인
  * - 동의·권한·GPS 성공 + 부산 안 → 해당 구역
  * - 부산 밖 → zoneId null (미소속)
- * - 거절/실패 → zoneId null + usedFallback (부산에 있다고 표시하지 않음)
+ * - 거절/실패 → zoneId null + usedFallback
  */
 export function useCurrentEventZone(): CurrentEventZoneState {
   const { ensureLocationConsent } = useLocationConsent();
-  const [location, setLocation] = useState<EventZoneCoordinate>(
-    DEFAULT_USER_LOCATION_BUSAN,
+  const coords = useLocationStore(s => s.coords);
+  /** 캐시가 없을 때만 쓰는 부트스트랩 상태 */
+  const [bootStatus, setBootStatus] = useState<CurrentEventZoneStatus>(
+    coords ? 'ready' : 'loading',
   );
-  const [usedFallback, setUsedFallback] = useState(false);
-  const [status, setStatus] = useState<CurrentEventZoneStatus>('loading');
-  const [zoneId, setZoneId] = useState<EventZoneId | null>(null);
 
   useEffect(() => {
+    if (coords) {
+      setBootStatus('ready');
+    }
+  }, [coords]);
+
+  useEffect(() => {
+    if (useLocationStore.getState().coords) {
+      return;
+    }
+
     let cancelled = false;
 
     (async () => {
-      const consent = await ensureLocationConsent();
+      setBootStatus('loading');
+
+      const acquired = await acquireDeviceCoordinates({ ensureLocationConsent });
       if (cancelled) {
         return;
       }
 
-      if (consent !== 'accepted') {
-        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
-        return;
-      }
-
-      const permission = await requestFineLocationPermission();
-      if (cancelled) {
-        return;
-      }
-
-      if (permission !== 'granted') {
-        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
-        return;
-      }
-
-      const coords = await getCurrentCoordinates();
-      if (cancelled) {
-        return;
-      }
-
-      if (!coords) {
-        applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
-        return;
-      }
-
-      setLocation(coords);
-      setUsedFallback(false);
-
-      if (!isInsideBusanBounds(coords)) {
-        setZoneId(null);
-        setStatus('ready');
-        return;
-      }
-
-      setZoneId(resolveEventZoneFromCoordinate(coords));
-      setStatus('ready');
+      setBootStatus(acquired.ok ? 'ready' : 'fallback');
     })().catch(() => {
       if (cancelled) {
         return;
       }
-      applyFallback(setLocation, setZoneId, setUsedFallback, setStatus);
+      setBootStatus('fallback');
     });
 
     return () => {
@@ -109,10 +72,32 @@ export function useCurrentEventZone(): CurrentEventZoneState {
     };
   }, [ensureLocationConsent]);
 
-  return {
-    zoneId,
-    location,
-    usedFallback,
-    status,
-  };
+  return useMemo((): CurrentEventZoneState => {
+    if (coords) {
+      return {
+        zoneId: isInsideBusanBounds(coords)
+          ? resolveEventZoneFromCoordinate(coords)
+          : null,
+        location: coords,
+        usedFallback: false,
+        status: 'ready',
+      };
+    }
+
+    if (bootStatus === 'loading') {
+      return {
+        zoneId: null,
+        location: DEFAULT_USER_LOCATION_BUSAN,
+        usedFallback: false,
+        status: 'loading',
+      };
+    }
+
+    return {
+      zoneId: null,
+      location: DEFAULT_USER_LOCATION_BUSAN,
+      usedFallback: true,
+      status: 'fallback',
+    };
+  }, [bootStatus, coords]);
 }

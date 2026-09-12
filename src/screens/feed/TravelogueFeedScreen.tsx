@@ -17,6 +17,7 @@ import {
   useTravelogueFeedScreen,
 } from '../../hooks/feed/useTravelogueFeedScreen';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import type { RootStackParamList } from '../../navigation/types';
 import type { TravelRecord } from '../../types/travelReview';
 import type { AppLanguage } from '../../types/user';
@@ -112,7 +113,12 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
   } = useTravelogueFeedScreen({ embeddedInMainTabs });
 
   return (
-    <View className="flex-1 bg-brand-background">
+    <View
+      testID={TEST_ID.feed.screen}
+      accessible
+      accessibilityLabel={TEST_ID.feed.screen}
+      collapsable={false}
+      className="flex-1 bg-brand-background">
       <View className="flex-row items-center border-b border-brand-border bg-brand-surface px-4 py-3">
         {!embeddedInMainTabs ? (
           <BackButton
@@ -128,9 +134,10 @@ export function TravelogueFeedScreen({ navigation, embeddedInMainTabs = false }:
           <ActivityIndicator color={ICON_COLOR_PRIMARY} />
         </View>
       ) : travelRecords.length === 0 ? (
-        <View
-          className="flex-1 items-center justify-center px-6"
-          style={{ paddingBottom: bottomPadding }}>
+          <View
+            testID={TEST_ID.feed.empty}
+            className="flex-1 items-center justify-center px-6"
+            style={{ paddingBottom: bottomPadding }}>
           <View className="items-center rounded-2xl border-2 border-dashed border-brand-border bg-brand-surface px-6 py-12">
             <AppIcon name="fileText" size={40} color={ICON_COLOR_MUTED} />
             <Text className="mt-3 text-base font-semibold text-brand-text">

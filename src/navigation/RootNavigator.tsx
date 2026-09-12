@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { BrandIcon } from '../components/shared/brand/BrandIcon';
 import { layout } from '../constants/common/layout';
+import { TEST_ID } from '../constants/e2e/testIds';
 import { useSetupPhase } from '../hooks/useSetupPhase';
 import { FestivalCalendarScreen } from '../screens/festival/FestivalCalendarScreen';
 import { FestivalDetailScreen } from '../screens/festival/FestivalDetailScreen';
@@ -12,6 +13,13 @@ import { PlaceMapSearchScreen } from '../screens/places/PlaceMapSearchScreen';
 import { HelpDeskChatScreen } from '../screens/helpdesk/HelpDeskChatScreen';
 import { EventZoneScreen } from '../screens/eventZone/EventZoneScreen';
 import { EventZoneChatScreen } from '../screens/eventZone/EventZoneChatScreen';
+import { EventGameDetailScreen } from '../screens/eventZone/EventGameDetailScreen';
+import { EventGameCameraScreen } from '../screens/eventZone/EventGameCameraScreen';
+import { EventParticipationHistoryScreen } from '../screens/eventZone/EventParticipationHistoryScreen';
+import { EventAlbumScreen } from '../screens/eventZone/EventAlbumScreen';
+import { EventTitlesScreen } from '../screens/eventZone/EventTitlesScreen';
+import { EventRewardsScreen } from '../screens/eventZone/EventRewardsScreen';
+import { NotificationSettingsScreen } from '../screens/mypage/NotificationSettingsScreen';
 import { LuggageStorageScreen } from '../screens/locker/LuggageStorageScreen';
 import { TravelogueDetailScreen } from '../screens/feed/TravelogueDetailScreen';
 import { MenuPlaceholderScreen } from '../screens/MenuPlaceholderScreen';
@@ -84,7 +92,7 @@ export function RootNavigator() {
 
   if (!ready || !hasAppHydrated || !hasAuthHydrated) {
     return (
-      <View style={[layout.screen, styles.loading]}>
+      <View testID={TEST_ID.app.loading} style={[layout.screen, styles.loading]}>
         <BrandIcon size={72} />
         <ActivityIndicator size="large" color="#0077B6" style={styles.spinner} />
       </View>
@@ -119,6 +127,16 @@ export function RootNavigator() {
         <Stack.Screen name="HelpDeskChat" component={HelpDeskChatScreen} />
         <Stack.Screen name="EventZone" component={EventZoneScreen} />
         <Stack.Screen name="EventZoneChat" component={EventZoneChatScreen} />
+        <Stack.Screen name="EventGameDetail" component={EventGameDetailScreen} />
+        <Stack.Screen name="EventGameCamera" component={EventGameCameraScreen} />
+        <Stack.Screen
+          name="EventParticipationHistory"
+          component={EventParticipationHistoryScreen}
+        />
+        <Stack.Screen name="EventAlbum" component={EventAlbumScreen} />
+        <Stack.Screen name="EventTitles" component={EventTitlesScreen} />
+        <Stack.Screen name="EventRewards" component={EventRewardsScreen} />
+        <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -76,9 +76,8 @@ export function BusanZoneMap({
 
   return (
     <View
-      style={styles.root}
+      style={[styles.root, { backgroundColor: EVENT_MAP_BG }]}
       className="flex-1 overflow-hidden"
-      style={{ backgroundColor: EVENT_MAP_BG }}
       onLayout={onLayout}
       {...panHandlers}>
       <Animated.View style={cameraStyle}>

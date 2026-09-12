@@ -36,6 +36,7 @@ import { getNearestUpcomingStop } from '../../utils/plan/planSchedule';
 import { resolvePlanTravelStatus } from '../../utils/plan/planTravelStatus';
 import { isTravelRecordPublic } from '../../utils/review/travelReview';
 import { usePlanPicker } from '../plan/usePlanPicker';
+import { useLocationCache } from '../location/useLocationCache';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useSessionActiveTravelsSyncOnFocus } from '../useSessionActiveTravelsSync';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
@@ -55,8 +56,9 @@ export function useMainHomeScreen({
   forceShowRebootFab = false,
   guideScrollTargetId = null,
 }: UseMainHomeScreenParams) {
+  useLocationCache();
   const insets = useSafeAreaInsets();
-  const { goToTab } = useMainTabNavigation();
+  const { goToTab, activeTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
   const { showUnavailable } = useFeatureUnavailableAlert();
   const scrollRef = useRef<ScrollView>(null);
@@ -94,7 +96,7 @@ export function useMainHomeScreen({
       enabled: showSyncStatus,
       message: planDetailCopy.offlineSyncNotice,
     });
-  useSessionActiveTravelsSyncOnFocus();
+  useSessionActiveTravelsSyncOnFocus(activeTab === 'home');
 
   const [latestTravelogue, setLatestTravelogue] = useState<TravelRecord | null>(null);
   const [loadingTravelogue, setLoadingTravelogue] = useState(true);

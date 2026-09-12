@@ -1,4 +1,4 @@
-jest.mock('../src/components/feed/useTravelogueSocialActions', () => ({
+jest.mock('../src/hooks/feed/useTravelogueSocialActions', () => ({
   TravelogueSocialError: class TravelogueSocialError extends Error {},
   useTravelogueSocialActions: () => ({}),
 }));

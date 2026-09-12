@@ -3,6 +3,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ICON_COLOR_MUTED, ICON_COLOR_PRIMARY, NAVBAR_TAB_ICONS } from '../../../constants/icons';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
@@ -58,6 +59,7 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
 
   return (
     <View
+      testID={TEST_ID.navbar.root}
       className="absolute bottom-0 left-0 right-0 z-50 overflow-hidden"
       style={{
         paddingBottom: bottomPad,
@@ -106,8 +108,10 @@ export function Navbar({ activeTab, language = 'ko', onTabPress }: NavbarProps) 
           const tabButton = (
             <Pressable
               onPress={() => onTabPress(tab.id)}
+              testID={TEST_ID.navbar.tab(tab.id)}
               className="min-w-[56px] flex-1 items-center py-1 active:opacity-70"
               accessibilityRole="button"
+              accessibilityLabel={label}
               accessibilityState={{ selected: active }}>
               <AppIcon
                 name={NAVBAR_TAB_ICONS[tab.id]}

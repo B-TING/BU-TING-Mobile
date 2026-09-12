@@ -15,6 +15,7 @@ type OptionCardProps = {
   icon?: LucideIconName;
   /** 2열 그리드 셀 */
   grid?: boolean;
+  testID?: string;
 };
 
 export function OptionCard({
@@ -26,12 +27,14 @@ export function OptionCard({
   emoji,
   icon,
   grid = false,
+  testID,
 }: OptionCardProps) {
   const showMedia = Boolean(emoji || icon);
 
   return (
     <Pressable
       onPress={onPress}
+      testID={testID}
       style={grid ? { width: '48%' } : undefined}
       className={cn(
         'rounded-[20px] border border-brand-border bg-white active:opacity-90',

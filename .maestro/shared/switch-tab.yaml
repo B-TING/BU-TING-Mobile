@@ -1,0 +1,16 @@
+appId: com.butingmobile
+name: Shared switch main tab
+tags:
+  - shared
+---
+# TAB: navbar.tab.* / SCREEN: 해당 화면 testID
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: ${TAB}
+      - runFlow: dismiss-optional.yaml
+      - waitForAnimationToEnd:
+          timeout: 4000
+      - assertVisible:
+          id: ${SCREEN}

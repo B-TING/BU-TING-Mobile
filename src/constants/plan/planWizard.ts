@@ -272,6 +272,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: string;
     creatingManual: string;
     createManualError: string;
+    createAiError: string;
     createAiNeedPlaces: string;
     pickPlan: string;
     days: (n: number) => string;
@@ -318,6 +319,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'AI에게 일정 요청 중…',
     creatingManual: '여행 일정 생성 중…',
     createManualError: '여행 생성에 실패했습니다. 로그인 상태와 API 서버를 확인해 주세요.',
+    createAiError: 'AI 일정 생성에 실패했습니다. 빈 일정은 삭제했어요.',
     createAiNeedPlaces: '가고 싶은 관광지를 1곳 이상 선택해 주세요.',
     pickPlan: '이 일정으로 시작',
     days: n => `${n}일`,
@@ -363,6 +365,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'Requesting plan from AI…',
     creatingManual: 'Creating your trip…',
     createManualError: 'Could not create the trip. Check login and API server.',
+    createAiError: 'AI could not create the plan. The empty trip was removed.',
     createAiNeedPlaces: 'Pick at least one place you want to visit.',
     pickPlan: 'Start with this plan',
     days: n => `${n} days`,
@@ -408,6 +411,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: 'AIにリクエスト中…',
     creatingManual: '旅行を作成中…',
     createManualError: '旅行の作成に失敗しました。ログインとAPIを確認してください。',
+    createAiError: 'AIの行程作成に失敗しました。空の旅行は削除しました。',
     createAiNeedPlaces: '行きたい観光地を1件以上選んでください。',
     pickPlan: 'このプランで開始',
     days: n => `${n}日`,
@@ -453,6 +457,7 @@ export const PLAN_WIZARD_COPY: Record<
     generating: '正在向 AI 请求行程…',
     creatingManual: '正在创建旅行…',
     createManualError: '创建旅行失败。请检查登录和 API 服务器。',
+    createAiError: 'AI 行程生成失败。已删除空行程。',
     createAiNeedPlaces: '请至少选择 1 个想去的景点。',
     pickPlan: '使用此行程',
     days: n => `${n}天`,

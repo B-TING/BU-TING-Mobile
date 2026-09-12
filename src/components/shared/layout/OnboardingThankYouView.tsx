@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ONBOARDING_COMPLETE_DELAY_MS } from '../../../constants/setup/onboarding';
 import { layout } from '../../../constants/common/layout';
 
@@ -31,6 +32,7 @@ export function OnboardingThankYouView({
 
   return (
     <View
+      testID={TEST_ID.onboarding.thankYou}
       className="flex-1 bg-brand-background px-8"
       style={[layout.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }]}>
       {onBack && backLabel ? (

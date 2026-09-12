@@ -36,6 +36,26 @@ export const ZONE_EVENT_TYPE_META: Record<
     defaultDurationMinutes: 30,
     descriptionKo: '다른 구역 유저와 실시간 대결! 알림을 켠 유저 대상.',
   },
+  PLACE_AUTH: {
+    labelKo: '장소 인증 미션',
+    emoji: '📍',
+    defaultDurationMinutes: 45,
+    descriptionKo:
+      '목표 장소 반경 안에서 촬영·제출하세요. GPS 1차 통과 후 관리자 검수로 확정됩니다.',
+  },
+  OBJECT_AUTH: {
+    labelKo: '사물 인증 미션',
+    emoji: '🔍',
+    defaultDurationMinutes: 30,
+    descriptionKo:
+      '목표 사물을 반경 안에서 촬영·제출하세요. GPS 1차 통과 후 관리자 검수로 확정됩니다.',
+  },
+  MUKJJIPPA: {
+    labelKo: '묵찌빠 대결',
+    emoji: '✊',
+    defaultDurationMinutes: 20,
+    descriptionKo: '다른 구역 유저와 묵찌빠로 대결해 승리하세요. (목업)',
+  },
 };
 
 export const ZONE_EVENT_TYPES: ZoneEventType[] = Object.keys(
@@ -71,12 +91,29 @@ export function buildRandomMockZoneEvent(): ZoneEvent {
   return buildMockZoneEvent(zone.id, type);
 }
 
-/** 이벤트 종료 시각 계산 */
+/** 이벤트 종료 시각 계산 (API endsAt 우선) */
 export function zoneEventEndsAt(event: ZoneEvent): number {
+  if (event.endsAt) {
+    const parsed = new Date(event.endsAt).getTime();
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
   return new Date(event.startsAt).getTime() + event.durationMinutes * 60_000;
 }
 
+export function zoneEventTypeCode(event: ZoneEvent): string {
+  return event.typeCode ?? event.type;
+}
+
 export function isZoneEventActive(event: ZoneEvent, now = Date.now()): boolean {
+  if (event.status === 'CLOSED' || event.status === 'CANCELLED') {
+    return false;
+  }
+  if (typeof event.remainingSeconds === 'number' && event.fetchedAt != null) {
+    const elapsedSec = Math.floor((now - event.fetchedAt) / 1000);
+    return event.remainingSeconds - elapsedSec > 0;
+  }
   const start = new Date(event.startsAt).getTime();
   return now >= start && now < zoneEventEndsAt(event);
 }

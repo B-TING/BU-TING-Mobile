@@ -16,9 +16,9 @@ export const FULL_MAP_FOCUS: MapFocusRect = {
   height: BUSAN_SVG_VIEWBOX.height,
 };
 
-/** 랜드마크 무게중심이 화면 좌상단(헤더 아래)에 오도록 하는 앵커 */
-const LANDMARK_SCREEN_ANCHOR_X = 0.30;
-const LANDMARK_SCREEN_ANCHOR_Y = 0.27;
+/** 패널(우하단) 공간 확보 — 구역 중심을 화면 왼쪽~중앙에 배치 */
+const LANDMARK_SCREEN_ANCHOR_X = 0.24;
+const LANDMARK_SCREEN_ANCHOR_Y = 0.32;
 
 const MIN_FOCUS_ZOOM_WIDTH = 220;
 const MIN_FOCUS_ZOOM_HEIGHT = 220;

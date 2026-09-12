@@ -5,6 +5,7 @@ import {
   GOOGLE_BUTTON,
   OAUTH_BUTTON_HEIGHT,
 } from '../../constants/auth/oauthButtonStyle';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import type { AppLanguage } from '../../types/user';
 import { cn } from '../../utils/common/cn';
 import { GoogleGIcon } from './icons/GoogleGIcon';
@@ -25,6 +26,7 @@ export function GoogleSignInButton({ language, disabled = false, onPress }: Prop
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={TEST_ID.login.google}
       className={cn('mb-3 w-full active:opacity-90', disabled && 'opacity-50')}>
       <View
         style={{

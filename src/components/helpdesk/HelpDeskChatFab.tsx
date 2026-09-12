@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { ICON_COLOR_WHITE } from '../../constants/icons';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../guide/guideTypes';
 import { GuideTarget } from '../guide/GuideTarget';
 import { AppIcon } from '../shared/icons/AppIcon';
@@ -80,6 +81,7 @@ export function HelpDeskChatFab({ onPress, bottom, accessibilityLabel }: HelpDes
           onPressOut={animateOut}
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
+          testID={TEST_ID.home.helpFab}
           style={styles.pressable}>
           <Animated.View
             style={[styles.fab, { transform: [{ scale }], opacity }]}>

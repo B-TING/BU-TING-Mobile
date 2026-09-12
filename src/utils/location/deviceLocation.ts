@@ -27,6 +27,22 @@ export async function requestFineLocationPermission(): Promise<LocationPermissio
   }
 }
 
+/** 이미 허용된 경우만. 폴링에서 권한 다이얼로그를 띄우지 않는다. */
+export async function checkFineLocationPermission(): Promise<LocationPermissionResult> {
+  if (Platform.OS !== 'android') {
+    return 'granted';
+  }
+
+  try {
+    const granted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+    return granted ? 'granted' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 /** 앱 사용 중(foreground) 현재 좌표. 실패 시 null. */
 export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
   const readOnce = (enableHighAccuracy: boolean) =>
@@ -41,9 +57,9 @@ export function getCurrentCoordinates(): Promise<EventZoneCoordinate | null> {
         () => resolve(null),
         {
           enableHighAccuracy,
-          timeout: enableHighAccuracy ? 12_000 : 8_000,
-          // 구역 판별은 캐시된(옛) 부산 좌표로 오인되면 안 됨
-          maximumAge: 0,
+          timeout: enableHighAccuracy ? 8_000 : 5_000,
+          // 10초 이내 캐시 재사용으로 응답 속도 개선 (구역 판별 오차 허용 범위)
+          maximumAge: 10_000,
         },
       );
     });

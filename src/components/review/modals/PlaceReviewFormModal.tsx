@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -25,7 +24,7 @@ import { pickReviewMedia } from '../../../utils/media/pickMedia';
 import { AppIcon } from '../../shared/icons/AppIcon';
 import { ResolvedRemoteImage } from '../../shared/media/ResolvedRemoteImage';
 import { ReviewVideoThumb } from '../../shared/media/ReviewVideoViews';
-import { AppModal, AppModalActions } from '../../shared/modals';
+import { AppModal, AppModalActions, useAppAlert } from '../../shared/modals';
 import { StarRating } from '../../shared/rating/StarRating';
 import { MediaPermissionDisclosure } from './MediaPermissionDisclosure';
 import { MediaSourcePickModal } from './MediaSourcePickModal';
@@ -84,6 +83,7 @@ export function PlaceReviewFormModal({
   onDelete,
   saving = false,
 }: PlaceReviewFormModalProps) {
+  const { alert } = useAppAlert();
   const [rating, setRating] = useState(5);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -144,7 +144,7 @@ export function PlaceReviewFormModal({
       return;
     }
     if (result.status === 'error') {
-      Alert.alert(result.message || copy.mediaPickFailed);
+      alert({ title: result.message || copy.mediaPickFailed });
     }
   };
 
@@ -223,7 +223,7 @@ export function PlaceReviewFormModal({
       return;
     }
     if (media.length >= MAX_MEDIA) {
-      Alert.alert(copy.mediaLimitReached);
+      alert({ title: copy.mediaLimitReached });
       return;
     }
     setSourcePickType(mediaType);

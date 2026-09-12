@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Platform, Pressable, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ICON_COLOR_DEFAULT } from '../../../constants/icons';
 import { BrandLogo } from '../brand/BrandLogo';
 import { AppIcon } from '../icons/AppIcon';
@@ -38,6 +39,7 @@ export function AppBar({ onMenuPress, onProfilePress, topRightAccessory }: AppBa
         <Pressable
           onPress={onMenuPress}
           hitSlop={12}
+          testID={TEST_ID.appBar.menu}
           className="h-10 w-10 items-center justify-center active:opacity-70"
           accessibilityRole="button"
           accessibilityLabel="메뉴">
@@ -51,6 +53,7 @@ export function AppBar({ onMenuPress, onProfilePress, topRightAccessory }: AppBa
           <Pressable
             onPress={onProfilePress}
             hitSlop={12}
+            testID={TEST_ID.appBar.profile}
             className="active:opacity-70"
             accessibilityRole="button"
             accessibilityLabel="프로필">

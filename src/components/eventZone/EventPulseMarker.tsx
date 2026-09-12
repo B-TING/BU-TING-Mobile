@@ -1,10 +1,12 @@
 import { memo, useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
-const EVENT_GLOW_COLOR = '#E91E63';
+const EVENT_GLOW_COLOR = '#EE82EE';
 const RING_DURATION_MS = 2200;
-const RING_SIZE = 160;
-const CORE_SIZE = 28;
+const RING_SIZE = 72;
+const PIN_WIDTH = 22;
+const PIN_HEIGHT = 32;
 
 type EventPulseMarkerProps = {
   /** 레이아웃 픽셀 좌표 (카메라 래퍼 내부, transform 적용 전) */
@@ -55,7 +57,7 @@ function ExpandingRingView({
   });
   const opacity = progress.interpolate({
     inputRange: [0, 0.1, 0.55, 1],
-    outputRange: [0, 0.65, 0.3, 0],
+    outputRange: [0, 0.35, 0.16, 0],
   });
 
   return (
@@ -72,8 +74,20 @@ function ExpandingRingView({
   );
 }
 
+function MapPinIcon() {
+  return (
+    <Svg width={PIN_WIDTH} height={PIN_HEIGHT} viewBox="0 0 24 36">
+      <Path
+        d="M12 0C5.373 0 0 5.373 0 12c0 8.4 12 24 12 24s12-15.6 12-24C24 5.373 18.627 0 12 0z"
+        fill={EVENT_GLOW_COLOR}
+      />
+      <Circle cx="12" cy="12" r="5" fill="#FFFFFF" />
+    </Svg>
+  );
+}
+
 /**
- * 이벤트 비콘 — RN View + native driver (scale/opacity).
+ * 이벤트 지도 핀 — RN View + native driver (scale/opacity).
  * SVG path 트리와 분리되어 pulse 프레임이 구 Path 를 dirty 하지 않는다.
  */
 export const EventPulseMarker = memo(function EventPulseMarker({
@@ -111,11 +125,19 @@ export const EventPulseMarker = memo(function EventPulseMarker({
 
   const haloScale = corePulse.interpolate({
     inputRange: [0.7, 1],
-    outputRange: [1, 1.3],
+    outputRange: [1, 1.16],
   });
   const haloOpacity = corePulse.interpolate({
     inputRange: [0.7, 1],
-    outputRange: [0.22, 0.38],
+    outputRange: [0.12, 0.22],
+  });
+  const pinScale = corePulse.interpolate({
+    inputRange: [0.7, 1],
+    outputRange: [1, 1.06],
+  });
+  const pinLift = corePulse.interpolate({
+    inputRange: [0.7, 1],
+    outputRange: [0, -2],
   });
 
   return (
@@ -132,16 +154,22 @@ export const EventPulseMarker = memo(function EventPulseMarker({
       <ExpandingRingView delayMs={RING_DURATION_MS / 2} active={active} />
       <Animated.View
         style={[
-          styles.halo,
+          styles.groundHalo,
           {
             opacity: haloOpacity,
             transform: [{ scale: haloScale }],
           },
         ]}
       />
-      <View style={styles.coreOuter}>
-        <View style={styles.coreInner} />
-      </View>
+      <Animated.View
+        style={[
+          styles.pinWrap,
+          {
+            transform: [{ translateY: pinLift }, { scale: pinScale }],
+          },
+        ]}>
+        <MapPinIcon />
+      </Animated.View>
     </View>
   );
 });
@@ -159,28 +187,27 @@ const styles = StyleSheet.create({
     width: RING_SIZE,
     height: RING_SIZE,
     borderRadius: RING_SIZE / 2,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: EVENT_GLOW_COLOR,
   },
-  halo: {
+  groundHalo: {
     position: 'absolute',
-    width: CORE_SIZE + 16,
-    height: CORE_SIZE + 16,
-    borderRadius: (CORE_SIZE + 16) / 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: EVENT_GLOW_COLOR,
   },
-  coreOuter: {
-    width: CORE_SIZE,
-    height: CORE_SIZE,
-    borderRadius: CORE_SIZE / 2,
-    backgroundColor: EVENT_GLOW_COLOR,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coreInner: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: '#FFFFFF',
+  pinWrap: {
+    position: 'absolute',
+    left: (RING_SIZE - PIN_WIDTH) / 2,
+    top: RING_SIZE / 2 - PIN_HEIGHT,
+    width: PIN_WIDTH,
+    height: PIN_HEIGHT,
+    transformOrigin: 'bottom',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 3,
+    elevation: 3,
   },
 });

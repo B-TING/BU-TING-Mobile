@@ -1,6 +1,9 @@
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useIsFocused } from '@react-navigation/native';
+
 import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
+import { EventChip } from '../../eventZone/EventChip';
 import { MapEdgeFadeOverlay } from '../../eventZone/MapEdgeFadeOverlay';
 import {
   EVENT_ZONE_BY_ID,
@@ -14,7 +17,9 @@ import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
-import { isAlphaFeatureBlocked } from '../../../constants/common/alphaFeatureBlocks';
+import { canQueryZoneEvents, useHydrateZoneEvents } from '../../../hooks/eventZone/useHydrateZoneEvents';
+import { useMainTabNavigationOptional } from '../../../navigation/mainTabNavigation';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
 
@@ -56,8 +61,13 @@ export function HomeEventZoneSection({
   const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
+  const isScreenFocused = useIsFocused();
+  const activeTab = useMainTabNavigationOptional()?.activeTab;
+  const pollEvents =
+    canQueryZoneEvents() && isScreenFocused && (activeTab == null || activeTab === 'home');
+  useHydrateZoneEvents(pollEvents);
   const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
-  const activeEvent = isAlphaFeatureBlocked('zoneEvent') ? undefined : activeEventRaw;
+  const activeEvent = canQueryZoneEvents() ? activeEventRaw : undefined;
 
   return (
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
@@ -93,6 +103,7 @@ export function HomeEventZoneSection({
         <View className="absolute inset-0 overflow-hidden">
           <Pressable
             onPress={onMapPress}
+            testID={TEST_ID.home.eventZoneMap}
             className="h-full w-full active:opacity-95"
             accessibilityRole="button"
             accessibilityLabel={copy.mapA11y}>
@@ -112,28 +123,18 @@ export function HomeEventZoneSection({
           ]}>
           <View>
             <View className="flex-row items-center gap-1">
-              <Text className="flex-1 text-sm font-bold text-brand-text" numberOfLines={1}>
+              <Text className="min-w-0 flex-1 text-sm font-bold text-brand-text" numberOfLines={1}>
                 {eventZoneName(zone, language)}
               </Text>
-              {activeEvent ? (
-                <View className="rounded-full bg-pink-600 px-1.5 py-0.5">
-                  <Text className="text-[9px] font-bold text-white">{zoneCopy.eventActiveBadge}</Text>
-                </View>
-              ) : null}
+              {activeEvent ? <EventChip label={zoneCopy.eventActiveBadge} /> : null}
             </View>
-            
-            <View className="flex-row justify-between gap-1 w-full">
+
             {room ? (
               <Text className="mt-0.5 text-[10px] font-semibold text-brand-primary">
                 {zoneCopy.chatMemberCount(liveMemberCount ?? room.memberCount)}
               </Text>
             ) : null}
-            {activeEvent ? (
-              <Text className="mt-0.5 text-[10px] font-semibold text-pink-600 ellipsis" numberOfLines={1}>
-                ⚡ {activeEvent.titleKo}
-              </Text>
-            ) : null}
-            </View>
+
             <Text className="mb-1.5 mt-2 text-[10px] font-bold uppercase tracking-wide text-brand-muted">
               {copy.landmarksTitle}
             </Text>
@@ -143,7 +144,7 @@ export function HomeEventZoneSection({
                   key={landmark.id}
                   className="flex-row items-center rounded-lg bg-brand-background px-2 py-1">
                   <Text className="mr-1.5 text-xs">{landmark.emoji}</Text>
-                  <Text className="flex-1 text-[11px] font-medium text-brand-text" numberOfLines={1}>
+                  <Text className="min-w-0 flex-1 text-[11px] font-medium text-brand-text" numberOfLines={1}>
                     {landmarkName(landmark, language)}
                   </Text>
                 </View>
@@ -154,6 +155,7 @@ export function HomeEventZoneSection({
           <Pressable
             onPress={() => onEnterChat(chatZoneId)}
             disabled={!room}
+            testID={TEST_ID.home.eventZoneChat}
             className={`mt-2 items-center rounded-xl py-2 active:opacity-90 ${
               room ? 'bg-brand-primary' : 'bg-brand-border'
             }`}

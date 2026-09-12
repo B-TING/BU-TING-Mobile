@@ -1,0 +1,16 @@
+appId: com.butingmobile
+name: Helpdesk — alpha blocked alert
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.helpFab
+- extendedWaitUntil:
+    visible:
+      id: alert.featureUnavailable
+    timeout: 8000
+- tapOn:
+    id: alert.confirm
+- assertVisible:
+    id: home.screen

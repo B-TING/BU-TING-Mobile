@@ -17,6 +17,8 @@ import {
 } from '../utils/places/festivalApiMapper';
 import { logPlacesApiError } from '../utils/places/placesApiLogger';
 
+const EMPTY_FESTIVALS: BusanFestival[] = [];
+
 type FestivalCacheEntry = {
   festivals: BusanFestival[];
   error: string | null;
@@ -67,7 +69,7 @@ function homeDateRange(): { eventStartDate: string; eventEndDate: string } {
 export const useFestivalStore = create<FestivalState>()((set, get) => ({
   cacheByMonth: {},
   festivalsById: {},
-  homeFestivals: [],
+  homeFestivals: EMPTY_FESTIVALS,
   loadingByMonth: {},
   loadingHome: false,
   loadingDetailById: {},
@@ -78,9 +80,10 @@ export const useFestivalStore = create<FestivalState>()((set, get) => ({
   getFestivalsForMonth: (year, month) => {
     const entry = get().cacheByMonth[monthKey(year, month)];
     if (!entry) {
-      return [];
+      return EMPTY_FESTIVALS;
     }
-    return festivalsInMonth(entry.festivals, year, month);
+    const filtered = festivalsInMonth(entry.festivals, year, month);
+    return filtered.length === 0 ? EMPTY_FESTIVALS : filtered;
   },
 
   isMonthLoading: (year, month) => get().loadingByMonth[monthKey(year, month)] ?? false,
@@ -197,7 +200,7 @@ export const useFestivalStore = create<FestivalState>()((set, get) => ({
       });
 
       set({
-        homeFestivals: [],
+        homeFestivals: EMPTY_FESTIVALS,
         homeError: message,
         loadingHome: false,
       });

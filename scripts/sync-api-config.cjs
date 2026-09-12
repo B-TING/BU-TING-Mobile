@@ -69,6 +69,11 @@ export const TRAVEL_SURVEY_ENDPOINTS = {
 
 export const USER_ENDPOINTS = {
   me: '/api/v1/users/me',
+  rewards: '/api/v1/users/me/rewards',
+  pointLedger: '/api/v1/users/me/point-ledger',
+  zoneSubscriptions: '/api/v1/users/me/zone-subscriptions',
+  /** FCM 연동 전까지 앱에서 호출하지 않음 */
+  notificationSettings: '/api/v1/users/me/notification-settings',
 } as const;
 
 export const PLACES_ENDPOINTS = {
@@ -94,6 +99,8 @@ export const TRAVEL_ENDPOINTS = {
   travelPlanById: (travelId: string, planId: string) =>
     \`/api/v1/travels/\${travelId}/plans/\${planId}\`,
   travelStatus: (travelId: string) => \`/api/v1/travels/\${travelId}/status\`,
+  /** POST /api/v1/travels/{travelId}/ai-plans */
+  aiPlans: (travelId: string) => \`/api/v1/travels/\${travelId}/ai-plans\`,
   planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
   planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,
@@ -134,6 +141,60 @@ export const STORAGE_ENDPOINTS = {
 
 export const FILE_ENDPOINTS = {
   files: '/api/v1/files',
+} as const;
+
+export const ZONE_EVENT_ENDPOINTS = {
+  /** GET /api/v1/zone-events/active?zone= */
+  active: '/api/v1/zone-events/active',
+  /** GET /api/v1/zone-events/{eventId} */
+  detail: (eventId: string) => \`/api/v1/zone-events/\${eventId}\`,
+  /** GET /api/v1/zone-event-rounds/current */
+  currentRound: '/api/v1/zone-event-rounds/current',
+  /** POST /api/v1/zone-events/{eventId}/participations */
+  join: (eventId: string) => \`/api/v1/zone-events/\${eventId}/participations\`,
+  /** GET /api/v1/zone-events/{eventId}/participations/me */
+  myParticipations: (eventId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/me\`,
+  /** DELETE /api/v1/zone-events/{eventId}/participations/{participationId} */
+  cancelParticipation: (eventId: string, participationId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/\${participationId}\`,
+  /** POST /api/v1/zone-events/{eventId}/participations/{participationId}/submit */
+  submit: (eventId: string, participationId: string) =>
+    \`/api/v1/zone-events/\${eventId}/participations/\${participationId}/submit\`,
+  /** GET /api/v1/users/me/zone-event-participations */
+  myHistory: '/api/v1/users/me/zone-event-participations',
+  /** GET /api/v1/zone-events/{eventId}/album */
+  eventAlbum: (eventId: string) => \`/api/v1/zone-events/\${eventId}/album\`,
+  /** GET /api/v1/zones/{zoneId}/album */
+  zoneAlbum: (zoneId: string) => \`/api/v1/zones/\${zoneId}/album\`,
+  /** GET /api/v1/zone-event-rounds/{roundId}/album */
+  roundAlbum: (roundId: string) => \`/api/v1/zone-event-rounds/\${roundId}/album\`,
+  /** PATCH /api/v1/zone-event-participations/{id}/visibility */
+  visibility: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/visibility\`,
+  /** POST/DELETE /api/v1/zone-event-participations/{id}/likes */
+  likes: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/likes\`,
+  /** GET/POST /api/v1/zone-event-participations/{id}/comments */
+  comments: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/comments\`,
+  /** PATCH/DELETE /api/v1/zone-event-participations/{id}/comments/{commentId} */
+  commentById: (participationId: string, commentId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/comments/\${commentId}\`,
+  /** POST /api/v1/zone-event-participations/{id}/reports */
+  reports: (participationId: string) =>
+    \`/api/v1/zone-event-participations/\${participationId}/reports\`,
+} as const;
+
+export const ZONE_TITLE_ENDPOINTS = {
+  /** GET /api/v1/zone-titles — 비로그인 가능 */
+  list: '/api/v1/zone-titles',
+  /** GET /api/v1/users/me/zone-titles */
+  me: '/api/v1/users/me/zone-titles',
+  /** PATCH /api/v1/users/me/zone-titles/{userTitleId}/equip */
+  equip: (userTitleId: string) => \`/api/v1/users/me/zone-titles/\${userTitleId}/equip\`,
+  /** DELETE /api/v1/users/me/zone-titles/equipped */
+  unequip: '/api/v1/users/me/zone-titles/equipped',
 } as const;
 
 export const TRAVEL_RECORD_ENDPOINTS = {

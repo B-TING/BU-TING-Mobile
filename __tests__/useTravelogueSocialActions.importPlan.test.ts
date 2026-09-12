@@ -85,7 +85,7 @@ jest.mock('../src/stores', () => ({
 }));
 
 import { TRAVEL_REVIEW_COPY } from '../src/constants/review/travelReview';
-import { useTravelogueSocialActions } from '../src/components/feed/useTravelogueSocialActions';
+import { useTravelogueSocialActions } from '../src/hooks/feed/useTravelogueSocialActions';
 import type { TravelRecord } from '../src/types/travelReview';
 import { act, renderHook } from './helpers/renderHook';
 

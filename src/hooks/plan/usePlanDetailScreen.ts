@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  type PlanScheduleTabHandle,
-  type ScheduleModalState,
-} from '../../components/plan/tabs/PlanScheduleTab';
 import { getNavbarActionBarInset, getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { type PlanDetailTab } from '../../constants/plan/planDetail';
 import { useAppLanguage, useCopy } from '../../i18n';
@@ -15,42 +10,11 @@ import {
   ALPHA_FEATURE_LABELS,
   isAlphaFeatureBlocked,
 } from '../../constants/common/alphaFeatureBlocks';
-import { useBusanSearchLocationWhen } from '../usePlaceMapUserLocation';
 import { usePlanRoutePlaceDetails } from '../usePlanRoutePlaceDetails';
 import { useTravelExpensesSync } from '../useTravelExpensesSync';
 import { useTravelMembersSync } from '../useTravelMembersSync';
 import type { RootStackParamList } from '../../navigation/types';
 import { navigateToMainTab } from '../../navigation/navigateToMainTab';
-import {
-  addPlanPlaceFromCandidate,
-  findDayRoute,
-  getDayRoutesFromPlan,
-  removePlanPlaceFromApi,
-  replacePlanPlaceFromCandidate,
-  routesInItemOrder,
-  updatePlanPlaceMemoOnApi,
-  updatePlanPlaceOrderOnApi,
-  updatePlanPlaceVisitedOnApi,
-} from '../../services/travel/planPlaceSync';
-import {
-  addPlanDayOnApi,
-  canAddPlanDay,
-  canRemovePlanDay,
-  computeNextPlanDay,
-  removePlanDayOnApi,
-} from '../../services/travel/planDaySync';
-import {
-  budgetEntryToCreateRequest,
-  expenseCreateResponseToBudgetEntry,
-} from '../../services/travel/travelExpenseMapper';
-import { createTravelExpense } from '../../services/travel/travelExpenseService';
-import { resolveTravelInviteLink, leaveTravelTeam, transferTravelLeader, removeTravelMember } from '../../services/travel/travelTeamService';
-import { TravelServiceError, updateTravelStatus } from '../../services/travel/travelService';
-import {
-  PlaceReviewSyncError,
-  savePlaceReviewForTravel,
-} from '../../services/travel/savePlaceReviewForTravel';
-import { deletePlaceReviewForTravel } from '../../services/travel/deletePlaceReviewForTravel';
 import { loadPlanPlaceReviewsForTravel } from '../../services/travel/loadPlanPlaceReviewsForTravel';
 import { fetchMyTravelRecords } from '../../services/travel/travelRecordService';
 import {
@@ -64,38 +28,18 @@ import {
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
+import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
+import { usePlanDetailBudget } from './usePlanDetailBudget';
+import { usePlanDetailMembers } from './usePlanDetailMembers';
+import { usePlanDetailReviews } from './usePlanDetailReviews';
+import { usePlanDetailSchedule } from './usePlanDetailSchedule';
 import { usePlanPicker } from './usePlanPicker';
-import type { BudgetEntry, PlanMember, RouteItem, TravelLegMode } from '../../types/travelPlan';
-import type { PlaceReview } from '../../types/travelReview';
 import { sortedRoutes } from '../../utils/plan/planItinerary';
-import { optimizeRouteOrder } from '../../utils/plan/routeOptimize';
-import {
-  buildMemberSummariesFromBudgetEntries,
-  buildTransfersFromMemberSummaries,
-  pickCurrencyMemberSummaries,
-} from '../../utils/plan/budgetSettlementPreview';
-import {
-  candidateToRouteItem,
-  type RebootPlaceCandidate,
-} from '../../utils/places/rebootPlaces';
 import {
   mergeRouteWithPlaceDetail,
   resolveRouteImageUrl,
 } from '../../utils/places/routePlaceDetail';
-import { usePlaceDetailCacheStore } from '../../stores/usePlaceDetailCacheStore';
-import { getReviewForPlace, reviewProgress } from '../../utils/review/travelReview';
-import { lockPlanScheduleIfApiError } from '../../utils/travel/scheduleApiLock';
-import type { BudgetEntryDraft } from '../../components/plan/modals/BudgetEntryModal';
-
-const EMPTY_BUDGET: BudgetEntry[] = [];
-
-function seedCandidateRouteImage(candidate: RebootPlaceCandidate): void {
-  usePlaceDetailCacheStore.getState().seedImageUrl(candidate.placeId, candidate.imageUrl, {
-    name: candidate.placeName,
-    address: candidate.address,
-  });
-}
 
 export type UsePlanDetailScreenParams = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PlanDetail'>;
@@ -105,6 +49,7 @@ export type UsePlanDetailScreenParams = {
   embeddedInMainTabs?: boolean;
 };
 
+/** PlanDetail 화면 오케스트레이터 — 도메인 훅을 조합하고 화면 공통 상태를 관리합니다. */
 export function usePlanDetailScreen({
   navigation,
   paramPlanId,
@@ -120,16 +65,6 @@ export function usePlanDetailScreen({
   const plans = usePlanStore(s => s.plans);
   const plansHydrated = usePlanStore(s => s._hasHydrated);
   const activePlanId = usePlanStore(s => s.activePlanId);
-  const budgetByPlan = usePlanStore(s => s.budgetByPlan);
-  const toggleVisited = usePlanStore(s => s.toggleRouteVisited);
-  const replaceRoute = usePlanStore(s => s.replaceRouteInPlan);
-  const addRoute = usePlanStore(s => s.addRouteToPlan);
-  const removeRoute = usePlanStore(s => s.removeRouteFromPlan);
-  const reorderRoutes = usePlanStore(s => s.reorderRoutesInPlan);
-  const updateRouteMemo = usePlanStore(s => s.updateRouteMemo);
-  const addItineraryDay = usePlanStore(s => s.addItineraryDay);
-  const removeItineraryDay = usePlanStore(s => s.removeItineraryDay);
-  const addBudgetEntry = usePlanStore(s => s.addBudgetEntry);
   const completePlan = usePlanStore(s => s.completePlan);
   const displayName = useAppStore(s => s.auth.displayName) ?? 'Traveler';
   const accessToken = useAuthStore(selectReusableAccessToken);
@@ -158,6 +93,8 @@ export function usePlanDetailScreen({
   const copy = useCopy('planDetail');
   const pickerCopy = useCopy('mainHome');
   const setupCopy = useCopy('setup');
+  const { alert } = useAppAlert();
+  const { showUnavailable } = useFeatureUnavailableAlert();
   const { toastText, toastOpacity, showToast } = usePlanOfflineSyncFeedback({
     planId,
     enabled: isApiPlan,
@@ -168,16 +105,22 @@ export function usePlanDetailScreen({
     showToast(copy.offlineSyncNotice);
   }, [showToast, copy.offlineSyncNotice]);
 
+  const mainTabs = useMainTabNavigationOptional();
+  const syncEnabled =
+    isApiPlan &&
+    !offlineMode &&
+    (!embeddedInMainTabs || mainTabs?.activeTab === 'route');
+
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
-    enabled: isApiPlan && !offlineMode,
+    enabled: syncEnabled,
     accessToken,
   });
   const { syncMembers } = useTravelMembersSync({
     planId,
     travelId,
     accessToken,
-    enabled: isApiPlan && !offlineMode,
+    enabled: syncEnabled,
   });
   const {
     syncExpenses,
@@ -194,11 +137,13 @@ export function usePlanDetailScreen({
     accessToken,
     enabled: isApiPlan && !offlineMode,
   });
+
   const planReviews =
     useTravelRecordStore(s =>
       travelId ? s.reviewsByTravelId[travelId] : undefined,
     ) ?? EMPTY_REVIEWS;
   const [isPlanPublished, setIsPlanPublished] = useState(false);
+  const [tab, setTab] = useState<PlanDetailTab>(initialTab ?? 'overview');
 
   const planPlaceIdsKey = useMemo(() => {
     if (!plan) {
@@ -250,28 +195,6 @@ export function usePlanDetailScreen({
     void loadPlanPlaceReviewsForTravel({ accessToken, plan: current });
   }, [planId, accessToken, isApiPlan, planPlaceIdsKey]);
 
-  const budgetEntries = useMemo(
-    () => (planId ? budgetByPlan[planId] : undefined) ?? EMPTY_BUDGET,
-    [budgetByPlan, planId],
-  );
-
-  const reviewCopy = useCopy('travelReview');
-  const { alert } = useAppAlert();
-  const { showUnavailable } = useFeatureUnavailableAlert();
-
-  const [tab, setTab] = useState<PlanDetailTab>(initialTab ?? 'overview');
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>({ kind: 'none' });
-  const [scheduleReorderActive, setScheduleReorderActive] = useState(false);
-  const [reviewFormRoute, setReviewFormRoute] = useState<RouteItem | null>(null);
-  const [savingReview, setSavingReview] = useState(false);
-  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [inviteExpiredAt, setInviteExpiredAt] = useState<string | null>(null);
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-
   const {
     pickerPlans,
     canSwitchPlans,
@@ -299,483 +222,34 @@ export function usePlanDetailScreen({
     navigation.navigate('PlanWizard');
   }, [closePlanPicker, navigation, offlineMode]);
 
-  const viewedPlanIdRef = useRef(planId);
-  useEffect(() => {
-    if (viewedPlanIdRef.current === planId) {
-      return;
-    }
-    viewedPlanIdRef.current = planId;
-    setSelectedDay(1);
-    setScheduleModal({ kind: 'none' });
-    setScheduleReorderActive(false);
-    setReviewFormRoute(null);
-    setBudgetModalOpen(false);
-    setInviteModalOpen(false);
-    setSelectedMember(null);
-    setMemberActionError(null);
-  }, [planId]);
-
-  const canInvite = useMemo(() => {
-    if (!isApiPlan || !authUser?.userId || !plan) {
-      return false;
-    }
-    return plan.members.some(
-      member => member.userId === authUser.userId && member.role === 'LEADER',
-    );
-  }, [authUser?.userId, isApiPlan, plan]);
-
-  const canLeaveTrip = useMemo(() => {
-    if (!isApiPlan || offlineMode || !authUser?.userId || !plan) {
-      return false;
-    }
-    return plan.members.some(member => member.userId === authUser.userId);
-  }, [authUser?.userId, isApiPlan, offlineMode, plan]);
-
-  const [leavingTrip, setLeavingTrip] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<PlanMember | null>(null);
-  const [memberActionBusy, setMemberActionBusy] = useState(false);
-  const [memberActionError, setMemberActionError] = useState<string | null>(null);
-
-  const canTransferSelected = useMemo(() => {
-    if (!canInvite || offlineMode || !selectedMember) {
-      return false;
-    }
-    return selectedMember.role !== 'LEADER';
-  }, [canInvite, offlineMode, selectedMember]);
-
-  const canKickSelected = useMemo(() => {
-    if (!canInvite || offlineMode || !selectedMember || !authUser?.userId) {
-      return false;
-    }
-    return (
-      selectedMember.userId !== authUser.userId && selectedMember.role !== 'LEADER'
-    );
-  }, [authUser?.userId, canInvite, offlineMode, selectedMember]);
-
-  const settlementConfirmed = settlement?.confirmed === true;
-  const canConfirmSettlement = canInvite && !settlementConfirmed && !viewOnly;
-
-  const settlementMemberSummaries = useMemo(() => {
-    const fromApi = pickCurrencyMemberSummaries(summary?.currencySummaries);
-    if (fromApi.length > 0) {
-      return fromApi;
-    }
-    if (!plan || budgetEntries.length === 0) {
-      return [];
-    }
-    return buildMemberSummariesFromBudgetEntries(budgetEntries, plan.members);
-  }, [budgetEntries, plan, summary]);
-
-  const settlementForDisplay = useMemo(() => {
-    if (!settlement && settlementMemberSummaries.length === 0) {
-      return null;
-    }
-
-    const apiTransfers = settlement?.transfers ?? [];
-    if (apiTransfers.length > 0 || settlementConfirmed) {
-      return (
-        settlement ?? {
-          travelId: travelId ?? '',
-          confirmed: false,
-          transfers: [],
-        }
-      );
-    }
-
-    const localTransfers = buildTransfersFromMemberSummaries(settlementMemberSummaries);
-    return {
-      travelId: settlement?.travelId ?? travelId ?? '',
-      confirmed: settlement?.confirmed ?? false,
-      confirmedById: settlement?.confirmedById,
-      confirmedAt: settlement?.confirmedAt,
-      transfers: localTransfers,
-    };
-  }, [settlement, settlementConfirmed, settlementMemberSummaries, travelId]);
-
-  const loadInviteLink = useCallback(async () => {
-    if (!accessToken || !travelId) {
-      return;
-    }
-    setInviteLoading(true);
-    setInviteError(null);
-    try {
-      const result = await resolveTravelInviteLink(accessToken, travelId);
-      setInviteLink(result.inviteLink);
-      setInviteExpiredAt(result.expiredAt ?? null);
-    } catch (error) {
-      setInviteError(error instanceof Error ? error.message : copy.inviteLinkError);
-      setInviteLink(null);
-      setInviteExpiredAt(null);
-    } finally {
-      setInviteLoading(false);
-    }
-  }, [accessToken, copy.inviteLinkError, travelId]);
-
-  const handleInvite = useCallback(() => {
-    if (isAlphaFeatureBlocked('invite')) {
-      showUnavailable(ALPHA_FEATURE_LABELS.invite);
-      return;
-    }
-    if (!canInvite) {
-      alert({ title: copy.inviteMembers, message: copy.inviteLeaderOnly });
-      return;
-    }
-    setInviteModalOpen(true);
-    void loadInviteLink();
-  }, [
-    alert,
-    canInvite,
-    copy.inviteLeaderOnly,
-    copy.inviteMembers,
-    loadInviteLink,
-    showUnavailable,
-  ]);
-
-  const handleSaveBudgetEntry = useCallback(
-    async (entry: BudgetEntryDraft) => {
-      if (viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-
-      if (!isApiPlan || !accessToken || !travelId) {
-        addBudgetEntry(entry);
-        return;
-      }
-
-      if (settlementConfirmed) {
-        alert({
-          title: copy.budgetAdd,
-          message: copy.budgetSettlementLocked,
-        });
-        return;
-      }
-
-      try {
-        const request = budgetEntryToCreateRequest(entry);
-        const created = await createTravelExpense(accessToken, travelId, request);
-        addBudgetEntry(
-          expenseCreateResponseToBudgetEntry(created, planId, request.participantIds),
-        );
-        await refreshSettlementPreview();
-        void syncExpenses();
-      } catch (error) {
-        alert({
-          title: copy.budgetAdd,
-          message: error instanceof Error ? error.message : copy.budgetAdd,
-        });
-      }
-    },
-    [
-      accessToken,
-      addBudgetEntry,
-      alert,
-      copy.budgetAdd,
-      copy.budgetSettlementLocked,
-      isApiPlan,
-      notifyScheduleReadOnly,
-      planId,
-      refreshSettlementPreview,
-      scheduleReadOnly,
-      settlementConfirmed,
-      syncExpenses,
-      travelId,
-      viewOnly,
-    ],
-  );
-
-  const handleConfirmSettlement = useCallback(() => {
-    if (!canConfirmSettlement) {
-      alert({
-        title: copy.budgetSettlementConfirm,
-        message: copy.budgetSettlementLeaderOnly,
-      });
-      return;
-    }
-
-    alert({
-      title: copy.budgetSettlementConfirmTitle,
-      message: copy.budgetSettlementConfirmMessage,
-      buttons: [
-        { label: copy.budgetCancel, variant: 'secondary', onPress: () => {} },
-        {
-          label: copy.budgetSettlementConfirmAction,
-          variant: 'primary',
-          onPress: () => {
-            void (async () => {
-              try {
-                await confirmSettlement();
-              } catch (error) {
-                alert({
-                  title: copy.budgetSettlementConfirm,
-                  message:
-                    error instanceof Error ? error.message : copy.budgetSettlementError,
-                });
-              }
-            })();
-          },
-        },
-      ],
-    });
-  }, [
-    alert,
-    canConfirmSettlement,
-    confirmSettlement,
-    copy.budgetCancel,
-    copy.budgetSettlementConfirm,
-    copy.budgetSettlementConfirmAction,
-    copy.budgetSettlementConfirmMessage,
-    copy.budgetSettlementConfirmTitle,
-    copy.budgetSettlementError,
-    copy.budgetSettlementLeaderOnly,
-  ]);
-
-  const closeInviteModal = useCallback(() => {
-    setInviteModalOpen(false);
-    setInviteLink(null);
-    setInviteExpiredAt(null);
-    setInviteError(null);
-    void syncMembers();
-  }, [syncMembers]);
-
-  const openMemberActions = useCallback(
-    (member: PlanMember) => {
-      if (!authUser?.userId || member.userId === authUser.userId) {
-        return;
-      }
-      setMemberActionError(null);
-      setSelectedMember(member);
-    },
-    [authUser?.userId],
-  );
-
-  const closeMemberActions = useCallback(() => {
-    if (memberActionBusy) {
-      return;
-    }
-    setSelectedMember(null);
-    setMemberActionError(null);
-  }, [memberActionBusy]);
-
-  const handleTransferLeader = useCallback(async () => {
-    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
-      return;
-    }
-    setMemberActionBusy(true);
-    setMemberActionError(null);
-    try {
-      await transferTravelLeader(accessToken, travelId, selectedMember.userId);
-      await syncMembers();
-      const name = selectedMember.nickname;
-      setSelectedMember(null);
-      alert({
-        title: copy.transferLeader,
-        message: copy.transferLeaderSuccess(name),
-      });
-    } catch (error) {
-      setMemberActionError(
-        error instanceof Error ? error.message : copy.transferLeaderFailed,
-      );
-    } finally {
-      setMemberActionBusy(false);
-    }
-  }, [
-    accessToken,
-    alert,
-    copy.transferLeader,
-    copy.transferLeaderFailed,
-    copy.transferLeaderSuccess,
-    memberActionBusy,
-    selectedMember,
-    syncMembers,
-    travelId,
-  ]);
-
-  const requestTransferLeader = useCallback(() => {
-    if (!selectedMember || !canTransferSelected) {
-      return;
-    }
-    alert({
-      title: copy.transferLeaderConfirmTitle,
-      message: copy.transferLeaderConfirmMessage(selectedMember.nickname),
-      buttons: [
-        { label: copy.close, variant: 'secondary', onPress: () => {} },
-        {
-          label: copy.transferLeaderConfirm,
-          variant: 'primary',
-          onPress: () => {
-            void handleTransferLeader();
-          },
-        },
-      ],
-    });
-  }, [
-    alert,
-    canTransferSelected,
-    copy.close,
-    copy.transferLeaderConfirm,
-    copy.transferLeaderConfirmMessage,
-    copy.transferLeaderConfirmTitle,
-    handleTransferLeader,
-    selectedMember,
-  ]);
-
-  const handleKickMember = useCallback(async () => {
-    if (!accessToken || !travelId || !selectedMember || memberActionBusy) {
-      return;
-    }
-    setMemberActionBusy(true);
-    setMemberActionError(null);
-    try {
-      await removeTravelMember(accessToken, travelId, selectedMember.userId);
-      await syncMembers();
-      const name = selectedMember.nickname;
-      setSelectedMember(null);
-      alert({
-        title: copy.kickMember,
-        message: copy.kickMemberSuccess(name),
-      });
-    } catch (error) {
-      setMemberActionError(
-        error instanceof Error ? error.message : copy.kickMemberFailed,
-      );
-    } finally {
-      setMemberActionBusy(false);
-    }
-  }, [
-    accessToken,
-    alert,
-    copy.kickMember,
-    copy.kickMemberFailed,
-    copy.kickMemberSuccess,
-    memberActionBusy,
-    selectedMember,
-    syncMembers,
-    travelId,
-  ]);
-
-  const requestKickMember = useCallback(() => {
-    if (!selectedMember || !canKickSelected) {
-      return;
-    }
-    alert({
-      title: copy.kickMemberConfirmTitle,
-      message: copy.kickMemberConfirmMessage(selectedMember.nickname),
-      buttons: [
-        { label: copy.close, variant: 'secondary', onPress: () => {} },
-        {
-          label: copy.kickMemberConfirm,
-          variant: 'danger',
-          onPress: () => {
-            void handleKickMember();
-          },
-        },
-      ],
-    });
-  }, [
-    alert,
-    canKickSelected,
-    copy.close,
-    copy.kickMemberConfirm,
-    copy.kickMemberConfirmMessage,
-    copy.kickMemberConfirmTitle,
-    handleKickMember,
-    selectedMember,
-  ]);
-
-  const handleLeaveTrip = useCallback(async () => {
-    if (!accessToken || !travelId || !planId || leavingTrip) {
-      return;
-    }
-    setLeavingTrip(true);
-    try {
-      await leaveTravelTeam(accessToken, travelId);
-      completePlan(planId);
-      navigateToMainTab(navigation, 'home');
-    } catch (error) {
-      const isLeaderBlocked =
-        error instanceof TravelServiceError && error.status === 409;
-      alert({
-        title: copy.leaveTrip,
-        message: isLeaderBlocked
-          ? copy.leaveTripLeaderBlocked
-          : error instanceof Error
-            ? error.message
-            : copy.leaveTripFailed,
-      });
-    } finally {
-      setLeavingTrip(false);
-    }
-  }, [
-    accessToken,
-    alert,
-    completePlan,
-    copy.leaveTrip,
-    copy.leaveTripFailed,
-    copy.leaveTripLeaderBlocked,
-    leavingTrip,
+  const members = usePlanDetailMembers({
     navigation,
+    plan,
     planId,
     travelId,
-  ]);
+    accessToken,
+    authUserId: authUser?.userId,
+    isApiPlan,
+    offlineMode,
+    syncMembers,
+  });
 
-  const requestLeaveTrip = useCallback(() => {
-    if (!canLeaveTrip || leavingTrip || !plan || !authUser?.userId) {
-      return;
-    }
-    const isLeader = plan.members.some(
-      member => member.userId === authUser.userId && member.role === 'LEADER',
-    );
-    if (isLeader && plan.members.length > 1) {
-      alert({
-        title: copy.leaveTrip,
-        message: copy.leaveTripLeaderBlocked,
-      });
-      return;
-    }
-    alert({
-      title: copy.leaveTripConfirmTitle,
-      message: copy.leaveTripConfirmMessage,
-      buttons: [
-        { label: copy.close, variant: 'secondary', onPress: () => {} },
-        {
-          label: copy.leaveTripConfirm,
-          variant: 'danger',
-          onPress: () => {
-            void handleLeaveTrip();
-          },
-        },
-      ],
-    });
-  }, [
-    alert,
-    authUser?.userId,
-    canLeaveTrip,
-    copy.close,
-    copy.leaveTrip,
-    copy.leaveTripConfirm,
-    copy.leaveTripConfirmMessage,
-    copy.leaveTripConfirmTitle,
-    copy.leaveTripLeaderBlocked,
-    handleLeaveTrip,
-    leavingTrip,
+  const budget = usePlanDetailBudget({
     plan,
-  ]);
-
-  const lockScheduleOnApiError = useCallback(
-    (error: unknown) => {
-      if (!isApiPlan) {
-        return;
-      }
-      lockPlanScheduleIfApiError(planId, error);
-    },
-    [isApiPlan, planId],
-  );
-
-  const scheduleRef = useRef<PlanScheduleTabHandle>(null);
-  const openRebootPendingRef = useRef(openReboot === true);
+    planId,
+    travelId,
+    accessToken,
+    isApiPlan,
+    viewOnly,
+    scheduleReadOnly,
+    canInvite: members.canInvite,
+    notifyScheduleReadOnly,
+    settlement,
+    summary,
+    confirmSettlement,
+    refreshSettlementPreview,
+    syncExpenses,
+  });
 
   const rawAllRoutes = useMemo(
     () => plan?.itinerary.flatMap(day => sortedRoutes(day.routes)) ?? [],
@@ -818,717 +292,53 @@ export function usePlanDetailScreen({
     [enrichedPlan],
   );
 
-  const recordsProgress = useMemo(
-    () => reviewProgress(allRoutes, planReviews),
-    [allRoutes, planReviews],
-  );
-
-  const scheduleDay =
-    enrichedPlan?.itinerary.find(d => d.dayNumber === selectedDay) ??
-    enrichedPlan?.itinerary[0];
-  const scheduleRoutes = useMemo(
-    () => (scheduleDay ? sortedRoutes(scheduleDay.routes) : []),
-    [scheduleDay],
-  );
-  const schedulePlaceIds = useMemo(
-    () => scheduleRoutes.map(r => r.placeId),
-    [scheduleRoutes],
-  );
-  const pickRoute =
-    scheduleModal.kind === 'pick'
-      ? (scheduleRoutes.find(r => r.itemId === scheduleModal.itemId) ?? null)
-      : null;
-  const lastScheduleRoute = scheduleRoutes[scheduleRoutes.length - 1];
-  const needGpsAddAnchor =
-    !offlineMode && scheduleModal.kind === 'add' && !lastScheduleRoute?.location;
-  const { location: gpsAddAnchor } = useBusanSearchLocationWhen(needGpsAddAnchor);
-  const addPlaceAnchor =
-    lastScheduleRoute?.location ?? gpsAddAnchor ?? undefined;
-
-  const closeScheduleModal = useCallback(() => {
-    setScheduleModal({ kind: 'none' });
-  }, []);
-
-  const handleDeleteRoute = useCallback(
-    async (route: RouteItem) => {
-      if (!planId || viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-
-      if (isApiPlan && accessToken && (route.apiPlanPlaceId || route.itemId)) {
-        try {
-          await removePlanPlaceFromApi(accessToken, route);
-          await syncFromServer();
-        } catch (error) {
-          lockScheduleOnApiError(error);
-          const message =
-            error instanceof Error ? error.message : '장소 삭제에 실패했습니다.';
-          Alert.alert('장소 삭제 실패', message);
-          return;
-        }
-        return;
-      }
-
-      removeRoute(planId, route.itemId);
-    },
-    [
-      planId,
-      viewOnly,
-      scheduleReadOnly,
-      isApiPlan,
-      accessToken,
-      removeRoute,
-      syncFromServer,
-      lockScheduleOnApiError,
-      notifyScheduleReadOnly,
-    ],
-  );
-
-  const resolveSelectedDayAfterRemove = useCallback(
-    (removedDayNumber: number, previousSelected: number) => {
-      const itinerary =
-        usePlanStore.getState().plans.find(p => p.planId === planId)?.itinerary ?? [];
-      if (itinerary.length === 0) {
-        return 1;
-      }
-      if (itinerary.some(day => day.dayNumber === previousSelected)) {
-        return previousSelected;
-      }
-      if (previousSelected === removedDayNumber) {
-        return Math.max(1, removedDayNumber - 1);
-      }
-      if (previousSelected > removedDayNumber) {
-        const adjusted = previousSelected - 1;
-        if (itinerary.some(day => day.dayNumber === adjusted)) {
-          return adjusted;
-        }
-      }
-      return itinerary[itinerary.length - 1]?.dayNumber ?? 1;
-    },
-    [planId],
-  );
-
-  const handleAddDay = useCallback(async () => {
-    if (!planId || !enrichedPlan || viewOnly) {
-      if (scheduleReadOnly) {
-        notifyScheduleReadOnly();
-      }
-      return;
-    }
-
-    if (!canAddPlanDay(enrichedPlan)) {
-      alert({ title: copy.addDay, message: copy.cannotAddMoreDays });
-      return;
-    }
-
-    if (isApiPlan && accessToken) {
-      try {
-        const next = await addPlanDayOnApi(accessToken, enrichedPlan);
-        await syncFromServer();
-        setSelectedDay(next.dayNumber);
-      } catch (error) {
-        lockScheduleOnApiError(error);
-        const message =
-          error instanceof Error ? error.message : copy.cannotAddMoreDays;
-        Alert.alert(copy.addDay, message);
-      }
-      return;
-    }
-
-    const next = computeNextPlanDay(enrichedPlan);
-    if (!next) {
-      alert({ title: copy.addDay, message: copy.cannotAddMoreDays });
-      return;
-    }
-    addItineraryDay(planId, next.dayNumber, next.visitDate);
-    setSelectedDay(next.dayNumber);
-  }, [
-    planId,
-    enrichedPlan,
-    scheduleReadOnly,
-    viewOnly,
-    isApiPlan,
-    accessToken,
-    alert,
-    copy,
-    addItineraryDay,
-    syncFromServer,
-    lockScheduleOnApiError,
-    notifyScheduleReadOnly,
-  ]);
-
-  const confirmRemoveDay = useCallback(async () => {
-    if (!planId || !enrichedPlan || !scheduleDay || viewOnly) {
-      return;
-    }
-
-    const removedDayNumber = scheduleDay.dayNumber;
-    const previousSelected = selectedDay;
-
-    if (isApiPlan && accessToken) {
-      try {
-        await removePlanDayOnApi(accessToken, enrichedPlan, scheduleDay);
-        await syncFromServer();
-        setSelectedDay(resolveSelectedDayAfterRemove(removedDayNumber, previousSelected));
-      } catch (error) {
-        lockScheduleOnApiError(error);
-        const message =
-          error instanceof Error ? error.message : copy.removeDayConfirmTitle;
-        Alert.alert(copy.removeDay, message);
-      }
-      return;
-    }
-
-    removeItineraryDay(planId, removedDayNumber);
-    setSelectedDay(resolveSelectedDayAfterRemove(removedDayNumber, previousSelected));
-  }, [
-    planId,
-    enrichedPlan,
-    scheduleDay,
-    viewOnly,
-    selectedDay,
-    isApiPlan,
-    accessToken,
-    copy,
-    removeItineraryDay,
-    syncFromServer,
-    lockScheduleOnApiError,
-    resolveSelectedDayAfterRemove,
-  ]);
-
-  const handleRemoveDay = useCallback(() => {
-    if (!planId || !enrichedPlan || !scheduleDay || viewOnly) {
-      if (scheduleReadOnly) {
-        notifyScheduleReadOnly();
-      }
-      return;
-    }
-
-    if (!canRemovePlanDay(enrichedPlan)) {
-      alert({ title: copy.removeDay, message: copy.cannotRemoveLastDay });
-      return;
-    }
-
-    alert({
-      title: copy.removeDayConfirmTitle,
-      message: copy.removeDayConfirmMessage(scheduleDay.date, scheduleDay.dayNumber),
-      buttons: [
-        { label: copy.rebootCancel, variant: 'secondary', onPress: () => {} },
-        {
-          label: copy.removeDayConfirm,
-          variant: 'primary',
-          onPress: () => {
-            void confirmRemoveDay();
-          },
-        },
-      ],
-    });
-  }, [
-    planId,
-    enrichedPlan,
-    scheduleDay,
-    scheduleReadOnly,
-    viewOnly,
-    alert,
-    copy,
-    confirmRemoveDay,
-    notifyScheduleReadOnly,
-  ]);
-
-  const handleToggleVisited = useCallback(
-    (itemId: string) => {
-      if (!planId || !plan) {
-        return;
-      }
-      if (scheduleReadOnly) {
-        notifyScheduleReadOnly();
-        return;
-      }
-
-      const route = plan.itinerary
-        .flatMap(day => day.routes)
-        .find(r => r.itemId === itemId);
-      if (!route) {
-        return;
-      }
-
-      const nextVisited = !route.isVisited;
-      toggleVisited(planId, itemId);
-
-      if (isApiPlan && accessToken && route.apiPlanPlaceId) {
-        void updatePlanPlaceVisitedOnApi(accessToken, route, nextVisited).catch(error => {
-          toggleVisited(planId, itemId);
-          if (__DEV__) {
-            console.warn('[PlanDetail] visited PATCH failed', error);
-          }
-        });
-      }
-    },
-    [
-      planId,
-      plan,
-      scheduleReadOnly,
-      notifyScheduleReadOnly,
-      toggleVisited,
-      isApiPlan,
-      accessToken,
-    ],
-  );
-
-  const handleSaveRouteMemo = useCallback(
-    async (route: RouteItem, memo: string | undefined) => {
-      if (!planId || viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-
-      const previousMemo = route.memo;
-      updateRouteMemo(planId, route.itemId, memo);
-
-      if (isApiPlan && accessToken) {
-        try {
-          await updatePlanPlaceMemoOnApi(accessToken, route, memo ?? null);
-        } catch (error) {
-          updateRouteMemo(planId, route.itemId, previousMemo);
-          lockScheduleOnApiError(error);
-          const message =
-            error instanceof Error ? error.message : '메모 저장에 실패했습니다.';
-          Alert.alert('메모 저장 실패', message);
-        }
-      }
-    },
-    [
-      planId,
-      viewOnly,
-      scheduleReadOnly,
-      isApiPlan,
-      accessToken,
-      updateRouteMemo,
-      lockScheduleOnApiError,
-      notifyScheduleReadOnly,
-    ],
-  );
-
-  const handlePickReplacement = useCallback(
-    async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!pickRoute || !planId || !scheduleDay || viewOnly) {
-        return;
-      }
-
-      seedCandidateRouteImage(candidate);
-
-      const apiPlanId = scheduleDay.apiPlanId;
-      if (isApiPlan && accessToken && apiPlanId) {
-        try {
-          const synced = await syncFromServer();
-          const freshRoute =
-            findDayRoute(synced, scheduleDay.dayNumber, pickRoute) ?? pickRoute;
-
-          const replaced = await replacePlanPlaceFromCandidate(
-            accessToken,
-            freshRoute,
-            candidate,
-          );
-          await syncFromServer();
-          if (legMode && legMode !== pickRoute.legMode) {
-            usePlanStore.getState().updateRouteLegMode(planId, replaced.itemId, legMode);
-          }
-          closeScheduleModal();
-        } catch (error) {
-          lockScheduleOnApiError(error);
-          const message =
-            error instanceof Error ? error.message : '장소 변경에 실패했습니다.';
-          Alert.alert('장소 변경 실패', message);
-          await syncFromServer();
-        }
-        return;
-      }
-
-      const replacement = candidateToRouteItem(
-        candidate,
-        pickRoute.sequence,
-        language,
-        pickRoute.type === 'LOCKER' ? 'ATTRACTION' : pickRoute.type,
-        legMode ?? pickRoute.legMode,
-      );
-      replaceRoute(planId, pickRoute.itemId, replacement);
-      closeScheduleModal();
-    },
-    [
-      pickRoute,
-      scheduleDay,
-      language,
-      planId,
-      isApiPlan,
-      accessToken,
-      replaceRoute,
-      closeScheduleModal,
-      viewOnly,
-      syncFromServer,
-      lockScheduleOnApiError,
-    ],
-  );
-
-  const handleReorderRoutes = useCallback(
-    async (dayNumber: number, orderedItemIds: string[]) => {
-      if (!planId || viewOnly) {
-        return;
-      }
-
-      const day = enrichedPlan?.itinerary.find(d => d.dayNumber === dayNumber);
-      const apiPlanId = day?.apiPlanId;
-      if (!isApiPlan || !accessToken || !apiPlanId) {
-        reorderRoutes(planId, dayNumber, orderedItemIds);
-        return;
-      }
-
-      try {
-        const synced = await syncFromServer();
-        const freshRoutes = getDayRoutesFromPlan(synced, dayNumber);
-        const orderedRoutes = routesInItemOrder(freshRoutes, orderedItemIds);
-        if (orderedRoutes.length !== freshRoutes.length) {
-          throw new Error(
-            '일정이 동기화되지 않았습니다. 잠시 후 다시 시도해 주세요.',
-          );
-        }
-
-        await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, orderedRoutes);
-        await syncFromServer();
-      } catch (error) {
-        lockScheduleOnApiError(error);
-        const message =
-          error instanceof Error ? error.message : '순서 변경에 실패했습니다.';
-        Alert.alert('순서 변경 실패', message);
-        await syncFromServer();
-      }
-    },
-    [
-      planId,
-      viewOnly,
-      enrichedPlan,
-      isApiPlan,
-      accessToken,
-      reorderRoutes,
-      syncFromServer,
-      lockScheduleOnApiError,
-    ],
-  );
-
-  const handleOptimizeDayRoute = useCallback(
-    async (dayNumber: number) => {
-      if (!planId || viewOnly) {
-        return;
-      }
-
-      const day = enrichedPlan?.itinerary.find(d => d.dayNumber === dayNumber);
-      const apiPlanId = day?.apiPlanId;
-      const routes = getDayRoutesFromPlan(enrichedPlan, dayNumber);
-      if (routes.length < 2) {
-        return;
-      }
-
-      if (!isApiPlan || !accessToken || !apiPlanId) {
-        const orderedItemIds = optimizeRouteOrder(routes).map(r => r.itemId);
-        reorderRoutes(planId, dayNumber, orderedItemIds);
-        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
-        return;
-      }
-
-      try {
-        const synced = await syncFromServer();
-        const freshRoutes = getDayRoutesFromPlan(synced, dayNumber);
-        if (freshRoutes.length < 2) {
-          return;
-        }
-        const optimized = optimizeRouteOrder(freshRoutes);
-
-        await updatePlanPlaceOrderOnApi(accessToken, apiPlanId, optimized);
-        await syncFromServer();
-        alert({ title: copy.routeOptimize, message: copy.routeOptimized });
-      } catch (error) {
-        lockScheduleOnApiError(error);
-        const message =
-          error instanceof Error ? error.message : '경로 최적화에 실패했습니다.';
-        Alert.alert('경로 최적화 실패', message);
-        await syncFromServer();
-      }
-    },
-    [
-      planId,
-      viewOnly,
-      enrichedPlan,
-      isApiPlan,
-      accessToken,
-      reorderRoutes,
-      syncFromServer,
-      alert,
-      copy,
-      lockScheduleOnApiError,
-    ],
-  );
-
-  const handleAddPlace = useCallback(
-    async (candidate: RebootPlaceCandidate, legMode?: TravelLegMode) => {
-      if (!scheduleDay || !planId || !enrichedPlan || viewOnly) {
-        return;
-      }
-
-      seedCandidateRouteImage(candidate);
-
-      const apiPlanId = scheduleDay.apiPlanId;
-      if (isApiPlan && apiPlanId && accessToken) {
-        try {
-          await syncFromServer();
-          await addPlanPlaceFromCandidate(accessToken, apiPlanId, candidate);
-          const afterAdd = await syncFromServer();
-          if (legMode && legMode !== 'walk') {
-            const dayRoutes = getDayRoutesFromPlan(afterAdd, scheduleDay.dayNumber);
-            const added = dayRoutes.find(r => r.placeId === candidate.placeId);
-            if (added) {
-              usePlanStore.getState().updateRouteLegMode(planId, added.itemId, legMode);
-            }
-          }
-          closeScheduleModal();
-        } catch (error) {
-          lockScheduleOnApiError(error);
-          const message =
-            error instanceof Error ? error.message : '장소 추가에 실패했습니다.';
-          Alert.alert('장소 추가 실패', message);
-          await syncFromServer();
-        }
-        return;
-      }
-
-      const newRoute = candidateToRouteItem(
-        candidate,
-        scheduleRoutes.length + 1,
-        language,
-        'ATTRACTION',
-        legMode ?? 'walk',
-      );
-      addRoute(planId, scheduleDay.dayNumber, newRoute);
-      closeScheduleModal();
-    },
-    [
-      scheduleDay,
-      scheduleRoutes,
-      language,
-      planId,
-      enrichedPlan,
-      viewOnly,
-      isApiPlan,
-      accessToken,
-      addRoute,
-      closeScheduleModal,
-      syncFromServer,
-      lockScheduleOnApiError,
-    ],
-  );
-
-  const handleCompletePlan = useCallback(async () => {
-    if (!planId) {
-      return;
-    }
-
-    if (isApiPlan && accessToken && plan) {
-      try {
-        await updateTravelStatus(accessToken, plan.apiTravelId ?? plan.planId, {
-          status: 'COMPLETED',
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : '여행 완료 처리에 실패했습니다.';
-        Alert.alert('여행 완료 실패', message);
-        return;
-      }
-    }
-
-    completePlan(planId);
-    navigateToMainTab(navigation, 'home');
-  }, [planId, isApiPlan, accessToken, plan, completePlan, navigation]);
-
-  const requestCompletePlan = useCallback(() => {
-    alert({
-      title: reviewCopy.completeTripConfirmTitle,
-      message: reviewCopy.completeTripConfirmMessage,
-      buttons: [
-        { label: reviewCopy.cancel, variant: 'secondary', onPress: () => {} },
-        {
-          label: reviewCopy.completeTripConfirm,
-          variant: 'primary',
-          onPress: () => {
-            void handleCompletePlan();
-          },
-        },
-      ],
-    });
-  }, [alert, reviewCopy, handleCompletePlan]);
-
-  const handleQuickRating = useCallback(
-    (routeItem: RouteItem, rating: number) => {
-      if (viewOnly || !plan) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-      void savePlaceReviewForTravel({
-        accessToken,
-        plan,
-        route: routeItem,
-        authorNickname: displayName,
-        payload: {
-          rating,
-          tags: [],
-          content: null,
-          media: [],
-        },
-      });
-    },
-    [
-      accessToken,
-      plan,
-      displayName,
-      notifyScheduleReadOnly,
-      scheduleReadOnly,
-      viewOnly,
-    ],
-  );
-
-  const handleSavePlaceReview = useCallback(
-    async (
-      payload: Omit<PlaceReview, 'placeReviewId' | 'createdAt' | 'updatedAt'> & {
-        placeReviewId?: string;
-      },
-    ) => {
-      if (viewOnly || !plan || !reviewFormRoute) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-      setSavingReview(true);
-      try {
-        await savePlaceReviewForTravel({
-          accessToken,
-          plan,
-          route: reviewFormRoute,
-          authorNickname: displayName,
-          payload: {
-            placeReviewId: payload.placeReviewId,
-            rating: payload.rating,
-            content: payload.content,
-            tags: payload.tags,
-            media: payload.media,
-          },
-        });
-      } catch (error) {
-        alert({
-          title:
-            error instanceof PlaceReviewSyncError
-              ? error.message
-              : error instanceof Error
-                ? error.message
-                : '후기 저장에 실패했습니다.',
-        });
-        throw error;
-      } finally {
-        setSavingReview(false);
-      }
-    },
-    [
-      accessToken,
-      plan,
-      reviewFormRoute,
-      displayName,
-      alert,
-      notifyScheduleReadOnly,
-      scheduleReadOnly,
-      viewOnly,
-    ],
-  );
-
-  const handleDeletePlaceReview = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      if (viewOnly || !plan || !reviewFormRoute) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        reject(new Error('no route'));
-        return;
-      }
-      const existing = getReviewForPlace(
-        planReviews,
-        reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
-      );
-      alert({
-        title: reviewCopy.deleteReviewConfirmTitle,
-        message: reviewCopy.deleteReviewConfirmMessage,
-        buttons: [
-          {
-            label: reviewCopy.cancel,
-            variant: 'secondary',
-            onPress: () => reject(new Error('cancelled')),
-          },
-          {
-            label: reviewCopy.deleteReviewConfirm,
-            variant: 'danger',
-            onPress: () => {
-              void (async () => {
-                setSavingReview(true);
-                try {
-                  await deletePlaceReviewForTravel({
-                    accessToken,
-                    plan,
-                    route: reviewFormRoute,
-                    placeReviewId: existing?.placeReviewId,
-                  });
-                  resolve();
-                } catch (error) {
-                  alert({
-                    title:
-                      error instanceof PlaceReviewSyncError
-                        ? error.message
-                        : error instanceof Error
-                          ? error.message
-                          : 'Failed to delete review.',
-                  });
-                  reject(error);
-                } finally {
-                  setSavingReview(false);
-                }
-              })();
-            },
-          },
-        ],
-      });
-    });
-  }, [
-    accessToken,
+  const schedule = usePlanDetailSchedule({
     plan,
-    reviewFormRoute,
-    planReviews,
-    alert,
-    reviewCopy,
+    enrichedPlan,
+    planId,
+    accessToken,
+    isApiPlan,
     viewOnly,
     scheduleReadOnly,
+    offlineMode,
+    language,
     notifyScheduleReadOnly,
+    syncFromServer,
+  });
+
+  const reviews = usePlanDetailReviews({
+    navigation,
+    plan,
+    planId,
+    accessToken,
+    isApiPlan,
+    viewOnly,
+    scheduleReadOnly,
+    displayName,
+    allRoutes,
+    planReviews,
+    notifyScheduleReadOnly,
+  });
+
+  const viewedPlanIdRef = useRef(planId);
+  useEffect(() => {
+    if (viewedPlanIdRef.current === planId) {
+      return;
+    }
+    viewedPlanIdRef.current = planId;
+    schedule.resetScheduleUiOnPlanChange();
+    reviews.resetReviewUiOnPlanChange();
+    budget.resetBudgetUiOnPlanChange();
+    members.resetMemberUiOnPlanChange();
+  }, [
+    planId,
+    schedule.resetScheduleUiOnPlanChange,
+    reviews.resetReviewUiOnPlanChange,
+    budget.resetBudgetUiOnPlanChange,
+    members.resetMemberUiOnPlanChange,
   ]);
 
-  const exitOffline = useCallback(() => {
-    setOfflineMode(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
-  }, [navigation, setOfflineMode]);
-
-  const offlineExitNotifiedRef = useRef(false);
+  const openRebootPendingRef = useRef(openReboot === true);
 
   useEffect(() => {
     openRebootPendingRef.current = openReboot === true;
@@ -1550,17 +360,21 @@ export function usePlanDetailScreen({
     setTab('schedule');
 
     const timer = setTimeout(() => {
-      scheduleRef.current?.handleRebootFabPress();
+      schedule.scheduleRef.current?.handleRebootFabPress();
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [enrichedPlan, navigation, offlineMode, showUnavailable]);
+  }, [enrichedPlan, navigation, offlineMode, schedule.scheduleRef, showUnavailable]);
 
-  useEffect(() => {
-    if (scheduleModal.kind === 'pick' && !pickRoute) {
-      closeScheduleModal();
-    }
-  }, [scheduleModal.kind, pickRoute, closeScheduleModal]);
+  const exitOffline = useCallback(() => {
+    setOfflineMode(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }, [navigation, setOfflineMode]);
+
+  const offlineExitNotifiedRef = useRef(false);
 
   useEffect(() => {
     if (enrichedPlan) {
@@ -1600,11 +414,6 @@ export function usePlanDetailScreen({
     LEADER: copy.roleLeader,
     MEMBER: copy.roleMember,
   };
-
-  const budgetTotal = budgetEntries.reduce((s, e) => s + e.amount, 0);
-  const day =
-    enrichedPlan?.itinerary.find(d => d.dayNumber === selectedDay) ??
-    enrichedPlan?.itinerary[0];
 
   const transportCopy = {
     transportModeTitle: copy.transportModeTitle,
@@ -1662,52 +471,6 @@ export function usePlanDetailScreen({
     [navigation, showUnavailable],
   );
 
-  const handleScheduleToggleVisited = useCallback(
-    (itemId: string) => {
-      if (viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-      handleToggleVisited(itemId);
-    },
-    [viewOnly, scheduleReadOnly, notifyScheduleReadOnly, handleToggleVisited],
-  );
-
-  const handleWriteReview = useCallback(
-    (routeItem: RouteItem) => {
-      if (viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-      setReviewFormRoute(routeItem);
-    },
-    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
-  );
-
-  const handleScheduleModalChange = useCallback(
-    (modal: ScheduleModalState) => {
-      if (viewOnly) {
-        if (scheduleReadOnly) {
-          notifyScheduleReadOnly();
-        }
-        return;
-      }
-      setScheduleModal(modal);
-    },
-    [notifyScheduleReadOnly, scheduleReadOnly, viewOnly],
-  );
-
-  const reviewFormExisting = reviewFormRoute
-    ? getReviewForPlace(
-        planReviews,
-        reviewFormRoute.apiPlanPlaceId ?? reviewFormRoute.itemId,
-      )
-    : undefined;
-
   return {
     language,
     offlineMode,
@@ -1715,7 +478,7 @@ export function usePlanDetailScreen({
     copy,
     pickerCopy,
     setupCopy,
-    reviewCopy,
+    reviewCopy: reviews.reviewCopy,
     enrichedPlan,
     planId,
     isApiPlan,
@@ -1728,86 +491,86 @@ export function usePlanDetailScreen({
     toastOpacity,
     showToast,
     notifyScheduleReadOnly,
-    selectedDay,
-    setSelectedDay,
-    scheduleReorderActive,
-    setScheduleReorderActive,
-    reviewFormRoute,
-    setReviewFormRoute,
-    savingReview,
-    budgetModalOpen,
-    setBudgetModalOpen,
-    inviteModalOpen,
-    inviteLink,
-    inviteExpiredAt,
-    inviteLoading,
-    inviteError,
-    canInvite,
-    canLeaveTrip,
-    leavingTrip,
-    selectedMember,
-    memberActionBusy,
-    memberActionError,
-    canTransferSelected,
-    canKickSelected,
-    settlementConfirmed,
-    canConfirmSettlement,
-    settlementMemberSummaries,
-    settlementForDisplay,
+    selectedDay: schedule.selectedDay,
+    setSelectedDay: schedule.setSelectedDay,
+    scheduleReorderActive: schedule.scheduleReorderActive,
+    setScheduleReorderActive: schedule.setScheduleReorderActive,
+    reviewFormRoute: reviews.reviewFormRoute,
+    setReviewFormRoute: reviews.setReviewFormRoute,
+    savingReview: reviews.savingReview,
+    budgetModalOpen: budget.budgetModalOpen,
+    setBudgetModalOpen: budget.setBudgetModalOpen,
+    inviteModalOpen: members.inviteModalOpen,
+    inviteLink: members.inviteLink,
+    inviteExpiredAt: members.inviteExpiredAt,
+    inviteLoading: members.inviteLoading,
+    inviteError: members.inviteError,
+    canInvite: members.canInvite,
+    canLeaveTrip: members.canLeaveTrip,
+    leavingTrip: members.leavingTrip,
+    selectedMember: members.selectedMember,
+    memberActionBusy: members.memberActionBusy,
+    memberActionError: members.memberActionError,
+    canTransferSelected: members.canTransferSelected,
+    canKickSelected: members.canKickSelected,
+    settlementConfirmed: budget.settlementConfirmed,
+    canConfirmSettlement: budget.canConfirmSettlement,
+    settlementMemberSummaries: budget.settlementMemberSummaries,
+    settlementForDisplay: budget.settlementForDisplay,
     settlementLoading,
     settlementError,
     confirming,
-    budgetEntries,
-    budgetTotal,
+    budgetEntries: budget.budgetEntries,
+    budgetTotal: budget.budgetTotal,
     tripDates,
     allRoutes,
-    recordsProgress,
+    recordsProgress: reviews.recordsProgress,
     isPlanPublished,
     roleLabels,
-    day,
+    day: schedule.day,
     transportCopy,
     mainTabBottomClearance,
     actionBarBottomInset,
     toastBottom,
-    scheduleRef,
+    scheduleRef: schedule.scheduleRef,
     planReviews,
     displayName,
-    scheduleModal,
-    pickRoute,
-    schedulePlaceIds,
-    addPlaceAnchor,
-    reviewFormExisting,
+    scheduleModal: schedule.scheduleModal,
+    pickRoute: schedule.pickRoute,
+    schedulePlaceIds: schedule.schedulePlaceIds,
+    addPlaceAnchor: schedule.addPlaceAnchor,
+    reviewFormExisting: reviews.reviewFormExisting,
     handleBackPress,
-    handleInvite,
-    openMemberActions,
-    closeMemberActions,
-    requestTransferLeader,
-    requestKickMember,
-    requestLeaveTrip,
-    handleSaveBudgetEntry,
-    handleConfirmSettlement,
-    closeInviteModal,
-    loadInviteLink,
-    handleDeleteRoute,
-    handleAddDay,
-    handleRemoveDay,
-    handleToggleVisited: handleScheduleToggleVisited,
-    handleSaveRouteMemo,
-    handlePickReplacement,
-    handleReorderRoutes,
-    handleOptimizeDayRoute,
-    handleAddPlace,
-    handleQuickRating,
-    handleSavePlaceReview,
-    handleDeletePlaceReview,
-    closeScheduleModal,
-    requestCompletePlan,
+    handleInvite: members.handleInvite,
+    openMemberActions: members.openMemberActions,
+    closeMemberActions: members.closeMemberActions,
+    requestTransferLeader: members.requestTransferLeader,
+    requestKickMember: members.requestKickMember,
+    requestLeaveTrip: members.requestLeaveTrip,
+    handleSaveBudgetEntry: budget.handleSaveBudgetEntry,
+    handleConfirmSettlement: budget.handleConfirmSettlement,
+    closeInviteModal: members.closeInviteModal,
+    loadInviteLink: members.loadInviteLink,
+    handleDeleteRoute: schedule.handleDeleteRoute,
+    handleAddDay: schedule.handleAddDay,
+    handleRemoveDay: schedule.handleRemoveDay,
+    handleToggleVisited: schedule.handleToggleVisited,
+    handleSaveRouteMemo: schedule.handleSaveRouteMemo,
+    handlePickReplacement: schedule.handlePickReplacement,
+    handleReorderRoutes: schedule.handleReorderRoutes,
+    handleOptimizeDayRoute: schedule.handleOptimizeDayRoute,
+    handleAddPlace: schedule.handleAddPlace,
+    handleQuickRating: reviews.handleQuickRating,
+    handleSavePlaceReview: reviews.handleSavePlaceReview,
+    handleDeletePlaceReview: reviews.handleDeletePlaceReview,
+    closeScheduleModal: schedule.closeScheduleModal,
+    requestCompletePlan: reviews.requestCompletePlan,
     syncExpenses,
     handlePublished,
     handleViewFeed,
     handleViewTravelRecord,
-    handleWriteReview,
-    handleScheduleModalChange,
+    handleWriteReview: reviews.handleWriteReview,
+    handleScheduleModalChange: schedule.handleScheduleModalChange,
     pickerPlans,
     canSwitchPlans,
     planPickerOpen,

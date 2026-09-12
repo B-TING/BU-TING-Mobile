@@ -42,6 +42,12 @@ function bookmarkKeyForType(contentTypeId: PlaceContentTypeId): keyof Pick<
   }
 }
 
+/** React 셀렉터용 — 스토어 배열 참조를 그대로 반환 */
+export function selectBookmarkedIdsForType(contentTypeId: PlaceContentTypeId) {
+  const key = bookmarkKeyForType(contentTypeId);
+  return (state: PlaceBookmarkState) => state[key];
+}
+
 export const usePlaceBookmarkStore = create<PlaceBookmarkState>()(
   persist(
     (set, get) => ({

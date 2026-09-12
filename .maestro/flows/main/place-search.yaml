@@ -1,0 +1,21 @@
+appId: com.butingmobile
+name: Place map search — hotels quick access
+tags:
+  - main
+---
+- runFlow: ../../shared/enter-main.yaml
+- tapOn:
+    id: home.quickAccess.hotels
+- runFlow: ../../shared/dismiss-optional.yaml
+- extendedWaitUntil:
+    visible:
+      id: placeSearch.screen
+    timeout: 20000
+- assertVisible:
+    id: placeSearch.keyword
+- tapOn:
+    id: nav.back
+- extendedWaitUntil:
+    visible:
+      id: home.screen
+    timeout: 10000

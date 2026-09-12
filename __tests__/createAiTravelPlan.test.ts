@@ -1,6 +1,7 @@
 const mockCreateTravel = jest.fn();
 const mockGenerateAiTravelPlans = jest.fn();
 const mockCreateTravelRecordDraft = jest.fn();
+const mockLeaveTravelTeam = jest.fn();
 
 jest.mock('../src/services/travel/travelService', () => ({
   createTravel: (...args: unknown[]) => mockCreateTravel(...args),
@@ -9,6 +10,10 @@ jest.mock('../src/services/travel/travelService', () => ({
 
 jest.mock('../src/services/travel/travelRecordService', () => ({
   createTravelRecordDraft: (...args: unknown[]) => mockCreateTravelRecordDraft(...args),
+}));
+
+jest.mock('../src/services/travel/travelTeamService', () => ({
+  leaveTravelTeam: (...args: unknown[]) => mockLeaveTravelTeam(...args),
 }));
 
 jest.mock('../src/utils/api/apiServerOrigin', () => ({
@@ -98,6 +103,7 @@ describe('createAiTravelPlan', () => {
       ],
     });
     mockCreateTravelRecordDraft.mockResolvedValue({ travelRecordId: 'record-1' });
+    mockLeaveTravelTeam.mockResolvedValue(undefined);
   });
 
   it('creates a new travel then requests AI plans without seeding empty days', async () => {
@@ -122,6 +128,7 @@ describe('createAiTravelPlan', () => {
       }),
     );
     expect(plan.apiTravelId).toBe('travel-1');
+    expect(mockLeaveTravelTeam).not.toHaveBeenCalled();
     expect(plan.itinerary[0]?.routes).toHaveLength(2);
     expect(plan.itinerary[0]?.routes.find(route => route.placeId === 'stay_1')?.type).toBe(
       'ACCOMMODATION',
@@ -153,6 +160,7 @@ describe('createAiTravelPlan', () => {
 
     expect(mockCreateTravel).not.toHaveBeenCalled();
     expect(mockGenerateAiTravelPlans).not.toHaveBeenCalled();
+    expect(mockLeaveTravelTeam).not.toHaveBeenCalled();
   });
 
   it('does not fall back to a local fake itinerary when AI generation fails', async () => {
@@ -167,5 +175,23 @@ describe('createAiTravelPlan', () => {
         members,
       }),
     ).rejects.toThrow('일정 생성 시간이 초과되었습니다. 다시 시도해 주세요.');
+
+    expect(mockLeaveTravelTeam).toHaveBeenCalledWith('token', 'travel-1');
+  });
+
+  it('still reports the AI error if discarding the empty travel fails', async () => {
+    mockGenerateAiTravelPlans.mockRejectedValue(new Error('서버 내부 오류가 발생했습니다.'));
+    mockLeaveTravelTeam.mockRejectedValue(new Error('나가기 실패'));
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await expect(
+      createAiTravelPlan({
+        accessToken: 'token',
+        answers: answers(),
+        members,
+      }),
+    ).rejects.toThrow('서버 내부 오류가 발생했습니다.');
+
+    warn.mockRestore();
   });
 });

@@ -16,6 +16,7 @@ import {
   SCHEDULE_PACE_OPTIONS,
   TRAVEL_STYLE_OPTIONS,
 } from '../../constants/setup/onboarding';
+import { TEST_ID } from '../../constants/e2e/testIds';
 import { useOnboardingScreen } from '../../hooks/setup/useOnboardingScreen';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -74,6 +75,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
               description={opt.description?.[language]}
               selected={answers.travelStyle === opt.value}
               onPress={() => selectTravelStyle(opt.value)}
+              testID={TEST_ID.onboarding.option(opt.value)}
             />
           )),
         );
@@ -88,6 +90,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
               description={opt.description?.[language]}
               selected={answers.schedulePace === opt.value}
               onPress={() => selectSchedulePace(opt.value)}
+              testID={TEST_ID.onboarding.option(opt.value)}
             />
           )),
         );
@@ -102,6 +105,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
               description={opt.description?.[language]}
               selected={answers.companions === opt.value}
               onPress={() => selectCompanions(opt.value)}
+              testID={TEST_ID.onboarding.option(opt.value)}
             />
           )),
         );
@@ -116,6 +120,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
               description={opt.description?.[language]}
               selected={answers.luggage === opt.value}
               onPress={() => selectLuggage(opt.value)}
+              testID={TEST_ID.onboarding.option(opt.value)}
             />
           )),
         );
@@ -132,6 +137,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
                   description={opt.description?.[language]}
                   selected={answers.purposes.includes(opt.value)}
                   onPress={() => togglePurpose(opt.value)}
+                  testID={TEST_ID.onboarding.option(opt.value)}
                 />
               ))}
             </View>
@@ -148,6 +154,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
               description={opt.description?.[language]}
               selected={answers.busanFamiliarity === opt.value}
               onPress={() => selectBusanFamiliarity(opt.value)}
+              testID={TEST_ID.onboarding.option(opt.value)}
             />
           )),
         );
@@ -200,6 +207,7 @@ export function OnboardingScreen({ navigation, route }: Props) {
       onSkipAll={onSkipAll}
       footer={
         <PrimaryButton
+          testID={TEST_ID.onboarding.next}
           label={footerLabel}
           onPress={goNext}
           disabled={!canProceed()}

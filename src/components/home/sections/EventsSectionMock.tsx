@@ -3,6 +3,7 @@ import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { festivalTagLabel } from '../../../constants/festival/festivalCalendar';
 import type { MockEvent } from '../../../constants/home/mainHome';
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ICON_COLOR_WHITE } from '../../../constants/icons';
 import type { AppLanguage } from '../../../types/user';
 import { cn } from '../../../utils/common/cn';
@@ -127,7 +128,11 @@ export function EventsSectionMock({
     <View className="mb-6">
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-base font-bold text-brand-text">{title}</Text>
-        <Pressable onPress={onViewAllPress} hitSlop={8} className="active:opacity-70">
+        <Pressable
+          onPress={onViewAllPress}
+          testID={TEST_ID.home.eventsViewAll}
+          hitSlop={8}
+          className="active:opacity-70">
           <Text className="text-sm font-semibold text-brand-muted">{viewAllLabel}</Text>
         </Pressable>
       </View>

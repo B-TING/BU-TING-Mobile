@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   TravelogueSocialError,
   useTravelogueSocialActions,
-} from '../../components/feed/useTravelogueSocialActions';
+} from './useTravelogueSocialActions';
 import { useAppAlert } from '../../components/shared/modals';
 import { getNavbarOverlayHeight } from '../../components/shared/navigation/Navbar';
 import { useAppLanguage, useCopy } from '../../i18n';

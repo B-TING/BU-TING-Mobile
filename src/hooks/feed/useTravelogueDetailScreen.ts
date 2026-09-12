@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   TravelogueSocialError,
   useTravelogueSocialActions,
-} from '../../components/feed/useTravelogueSocialActions';
+} from './useTravelogueSocialActions';
 import { useAppAlert } from '../../components/shared/modals';
 import { EVENT_ZONE_BY_ID } from '../../constants/eventZone/eventZone';
 import type { CopyFor } from '../../i18n';

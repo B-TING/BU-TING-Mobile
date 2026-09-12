@@ -1,3 +1,5 @@
+import { Linking } from 'react-native';
+
 import {
   buildGoogleMapsDirectionsAppUrl,
   buildGoogleMapsDirectionsWebUrl,
@@ -7,6 +9,7 @@ import {
   buildLegDirectionsFallbackUrls,
   isLegDirectionsInputValid,
   isValidMapCoordinate,
+  openLegDirections,
   resolveGoogleDirectionsLabel,
 } from '../src/utils/map/mapDirections';
 
@@ -122,10 +125,79 @@ describe('mapDirections', () => {
 
   it('returns fallback chain google-first', () => {
     const urls = buildLegDirectionsFallbackUrls(sampleLeg);
+    expect(urls).toHaveLength(5);
     expect(urls[0]).toContain('comgooglemaps://');
     expect(urls[1]).toContain('google.com/maps/dir');
     expect(urls[2]).toContain('kakaomap://');
     expect(urls[3]).toContain('m.map.kakao.com/scheme/route');
     expect(urls[4]).toContain('map.kakao.com/link/by/walk');
+  });
+
+  it('maps transit mode on Google and Kakao urls', () => {
+    const transit = { ...sampleLeg, mode: 'transit' as const };
+    expect(buildGoogleMapsDirectionsAppUrl(transit)).toContain('directionsmode=transit');
+    expect(buildKakaoMapDirectionsAppUrl(transit)).toContain('by=publictransit');
+    expect(buildKakaoMapDirectionsWebUrl(transit)).toContain('/link/by/traffic/');
+  });
+
+  it('uses place name when address and coordinates are missing', () => {
+    const namedOnly = {
+      lat: 0,
+      lng: 0,
+      name: '해운대',
+      address: '',
+    };
+    expect(resolveGoogleDirectionsLabel(namedOnly)).toBe('해운대');
+    expect(
+      isLegDirectionsInputValid({
+        from: namedOnly,
+        to: { lat: 0, lng: 0, name: '서면', address: '' },
+        mode: 'walk',
+      }),
+    ).toBe(true);
+    expect(buildKakaoMapDirectionsWebUrl({
+      from: namedOnly,
+      to: { lat: 0, lng: 0, name: '서면', address: '' },
+      mode: 'walk',
+    })).toContain(encodeURIComponent('해운대'));
+  });
+
+  it('rejects out-of-range coordinates', () => {
+    expect(isValidMapCoordinate(91, 129)).toBe(false);
+    expect(isValidMapCoordinate(35, 181)).toBe(false);
+  });
+});
+
+describe('openLegDirections', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('returns invalid when both endpoints are empty', async () => {
+    await expect(
+      openLegDirections({
+        from: { lat: 0, lng: 0, name: '', address: '' },
+        to: { lat: 0, lng: 0, name: '', address: '' },
+        mode: 'walk',
+      }),
+    ).resolves.toBe('invalid');
+  });
+
+  it('opens the first fallback url that can open', async () => {
+    jest
+      .spyOn(Linking, 'canOpenURL')
+      .mockImplementation(async (url: string) => url.includes('google.com/maps/dir'));
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+
+    await expect(openLegDirections(sampleLeg)).resolves.toBe('opened');
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(String(open.mock.calls[0]?.[0])).toContain('google.com/maps/dir');
+  });
+
+  it('returns failed when no fallback url can open', async () => {
+    jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(false);
+    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('blocked'));
+
+    await expect(openLegDirections(sampleLeg)).resolves.toBe('failed');
   });
 });

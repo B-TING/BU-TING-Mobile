@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TEST_ID } from '../../../constants/e2e/testIds';
 import { ICON_COLOR_DEFAULT } from '../../../constants/icons';
 import { AppIcon } from '../icons/AppIcon';
 import { SkipButton } from '../buttons/SkipButton';
@@ -42,12 +43,14 @@ export function OnboardingStepLayout({
 
   return (
     <View
+      testID={TEST_ID.onboarding.screen}
       className="flex-1 bg-white px-6"
       style={{ paddingTop: insets.top + 8 }}>
       <View className="mb-5 flex-row items-center gap-3">
         {onBack ? (
           <Pressable
             onPress={onBack}
+            testID={TEST_ID.onboarding.back}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel={backLabel}
@@ -69,12 +72,18 @@ export function OnboardingStepLayout({
           ))}
         </View>
 
-        <SkipButton label={skipLabel} onPress={onSkipStep} variant="secondary" />
+        <SkipButton
+          label={skipLabel}
+          onPress={onSkipStep}
+          variant="secondary"
+          testID={TEST_ID.onboarding.skipStep}
+        />
       </View>
 
       {onSkipAll && skipAllLabel ? (
         <Pressable
           onPress={onSkipAll}
+          testID={TEST_ID.onboarding.skipAll}
           className="mb-2 self-end active:opacity-70"
           hitSlop={8}>
           <Text className="text-xs font-medium text-brand-muted">{skipAllLabel}</Text>
