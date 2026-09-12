@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   Modal,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Camera, CameraType, type CameraApi } from 'react-native-camera-kit';
 
 import { EventChip } from '../../components/eventZone/EventChip';
 import { BRAND_BORDER, BRAND_MUTED, BRAND_TEXT } from '../../components/eventZone/eventZoneTheme';
@@ -20,7 +22,7 @@ import { MediaPermissionDisclosure } from '../../components/review/modals/MediaP
 import { ICON_COLOR_WHITE } from '../../constants/icons';
 import {
   eventGameObjectLabel,
-  isCameraEventGame,
+  isPhase1EventGame,
   resolveEventAuthTarget,
 } from '../../constants/eventZone/eventGame';
 import type { RadiusGateResult } from '../../hooks/eventZone/useEventAuthRadiusGate';
@@ -34,6 +36,7 @@ import {
 } from '../../stores';
 import { selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import { getCachedCoordinates } from '../../stores/useLocationStore';
+import { resolveEventAuthUserCoords } from '../../utils/eventZone/checkEventAuthLocation';
 import { mapSubmitParticipationStatus } from '../../services/eventZone/zoneEventMapper';
 import type {
   ZoneEventGrantedRewardResponse,
@@ -119,28 +122,54 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
   useLocationCache();
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
+  const triggerEvent = useZoneEventStore(s => s.triggerEvent);
   const submitForReview = useEventParticipationStore(s => s.submitForReview);
-  const event = useMemo(
+  const eventFromStore = useMemo(
     () => Object.values(activeEventsByZone).find(item => item?.id === eventId),
     [activeEventsByZone, eventId],
   );
+  const eventRef = useRef(eventFromStore);
+  if (eventFromStore) {
+    eventRef.current = eventFromStore;
+  }
+  const event = eventFromStore ?? eventRef.current;
 
+  const cameraRef = useRef<CameraApi>(null);
   const [phase, setPhase] = useState<CapturePhase>('ready');
   const [previewAsset, setPreviewAsset] = useState<MediaPickAsset | null>(null);
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [submitExtras, setSubmitExtras] = useState<SubmitExtras | null>(null);
   const [usedFileKeys, setUsedFileKeys] = useState<string[]>([]);
+  const [cameraReady, setCameraReady] = useState(false);
   const [permissionPrompt, setPermissionPrompt] = useState<
     null | 'request' | 'blocked'
   >(null);
 
   useEffect(() => {
-    if (!event || !isCameraEventGame(event) || !participationId) {
+    if (!event || !isPhase1EventGame(event) || !participationId) {
       navigation.goBack();
     }
   }, [event, navigation, participationId]);
 
-  if (!event || !isCameraEventGame(event) || !participationId) {
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const granted = await hasCameraPermission();
+      if (cancelled) {
+        return;
+      }
+      if (granted) {
+        setCameraReady(true);
+        return;
+      }
+      setPermissionPrompt('request');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!event || !isPhase1EventGame(event) || !participationId) {
     return null;
   }
 
@@ -189,6 +218,12 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
     fileTooLarge: copy.captureFailed,
   };
 
+  const applyCapturedAsset = (asset: MediaPickAsset) => {
+    setPreviewAsset(asset);
+    setCapturedAt(new Date().toISOString());
+    setPhase('preview');
+  };
+
   const openSystemCamera = async () => {
     const result = await pickReviewMedia({
       mediaType: 'image',
@@ -208,15 +243,36 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
 
-    setPreviewAsset(result.asset);
-    setCapturedAt(new Date().toISOString());
-    setPhase('preview');
+    applyCapturedAsset(result.asset);
+  };
+
+  const captureFromPreview = async () => {
+    try {
+      const captured = await cameraRef.current?.capture();
+      if (!captured?.uri) {
+        await openSystemCamera();
+        return;
+      }
+      applyCapturedAsset({
+        uri: captured.uri,
+        type: 'image',
+        fileName: captured.name || `zone-event-${Date.now()}.jpg`,
+        mimeType: 'image/jpeg',
+      });
+    } catch {
+      await openSystemCamera();
+    }
   };
 
   const ensureCameraAndCapture = async () => {
     const alreadyGranted = await hasCameraPermission();
     if (!alreadyGranted) {
       setPermissionPrompt('request');
+      return;
+    }
+    setCameraReady(true);
+    if (cameraRef.current) {
+      await captureFromPreview();
       return;
     }
     await openSystemCamera();
@@ -236,7 +292,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       });
       return;
     }
-    await openSystemCamera();
+    setCameraReady(true);
   };
 
   const handleCapture = async () => {
@@ -273,7 +329,7 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
       return;
     }
 
-    const coords = getCachedCoordinates();
+    const coords = resolveEventAuthUserCoords(event, getCachedCoordinates(), targetId);
     if (!coords) {
       alert({
         title: copy.locationUnavailableTitle,
@@ -306,18 +362,24 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
           capturedAt: capturedAt ?? new Date().toISOString(),
         },
       );
-      const localStatus = mapSubmitParticipationStatus(result.participation.status);
+      const serverStatus = result.participation.status ?? 'UNDER_REVIEW';
+      const localStatus = mapSubmitParticipationStatus(serverStatus);
       submitForReview(event, previewAsset.uri, targetId, localStatus);
+      triggerEvent({
+        ...event,
+        myParticipationStatus: serverStatus,
+        myParticipation: {
+          participationId,
+          status: serverStatus,
+          canResubmit: localStatus === 'rejected',
+        },
+      });
       setSubmitExtras(extrasFromSubmit(result));
-      if (localStatus === 'approved') {
-        setPhase('success');
-        return;
-      }
       if (localStatus === 'rejected') {
         setPhase('fail');
         return;
       }
-      setPhase('pending');
+      setPhase(localStatus === 'approved' ? 'success' : 'pending');
     } catch (error) {
       setPhase('preview');
       if (error instanceof ZoneEventServiceError) {
@@ -405,6 +467,13 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
               className="h-full w-full"
               resizeMode="cover"
             />
+          ) : cameraReady ? (
+            <Camera
+              ref={cameraRef}
+              style={styles.camera}
+              cameraType={CameraType.Back}
+              resizeMode="cover"
+            />
           ) : (
             <View className="flex-1 items-center justify-center">
               <View className="rounded-full border-2 border-dashed border-white/30 p-8">
@@ -482,7 +551,15 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
               <Text className="mt-2 text-center text-sm leading-relaxed text-brand-muted">
                 {resultBody}
               </Text>
-              {phase !== 'fail' && hasSubmitExtras(submitExtras) ? (
+              {previewAsset ? (
+                <Image
+                  source={{ uri: previewAsset.uri }}
+                  accessibilityLabel={copy.submittedPhoto}
+                  className="mt-4 h-44 w-full rounded-2xl bg-neutral-200"
+                  resizeMode="cover"
+                />
+              ) : null}
+              {phase === 'success' && hasSubmitExtras(submitExtras) ? (
                 <View className="mt-4 gap-3">
                   {submitExtras.pointBalance != null ? (
                     <Text className="text-center text-[13px] font-semibold" style={{ color: BRAND_TEXT }}>
@@ -561,3 +638,9 @@ export function EventGameCameraScreen({ navigation, route }: Props) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  camera: {
+    flex: 1,
+  },
+});

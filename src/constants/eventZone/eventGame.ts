@@ -24,6 +24,9 @@ export const EVENT_GAME_TYPES: EventGameType[] = [
 /** 기본 인증 반경 (m) — Notion auth_target.radius_m */
 export const DEFAULT_AUTH_RADIUS_M = 150;
 
+/** DEV: 인증 타겟 좌표를 내 위치로 맞춰 반경 게이트·join/submit을 통과한다. 끝나면 false. */
+export const DEV_SNAP_EVENT_AUTH_COORDS = __DEV__;
+
 const MOCK_SLOT_LETTERS = ['A', 'B', 'C', 'D'] as const;
 
 /** 백엔드 이벤트 콘텐츠(사물명) — 한국어 고정 */
@@ -203,6 +206,7 @@ export const EVENT_GAME_COPY: Record<
     submitMediaForbidden: string;
     submitDeadlinePassed: string;
     historyCanResubmit: string;
+    submittedPhoto: string;
     rulesTitle: string;
     rewardTitle: string;
     rewardHint: string;
@@ -364,6 +368,7 @@ export const EVENT_GAME_COPY: Record<
     submitMediaForbidden: '본인이 올린 사진만 제출할 수 있어요. 다시 촬영해 주세요.',
     submitDeadlinePassed: '마감되어 제출할 수 없어요.',
     historyCanResubmit: '재제출 가능',
+    submittedPhoto: '제출한 사진',
     rulesTitle: '참여 방법',
     rewardTitle: '보상',
     rewardHint: '미션 성공 시 구역 배지와 포인트가 지급됩니다.',
@@ -407,9 +412,9 @@ export const EVENT_GAME_COPY: Record<
     checkingLocation: '위치 확인 중…',
     submitForReview: '검수 요청',
     retakePhoto: '다시 촬영',
-    pendingReviewTitle: '검수 대기 중',
+    pendingReviewTitle: '검수 요청이 전송되었습니다',
     pendingReviewMessage:
-      '사진이 제출되었어요. 관리자 승인 후 결과가 안내됩니다.',
+      '관리자가 사진을 검수한 뒤에 미션 완료 여부가 확정됩니다.',
     cameraPermissionTitle: '카메라 권한이 필요해요',
     cameraPermissionMessage:
       '이벤트 인증 사진을 촬영하려면 카메라 접근을 허용해 주세요.',
@@ -532,6 +537,7 @@ export const EVENT_GAME_COPY: Record<
     submitMediaForbidden: 'You can only submit a photo you uploaded. Please retake it.',
     submitDeadlinePassed: 'The deadline has passed. You cannot submit.',
     historyCanResubmit: 'Can resubmit',
+    submittedPhoto: 'Submitted photo',
     rulesTitle: 'How to play',
     rewardTitle: 'Reward',
     rewardHint: 'Earn zone badges and points on success.',
@@ -574,9 +580,9 @@ export const EVENT_GAME_COPY: Record<
     checkingLocation: 'Checking location…',
     submitForReview: 'Submit for review',
     retakePhoto: 'Retake',
-    pendingReviewTitle: 'Pending review',
+    pendingReviewTitle: 'Review request sent',
     pendingReviewMessage:
-      'Your photo was submitted. An admin will review it and share the result.',
+      'An admin will review your photo before the mission is marked complete.',
     cameraPermissionTitle: 'Camera permission needed',
     cameraPermissionMessage:
       'Allow camera access to take an event verification photo.',
@@ -699,6 +705,7 @@ export const EVENT_GAME_COPY: Record<
     submitMediaForbidden: 'ご自身がアップロードした写真のみ提出できます。撮り直してください。',
     submitDeadlinePassed: '締切を過ぎたため提出できません。',
     historyCanResubmit: '再提出できます',
+    submittedPhoto: '提出した写真',
     rulesTitle: '参加方法',
     rewardTitle: '報酬',
     rewardHint: '成功時にエリアバッジとポイントを獲得します。',
@@ -741,9 +748,9 @@ export const EVENT_GAME_COPY: Record<
     checkingLocation: '位置を確認中…',
     submitForReview: '審査を依頼',
     retakePhoto: '再撮影',
-    pendingReviewTitle: '審査待ち',
+    pendingReviewTitle: '審査依頼を送信しました',
     pendingReviewMessage:
-      '写真を提出しました。管理者の承認後に結果が案内されます。',
+      '管理者が写真を審査したあと、ミッション完了が確定します。',
     cameraPermissionTitle: 'カメラ権限が必要です',
     cameraPermissionMessage:
       'イベント認証の写真を撮るにはカメラへのアクセスを許可してください。',
@@ -866,6 +873,7 @@ export const EVENT_GAME_COPY: Record<
     submitMediaForbidden: '只能提交本人上传的照片，请重新拍摄。',
     submitDeadlinePassed: '已截止，无法提交。',
     historyCanResubmit: '可再次提交',
+    submittedPhoto: '已提交的照片',
     rulesTitle: '参与方式',
     rewardTitle: '奖励',
     rewardHint: '成功后可获得区域徽章和积分。',
@@ -907,8 +915,8 @@ export const EVENT_GAME_COPY: Record<
     checkingLocation: '正在确认位置…',
     submitForReview: '提交审核',
     retakePhoto: '重新拍摄',
-    pendingReviewTitle: '审核中',
-    pendingReviewMessage: '照片已提交。管理员审核后会告知结果。',
+    pendingReviewTitle: '已发送审核请求',
+    pendingReviewMessage: '管理员审核照片后才会确定任务是否完成。',
     cameraPermissionTitle: '需要相机权限',
     cameraPermissionMessage: '请允许使用相机以拍摄活动认证照片。',
     cameraPermissionAllow: '允许',

@@ -135,6 +135,8 @@ export function EventParticipationHistoryScreen({ navigation }: Props) {
             status={item.status}
             statusLabel={statusLabel}
             timestamp={timestampLabel}
+            imageUri={item.localImageUri}
+            imageAccessibilityLabel={copy.submittedPhoto}
             resultTone={resultToneForStatus(item.status)}
             noteTone={item.rejectionReason ? 'danger' : item.canResubmit ? 'warning' : 'muted'}
             onPress={() =>

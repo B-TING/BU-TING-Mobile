@@ -1,6 +1,7 @@
 import {
   isServerTargetId,
   mapHistoryItemToRecord,
+  mapSubmitParticipationStatus,
   mapZoneEventDetail,
   mapZoneEventSummary,
 } from '../src/services/eventZone/zoneEventMapper';
@@ -194,5 +195,79 @@ describe('mapHistoryItemToRecord', () => {
 
   it('skips cancelled rows', () => {
     expect(mapHistoryItemToRecord({ ...historyBase, status: 'CANCELLED' })).toBeNull();
+  });
+
+  it('maps participation mediaUrl onto the record', () => {
+    const record = mapHistoryItemToRecord({
+      ...historyBase,
+      mediaUrl: 'https://cdn.example.com/photo.jpg',
+    });
+    expect(record?.localImageUri).toBe('https://cdn.example.com/photo.jpg');
+  });
+
+  it('falls back to submission mediaUrl when top-level mediaUrl is missing', () => {
+    const record = mapHistoryItemToRecord({
+      ...historyBase,
+      mediaUrl: null,
+      submissions: [
+        {
+          submissionId: 'sub-1',
+          attemptNo: 1,
+          targetId: TARGET_UUID,
+          mediaUrl: 'https://cdn.example.com/attempt.jpg',
+          submittedAt: '2026-09-01T01:00:00.000Z',
+        },
+      ],
+    });
+    expect(record?.localImageUri).toBe('https://cdn.example.com/attempt.jpg');
+  });
+
+  it('maps AUTO success as completed', () => {
+    const record = mapHistoryItemToRecord({
+      ...historyBase,
+      status: 'SUCCESS',
+      rejectionReason: undefined,
+      canResubmit: false,
+      submissions: [
+        {
+          submissionId: 'sub-1',
+          attemptNo: 1,
+          targetId: TARGET_UUID,
+          reviewStatus: 'SUCCESS',
+          submittedAt: '2026-09-01T01:00:00.000Z',
+        },
+      ],
+    });
+    expect(record?.status).toBe('approved');
+  });
+
+  it('maps UNDER_REVIEW as pending review', () => {
+    const record = mapHistoryItemToRecord({
+      ...historyBase,
+      status: 'UNDER_REVIEW',
+      rejectionReason: undefined,
+      canResubmit: false,
+      submissions: [
+        {
+          submissionId: 'sub-1',
+          attemptNo: 1,
+          targetId: TARGET_UUID,
+          reviewStatus: 'UNDER_REVIEW',
+          submittedAt: '2026-09-01T01:00:00.000Z',
+        },
+      ],
+    });
+    expect(record?.status).toBe('pending_review');
+  });
+});
+
+describe('mapSubmitParticipationStatus', () => {
+  it('treats AUTO SUCCESS as approved', () => {
+    expect(mapSubmitParticipationStatus('SUCCESS')).toBe('approved');
+  });
+
+  it('treats MANUAL UNDER_REVIEW as pending', () => {
+    expect(mapSubmitParticipationStatus('UNDER_REVIEW')).toBe('pending_review');
+    expect(mapSubmitParticipationStatus('SUBMITTED')).toBe('pending_review');
   });
 });

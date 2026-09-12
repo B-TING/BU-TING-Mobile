@@ -50,6 +50,7 @@ import {
   useZoneEventStore,
 } from '../../stores';
 import { getCachedCoordinates } from '../../stores/useLocationStore';
+import { resolveEventAuthUserCoords } from '../../utils/eventZone/checkEventAuthLocation';
 import { useAppAlert } from '../../components/shared/modals';
 import { zoneEventTypeCode } from '../../constants/eventZone/zoneEvents';
 import { isServerTargetId, mapParticipationStatus } from '../../services/eventZone/zoneEventMapper';
@@ -367,7 +368,11 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    const coords = getCachedCoordinates();
+    const coords = resolveEventAuthUserCoords(
+      event,
+      getCachedCoordinates(),
+      effectiveTargetId,
+    );
     if (!coords) {
       const config = buildRadiusModalConfig({ status: 'location_unavailable' }, copy);
       if (config) setRadiusModal(config);
@@ -497,7 +502,15 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
         ) : displayStatus === 'pending_review' ? (
           <EventCallout tone="info" title={copy.pendingReviewTitle} body={copy.pendingReviewMessage} />
         ) : displayStatus === 'approved' ? (
-          <EventCallout tone="event" title={copy.statusCompleted} body={copy.pendingReviewMessage} />
+          <EventCallout
+            tone="event"
+            title={copy.statusCompleted}
+            body={
+              event.type === 'OBJECT_AUTH' && authTarget?.placeName
+                ? copy.successObject(authTarget.placeName)
+                : copy.successPlace
+            }
+          />
         ) : attemptsExhausted ? (
           <EventCallout
             tone="warning"

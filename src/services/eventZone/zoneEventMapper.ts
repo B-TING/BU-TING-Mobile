@@ -387,6 +387,7 @@ export function mapParticipationStatus(
   return 'pending_review';
 }
 
+/** submit 응답: SUCCESS는 확정, UNDER_REVIEW/SUBMITTED는 검수 대기. */
 export function mapSubmitParticipationStatus(
   status: string | null | undefined,
 ): 'pending_review' | 'approved' | 'rejected' {
@@ -422,6 +423,8 @@ export function mapHistoryItemToRecord(
     .map(mapSubmissionHistoryItem)
     .filter((item): item is EventParticipationSubmission => item != null);
   const latestTargetId = submissions.find(item => item.targetId)?.targetId;
+  const mediaUrl =
+    asString(dto.mediaUrl) || submissions.find(item => item.mediaUrl)?.mediaUrl;
   return {
     id: participationId,
     eventId,
@@ -430,8 +433,9 @@ export function mapHistoryItemToRecord(
     eventTitleKo: asString(dto.event?.title) || eventType,
     targetId: latestTargetId,
     status: mapParticipationStatus(dto.status),
+    localImageUri: mediaUrl,
     createdAt: joinedAt,
-    submittedAt: completedAt,
+    submittedAt: completedAt || submissions[0]?.submittedAt,
     rejectionReason: asString(dto.rejectionReason) || undefined,
     canResubmit: Boolean(dto.canResubmit),
     submissions: submissions.length > 0 ? submissions : undefined,
