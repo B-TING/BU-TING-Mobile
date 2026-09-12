@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -56,7 +55,7 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
 
   const activeEventsByZone = useZoneEventStore(s => s.activeEventsByZone);
   const currentRound = useZoneEventStore(s => s.currentRound);
-  const { refresh: refreshZoneEvents } = useHydrateZoneEvents(isFocused);
+  useHydrateZoneEvents(isFocused);
   const eventZoneIds = useMemo(() => {
     if (!canQueryZoneEvents()) {
       return [] as EventZoneId[];
@@ -64,10 +63,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     return Object.keys(activeEventsByZone) as EventZoneId[];
   }, [activeEventsByZone]);
   const chatRooms = useMemo(() => allZoneChatRooms(), []);
-
-  const [toastText, setToastText] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelPendingSelection = useCallback(() => {
     if (selectionTimerRef.current != null) {
@@ -94,56 +89,11 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     cancelPendingSelection();
   }, [cancelPendingSelection]);
 
-  const showToast = (text: string) => {
-    setToastText(text);
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-    }
-    Animated.timing(toastOpacity, {
-      toValue: 1,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastOpacity, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => setToastText(null));
-    }, 3000);
-  };
-
   useEffect(() => {
     return () => {
       cancelPendingSelection();
-      if (toastTimer.current) {
-        clearTimeout(toastTimer.current);
-      }
     };
   }, [cancelPendingSelection]);
-
-  const handleTriggerEvent = async () => {
-    if (!canQueryZoneEvents()) {
-      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
-      return;
-    }
-    try {
-      await refreshZoneEvents(true);
-      const events = Object.values(useZoneEventStore.getState().activeEventsByZone);
-      const event = events.find(item => item && isPhase1EventGame(item) && isZoneEventActive(item));
-      if (!event) {
-        return;
-      }
-      showToast(
-        copy.eventToast(
-          eventZoneName(EVENT_ZONE_BY_ID[event.zoneId], language),
-          event.titleKo,
-        ),
-      );
-    } catch {
-      showUnavailable(ALPHA_FEATURE_LABELS.zoneEvent);
-    }
-  };
 
   const currentZoneGameEvent = useMemo(() => {
     if (!currentZoneId) {
@@ -318,8 +268,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     selectedLiveMemberCount,
     eventZoneIds,
     chatRooms,
-    toastText,
-    toastOpacity,
     liveMemberCounts,
     selectedActiveEvent,
     listActiveEventsByZone,
@@ -327,7 +275,6 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     selectedZoneGameEvent,
     selectZone,
     handleCloseExpanded,
-    handleTriggerEvent,
     handleEnterChat,
     handleJoinChat,
     handleOpenGameDetail,

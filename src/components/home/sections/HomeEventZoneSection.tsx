@@ -1,6 +1,7 @@
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
+import { EventChip } from '../../eventZone/EventChip';
 import { MapEdgeFadeOverlay } from '../../eventZone/MapEdgeFadeOverlay';
 import {
   EVENT_ZONE_BY_ID,
@@ -13,16 +14,11 @@ import { useCurrentEventZone } from '../../../hooks/useCurrentEventZone';
 import { useEventZoneCarousel } from '../../../hooks/useEventZoneCarousel';
 import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
-import type { EventZoneId, ZoneEventType } from '../../../types/eventZone';
+import type { EventZoneId } from '../../../types/eventZone';
 import { canQueryZoneEvents, useHydrateZoneEvents } from '../../../hooks/eventZone/useHydrateZoneEvents';
-import { ZONE_EVENT_TYPE_META, zoneEventTypeCode } from '../../../constants/eventZone/zoneEvents';
 import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
-import {
-  formatZoneEventRemaining,
-  useZoneEventRemaining,
-} from '../../../utils/eventZone/zoneEventRemaining';
 
 const WIDGET_BODY_HEIGHT = 210;
 const CHAT_PANEL_WIDTH_RATIO = 0.54;
@@ -65,14 +61,6 @@ export function HomeEventZoneSection({
   useHydrateZoneEvents(canQueryZoneEvents());
   const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
   const activeEvent = canQueryZoneEvents() ? activeEventRaw : undefined;
-  const remainingMs = useZoneEventRemaining(activeEvent);
-  const typeCode = activeEvent ? zoneEventTypeCode(activeEvent) : undefined;
-  const typeLabel =
-    typeCode && typeCode in ZONE_EVENT_TYPE_META
-      ? ZONE_EVENT_TYPE_META[typeCode as ZoneEventType].labelKo
-      : typeCode;
-  const remainingText =
-    activeEvent && remainingMs > 0 ? formatZoneEventRemaining(remainingMs, language) : '';
 
   return (
     <GuideTarget id={GUIDE_TARGET.homeEventZone} className="mb-6">
@@ -128,30 +116,18 @@ export function HomeEventZoneSection({
           ]}>
           <View>
             <View className="flex-row items-center gap-1">
-              <Text className="flex-1 text-sm font-bold text-brand-text" numberOfLines={1}>
+              <Text className="min-w-0 flex-1 text-sm font-bold text-brand-text" numberOfLines={1}>
                 {eventZoneName(zone, language)}
               </Text>
-              {activeEvent ? (
-                <View className="rounded-full bg-pink-600 px-1.5 py-0.5">
-                  <Text className="text-[9px] font-bold text-white">{zoneCopy.eventActiveBadge}</Text>
-                </View>
-              ) : null}
+              {activeEvent ? <EventChip label={zoneCopy.eventActiveBadge} /> : null}
             </View>
-            
-            <View className="flex-row justify-between gap-1 w-full">
+
             {room ? (
               <Text className="mt-0.5 text-[10px] font-semibold text-brand-primary">
                 {zoneCopy.chatMemberCount(liveMemberCount ?? room.memberCount)}
               </Text>
             ) : null}
-            {activeEvent ? (
-              <Text className="mt-0.5 text-[10px] font-semibold text-pink-600 ellipsis" numberOfLines={1}>
-                ⚡ {activeEvent.titleKo}
-                {typeLabel ? ` · ${typeLabel}` : ''}
-                {remainingText ? ` · ${remainingText}` : ''}
-              </Text>
-            ) : null}
-            </View>
+
             <Text className="mb-1.5 mt-2 text-[10px] font-bold uppercase tracking-wide text-brand-muted">
               {copy.landmarksTitle}
             </Text>
@@ -161,7 +137,7 @@ export function HomeEventZoneSection({
                   key={landmark.id}
                   className="flex-row items-center rounded-lg bg-brand-background px-2 py-1">
                   <Text className="mr-1.5 text-xs">{landmark.emoji}</Text>
-                  <Text className="flex-1 text-[11px] font-medium text-brand-text" numberOfLines={1}>
+                  <Text className="min-w-0 flex-1 text-[11px] font-medium text-brand-text" numberOfLines={1}>
                     {landmarkName(landmark, language)}
                   </Text>
                 </View>

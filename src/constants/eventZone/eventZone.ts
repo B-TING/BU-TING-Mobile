@@ -426,8 +426,6 @@ export const EVENT_ZONE_COPY: Record<
     eventEnded: string;
     eventActiveBadge: string;
     surpriseMissionBadge: string;
-    devEventTrigger: string;
-    devEventTriggerA11y: string;
     participationHistory: string;
     eventAlbum: string;
     zoneTitles: string;
@@ -440,7 +438,6 @@ export const EVENT_ZONE_COPY: Record<
     roundAlbum: string;
     roundEndsIn: (remaining: string) => string;
     roundStartsIn: (remaining: string) => string;
-    eventToast: (zoneName: string, eventTitle: string) => string;
   }
 > = {
   ko: {
@@ -468,8 +465,6 @@ export const EVENT_ZONE_COPY: Record<
     eventEnded: '이벤트가 종료되었습니다',
     eventActiveBadge: '🔥 이벤트',
     surpriseMissionBadge: '번개 미션',
-    devEventTrigger: '🎲 이벤트 발생',
-    devEventTriggerA11y: '개발용 번개 이벤트 발생',
     participationHistory: '참여 이력',
     eventAlbum: '앨범',
     zoneTitles: '칭호',
@@ -482,7 +477,6 @@ export const EVENT_ZONE_COPY: Record<
     roundAlbum: '회차 앨범',
     roundEndsIn: remaining => `종료까지 ${remaining}`,
     roundStartsIn: remaining => `시작까지 ${remaining}`,
-    eventToast: (zoneName, eventTitle) => `${zoneName}에 ${eventTitle} 이벤트 발생!`,
   },
   en: {
     screenTitle: 'Event Zone',
@@ -509,8 +503,6 @@ export const EVENT_ZONE_COPY: Record<
     eventEnded: 'This event has ended',
     eventActiveBadge: '🔥 Event',
     surpriseMissionBadge: 'Flash mission',
-    devEventTrigger: '🎲 Trigger event',
-    devEventTriggerA11y: 'Dev random event trigger',
     participationHistory: 'Participation history',
     eventAlbum: 'Album',
     zoneTitles: 'Titles',
@@ -523,7 +515,6 @@ export const EVENT_ZONE_COPY: Record<
     roundAlbum: 'Round album',
     roundEndsIn: remaining => `${remaining} left`,
     roundStartsIn: remaining => `Starts in ${remaining}`,
-    eventToast: (zoneName, eventTitle) => `${eventTitle} started in ${zoneName}!`,
   },
   ja: {
     screenTitle: 'イベントゾーン',
@@ -550,8 +541,6 @@ export const EVENT_ZONE_COPY: Record<
     eventEnded: 'イベントは終了しました',
     eventActiveBadge: '🔥 イベント',
     surpriseMissionBadge: 'サプライズミッション',
-    devEventTrigger: '🎲 イベント発生',
-    devEventTriggerA11y: '開発用ランダムイベント',
     participationHistory: '参加履歴',
     eventAlbum: 'アルバム',
     zoneTitles: '称号',
@@ -564,7 +553,6 @@ export const EVENT_ZONE_COPY: Record<
     roundAlbum: '回次アルバム',
     roundEndsIn: remaining => `終了まで ${remaining}`,
     roundStartsIn: remaining => `開始まで ${remaining}`,
-    eventToast: (zoneName, eventTitle) => `${zoneName}で${eventTitle}が始まりました!`,
   },
   zh: {
     screenTitle: '活动区域',
@@ -591,8 +579,6 @@ export const EVENT_ZONE_COPY: Record<
     eventEnded: '活动已结束',
     eventActiveBadge: '🔥 活动',
     surpriseMissionBadge: '闪电任务',
-    devEventTrigger: '🎲 触发活动',
-    devEventTriggerA11y: '开发用随机活动',
     participationHistory: '参与记录',
     eventAlbum: '相册',
     zoneTitles: '称号',
@@ -605,7 +591,6 @@ export const EVENT_ZONE_COPY: Record<
     roundAlbum: '本轮相册',
     roundEndsIn: remaining => `剩余 ${remaining}`,
     roundStartsIn: remaining => `${remaining}后开始`,
-    eventToast: (zoneName, eventTitle) => `${zoneName}开始了${eventTitle}!`,
   },
 };
 

@@ -1,4 +1,4 @@
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,14 +13,11 @@ import {
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
 import {
-  EVENT_PINK,
   PLANNING_CHIP_BG,
   PLANNING_CHIP_TEXT,
 } from '../../components/eventZone/eventZoneTheme';
 import { BackButton } from '../../components/shared/buttons/BackButton';
-import { AppIcon } from '../../components/shared/icons/AppIcon';
 import { TEST_ID } from '../../constants/e2e/testIds';
-import { ICON_COLOR_WHITE } from '../../constants/icons';
 import { EVENT_MAP_BG } from '../../constants/eventZone/mapChrome';
 import { useEventZoneScreen } from '../../hooks/eventZone/useEventZoneScreen';
 import type { RootStackParamList } from '../../navigation/types';
@@ -50,15 +47,12 @@ export function EventZoneScreen({ navigation }: Props) {
     selectedLiveMemberCount,
     eventZoneIds,
     chatRooms,
-    toastText,
-    toastOpacity,
     liveMemberCounts,
     listActiveEventsByZone,
     currentZoneGameEvent,
     selectedZoneGameEvent,
     selectZone,
     handleCloseExpanded,
-    handleTriggerEvent,
     handleEnterChat,
     handleJoinChat,
     handleOpenGameDetail,
@@ -130,30 +124,8 @@ export function EventZoneScreen({ navigation }: Props) {
                 {copy.planningBadge}
               </Text>
             </View>
-            {__DEV__ ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={copy.devEventTriggerA11y}
-                className="rounded-full px-3.5 py-2 shadow-sm active:opacity-80"
-                style={{ backgroundColor: EVENT_PINK }}
-                onPress={handleTriggerEvent}>
-                <Text className="text-[11px] font-bold text-white">{copy.devEventTrigger}</Text>
-              </Pressable>
-            ) : null}
           </View>
         </View>
-
-        {toastText ? (
-          <Animated.View
-            className="absolute left-0 right-0 items-center"
-            style={{ top: insets.top + 56, opacity: toastOpacity }}
-            pointerEvents="none">
-            <View className="flex-row items-center gap-2 rounded-full bg-black/80 px-5 py-3">
-              <AppIcon name="partyPopper" size={14} color={ICON_COLOR_WHITE} />
-              <Text className="text-xs font-semibold text-white">{toastText}</Text>
-            </View>
-          </Animated.View>
-        ) : null}
 
         {isFocusedOnZone && selectedZoneGameEvent ? (
           <View
