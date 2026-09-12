@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,10 +12,6 @@ import {
   EventZoneMapBadge,
   EventZoneZoneDetailPanel,
 } from '../../components/eventZone/EventZoneSections';
-import {
-  PLANNING_CHIP_BG,
-  PLANNING_CHIP_TEXT,
-} from '../../components/eventZone/eventZoneTheme';
 import { BackButton } from '../../components/shared/buttons/BackButton';
 import { TEST_ID } from '../../constants/e2e/testIds';
 import { EVENT_MAP_BG } from '../../constants/eventZone/mapChrome';
@@ -85,7 +81,7 @@ export function EventZoneScreen({ navigation }: Props) {
         />
 
         <View
-          className="absolute left-0 right-0 flex-row items-start justify-between px-3"
+          className="absolute left-0 right-0 flex-row items-start px-3"
           style={{ top: insets.top + 8 }}
           pointerEvents="box-none">
           <View className="flex-row items-start gap-2">
@@ -114,16 +110,6 @@ export function EventZoneScreen({ navigation }: Props) {
                 liveMemberCount={currentLiveMemberCount}
               />
             ) : null}
-          </View>
-
-          <View className="items-end gap-2">
-            <View
-              className="rounded-full px-3 py-1.5 shadow-sm"
-              style={{ backgroundColor: PLANNING_CHIP_BG }}>
-              <Text className="text-[11px] font-semibold" style={{ color: PLANNING_CHIP_TEXT }}>
-                {copy.planningBadge}
-              </Text>
-            </View>
           </View>
         </View>
 

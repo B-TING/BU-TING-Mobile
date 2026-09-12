@@ -5,8 +5,6 @@ export const EVENT_PINK_BORDER = '#F9A8D4';
 export const EVENT_PINK_TEXT = '#BE185D';
 /** 미션 카드 본문 등 연한 핑크 텍스트 */
 export const EVENT_PINK_BODY = '#9D174D';
-export const PLANNING_CHIP_BG = '#EDE9FE';
-export const PLANNING_CHIP_TEXT = '#6E36DB';
 export const EVENT_HERO_BLUE = '#0777B6';
 export const EVENT_HERO_PURPLE = '#8B5CF6';
 

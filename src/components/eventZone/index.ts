@@ -29,6 +29,4 @@ export {
   EVENT_PINK_BORDER,
   EVENT_PINK_BODY,
   EVENT_PINK_DARK,
-  PLANNING_CHIP_BG,
-  PLANNING_CHIP_TEXT,
 } from './eventZoneTheme';

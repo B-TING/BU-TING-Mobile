@@ -411,7 +411,6 @@ export const EVENT_ZONE_COPY: Record<
     chatFeatureHint: string;
     chatMemberCount: (n: number) => string;
     selectZoneHint: string;
-    planningBadge: string;
     locationFallbackHint: string;
     noZoneLabel: string;
     outsideBusanHint: string;
@@ -450,7 +449,6 @@ export const EVENT_ZONE_COPY: Record<
     chatFeatureHint: '구역별 실시간 채팅 (로컬 백엔드 테스트)',
     chatMemberCount: n => `채팅 ${n}명`,
     selectZoneHint: '지도에서 구역을 선택해 주세요',
-    planningBadge: '기획 미리보기',
     locationFallbackHint: '위치를 확인할 수 없어 기본 구역을 표시해요',
     noZoneLabel: '소속 구역 없음',
     outsideBusanHint: '부산 외 지역이라 채팅 구역에 속하지 않아요',
@@ -488,7 +486,6 @@ export const EVENT_ZONE_COPY: Record<
     chatFeatureHint: 'Zone live chat (local backend test)',
     chatMemberCount: n => `${n} in chat`,
     selectZoneHint: 'Select a zone on the map',
-    planningBadge: 'Planning preview',
     locationFallbackHint: 'Showing a default zone — location unavailable',
     noZoneLabel: 'Not in a zone',
     outsideBusanHint: 'Outside Busan — you are not in a chat zone',
@@ -526,7 +523,6 @@ export const EVENT_ZONE_COPY: Record<
     chatFeatureHint: 'アプリ内チャット（リアルタイム連携準備中）',
     chatMemberCount: n => `チャット ${n}人`,
     selectZoneHint: '地図でエリアを選択してください',
-    planningBadge: '企画プレビュー',
     locationFallbackHint: '現在地基準（GPS連携予定）',
     noZoneLabel: '所属エリアなし',
     outsideBusanHint: '釜山外のためチャットゾーンに所属していません',
@@ -564,7 +560,6 @@ export const EVENT_ZONE_COPY: Record<
     chatFeatureHint: '应用内聊天（实时同步筹备中）',
     chatMemberCount: n => `聊天 ${n} 人`,
     selectZoneHint: '请在地图上选择区域',
-    planningBadge: '策划预览',
     locationFallbackHint: '基于当前位置（GPS 接入待定）',
     noZoneLabel: '未加入区域',
     outsideBusanHint: '不在釜山，不属于任何聊天区域',

@@ -32,11 +32,7 @@ import type {
   ZoneEvent,
 } from '../../types/eventZone';
 
-export {
-  EVENT_PINK,
-  PLANNING_CHIP_BG,
-  PLANNING_CHIP_TEXT,
-} from './eventZoneTheme';
+export { EVENT_PINK } from './eventZoneTheme';
 
 type EventZoneMapBadgeProps = {
   zone?: EventZoneDefinition | null;
