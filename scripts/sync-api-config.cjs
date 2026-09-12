@@ -99,6 +99,8 @@ export const TRAVEL_ENDPOINTS = {
   travelPlanById: (travelId: string, planId: string) =>
     \`/api/v1/travels/\${travelId}/plans/\${planId}\`,
   travelStatus: (travelId: string) => \`/api/v1/travels/\${travelId}/status\`,
+  /** POST /api/v1/travels/{travelId}/ai-plans */
+  aiPlans: (travelId: string) => \`/api/v1/travels/\${travelId}/ai-plans\`,
   planPlaces: (planId: string) => \`/api/v1/plans/\${planId}/places\`,
   planPlaceSequence: (planId: string) => \`/api/v1/plans/\${planId}/places/sequence\`,
   planPlaceById: (planPlaceId: string) => \`/api/v1/plans/places/\${planPlaceId}\`,

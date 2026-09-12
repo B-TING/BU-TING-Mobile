@@ -252,6 +252,13 @@ export function usePlanWizardScreen({
     });
   };
 
+  const leaveWizard = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { tab: 'home' } }],
+    });
+  };
+
   const wizardMembers = (): PlanMember[] => [
     {
       userId: user?.userId ?? 'local-user',
@@ -298,6 +305,11 @@ export function usePlanWizardScreen({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : copy.createManualError;
+      if (answers.generationMode === 'auto') {
+        alert({ title: copy.createAiError, message });
+        leaveWizard();
+        return;
+      }
       alert({ title: copy.createManualError, message });
     } finally {
       setLoading(false);

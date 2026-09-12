@@ -470,8 +470,43 @@ export function mapAlbumItemToPost(
     likedByMe: Boolean(dto.likedByMe),
     comments: [],
     commentCount: asNumber(dto.commentCount) ?? 0,
-    visibility: 'public',
+    visibility: asString(dto.visibility).toUpperCase() === 'PRIVATE' ? 'private' : 'public',
     isMine: Boolean(dto.isMine),
+    completedAt: asString(dto.completedAt) || new Date().toISOString(),
+  };
+}
+
+/** 앨범 API는 PRIVATE를 안 내려주므로, 내 SUCCESS 이력에서 비공개 글을 앨범 카드로 옮긴다. */
+export function mapHistoryItemToAlbumPost(
+  dto: ZoneEventHistoryItemResponse,
+  author: { userId: string; nickname: string },
+): EventAlbumPost | null {
+  if (asString(dto.status) && asString(dto.status).toUpperCase() !== 'SUCCESS') {
+    return null;
+  }
+  const participationId = asString(dto.participationId);
+  const eventId = asString(dto.event?.eventId);
+  const zoneId = asString(dto.event?.zone?.zoneId);
+  if (!participationId || !eventId || !isEventZoneId(zoneId)) {
+    return null;
+  }
+  return {
+    id: participationId,
+    participationId,
+    eventId,
+    zoneId,
+    eventTitleKo: asString(dto.event?.title) || eventId,
+    eventType: 'PLACE_AUTH',
+    authorId: author.userId,
+    authorNickname: author.nickname.trim() || '여행자',
+    content: asString(dto.content) || undefined,
+    localImageUri: asString(dto.mediaUrl) || undefined,
+    likeCount: asNumber(dto.likeCount) ?? 0,
+    likedByMe: false,
+    comments: [],
+    commentCount: asNumber(dto.commentCount) ?? 0,
+    visibility: asString(dto.visibility).toUpperCase() === 'PRIVATE' ? 'private' : 'public',
+    isMine: true,
     completedAt: asString(dto.completedAt) || new Date().toISOString(),
   };
 }

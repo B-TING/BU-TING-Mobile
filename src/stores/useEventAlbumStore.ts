@@ -54,6 +54,17 @@ export function sortAlbumPosts(
   return next;
 }
 
+function sameAlbumUserId(left: string | undefined, right: string | undefined): boolean {
+  if (!left || !right) {
+    return false;
+  }
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+export function isAlbumPostMine(post: EventAlbumPost, viewerUserId: string): boolean {
+  return Boolean(post.isMine) || sameAlbumUserId(post.authorId, viewerUserId);
+}
+
 /** 공용 피드: 공개 게시물 + 내 비공개 게시물 */
 export function selectVisibleAlbumPosts(
   posts: EventAlbumPost[],
@@ -70,7 +81,7 @@ export function selectVisibleAlbumPosts(
     if (post.visibility === 'public') {
       return true;
     }
-    return Boolean(viewerUserId) && (post.isMine || post.authorId === viewerUserId);
+    return isAlbumPostMine(post, viewerUserId);
   });
 }
 

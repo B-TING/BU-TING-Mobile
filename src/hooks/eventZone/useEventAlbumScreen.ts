@@ -4,13 +4,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../../navigation/types';
 import { useCopy } from '../../i18n';
-import { mapAlbumComment, mapAlbumItemToPost } from '../../services/eventZone/zoneEventMapper';
+import { mapAlbumComment, mapAlbumItemToPost, mapHistoryItemToAlbumPost } from '../../services/eventZone/zoneEventMapper';
 import {
   addZoneEventComment,
   deleteZoneEventComment,
   editZoneEventComment,
   fetchAllZoneAlbums,
   fetchEventAlbum,
+  fetchMyZoneEventHistory,
   fetchRoundAlbum,
   fetchZoneAlbum,
   fetchZoneEventComments,
@@ -22,6 +23,7 @@ import {
 } from '../../services/eventZone/zoneEventService';
 import { useEventAlbumStore } from '../../stores';
 import {
+  isAlbumPostMine,
   selectVisibleAlbumPosts,
   sortAlbumPosts,
 } from '../../stores/useEventAlbumStore';
@@ -100,8 +102,8 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
       }
 
       const scopeKey = `${params.eventId ?? ''}|${params.roundId ?? ''}|${params.zoneId ?? ''}|${loadAllZones ? 'all' : ''}|${sort}`;
+      const prevPosts = useEventAlbumStore.getState().posts;
       if (reset && scopeRef.current !== scopeKey) {
-        replacePosts([]);
         scopeRef.current = scopeKey;
       }
 
@@ -139,10 +141,34 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
 
       const mapped = (page.items ?? [])
         .map(mapAlbumItemToPost)
-        .filter((item): item is NonNullable<typeof item> => item != null);
+        .filter((item): item is NonNullable<typeof item> => item != null)
+        .map(post => ({
+          ...post,
+          isMine: post.isMine || isAlbumPostMine(post, userId),
+        }));
+
+      if (reset && accessToken && userId) {
+        try {
+          const history = await fetchMyZoneEventHistory(accessToken, {
+            status: 'SUCCESS',
+            size: 50,
+          });
+          const incomingIds = new Set(mapped.map(post => post.id));
+          const nickname = authUser?.nickname?.trim() || '여행자';
+          for (const item of history.items ?? []) {
+            const mine = mapHistoryItemToAlbumPost(item, { userId, nickname });
+            if (!mine || mine.visibility !== 'private' || incomingIds.has(mine.id)) {
+              continue;
+            }
+            mapped.push(mine);
+            incomingIds.add(mine.id);
+          }
+        } catch {
+          // 공개 앨범만으로라도 보여준다
+        }
+      }
 
       if (reset) {
-        const prevPosts = useEventAlbumStore.getState().posts;
         const prevById = new Map(prevPosts.map(post => [post.id, post]));
         const merged = mapped.map(post => {
           const prev = prevById.get(post.id);
@@ -153,16 +179,17 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
             ...post,
             visibility: prev.visibility === 'private' ? 'private' : post.visibility,
             comments: prev.comments.length > 0 ? prev.comments : post.comments,
+            isMine: post.isMine || prev.isMine,
           };
         });
         const incomingIds = new Set(mapped.map(post => post.id));
-        const keptPrivateMine = prevPosts.filter(
+        const keptMine = prevPosts.filter(
           post =>
             !incomingIds.has(post.id) &&
-            post.visibility === 'private' &&
-            (post.isMine || (Boolean(userId) && post.authorId === userId)),
+            isAlbumPostMine(post, userId) &&
+            (post.visibility === 'private' || post.isMine),
         );
-        replacePosts([...merged, ...keptPrivateMine]);
+        replacePosts([...merged, ...keptMine]);
       } else {
         upsertPosts(mapped);
       }
@@ -180,6 +207,7 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
       sort,
       upsertPosts,
       userId,
+      authUser?.nickname,
     ],
   );
 
@@ -433,13 +461,16 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
         navigation.navigate('Login');
         return;
       }
+      const current = useEventAlbumStore.getState().posts.find(item => item.id === postId);
+      const prevVisibility = current?.visibility ?? (isPrivate ? 'private' : 'public');
       const next = isPrivate ? 'PUBLIC' : 'PRIVATE';
+      const nextVisibility = next === 'PUBLIC' ? 'public' : 'private';
       visibilityBusyRef.current = true;
+      setVisibility(postId, nextVisibility);
       try {
         await updateZoneEventParticipationVisibility(accessToken, postId, next);
-        setVisibility(postId, next === 'PUBLIC' ? 'public' : 'private');
       } catch {
-        // keep previous visibility
+        setVisibility(postId, prevVisibility);
       } finally {
         visibilityBusyRef.current = false;
       }

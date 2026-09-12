@@ -1,5 +1,7 @@
 import {
   isServerTargetId,
+  mapAlbumItemToPost,
+  mapHistoryItemToAlbumPost,
   mapHistoryItemToRecord,
   mapSubmitParticipationStatus,
   mapZoneEventDetail,
@@ -258,6 +260,55 @@ describe('mapHistoryItemToRecord', () => {
       ],
     });
     expect(record?.status).toBe('pending_review');
+  });
+});
+
+describe('mapAlbumItemToPost', () => {
+  it('maps a public SUCCESS album item from the zone album API', () => {
+    const post = mapAlbumItemToPost({
+      participationId: 'e658a5ef-4a3d-497a-8c10-35a7585b3dc2',
+      eventId: '9920c8fe-5f3e-44af-8ef4-cd0b26cfbd03',
+      eventTitle: '해운대 해변 인증',
+      zoneId: 'HAEUNDAE_GIJANG',
+      authorId: '66472ede-0e99-4470-a584-5c94ccfc5512',
+      authorNickname: '김충훈',
+      mediaUrl: 'https://example.com/photo.jpg',
+      likeCount: 0,
+      likedByMe: false,
+      commentCount: 0,
+      isMine: false,
+      completedAt: '2026-09-12T17:46:00.395592+09:00',
+    });
+
+    expect(post?.id).toBe('e658a5ef-4a3d-497a-8c10-35a7585b3dc2');
+    expect(post?.zoneId).toBe('HAEUNDAE_GIJANG');
+    expect(post?.visibility).toBe('public');
+    expect(post?.localImageUri).toBe('https://example.com/photo.jpg');
+  });
+});
+
+describe('mapHistoryItemToAlbumPost', () => {
+  it('maps a private SUCCESS history item so the owner can still see it in the album', () => {
+    const post = mapHistoryItemToAlbumPost(
+      {
+        participationId: 'e658a5ef-4a3d-497a-8c10-35a7585b3dc2',
+        status: 'SUCCESS',
+        event: {
+          eventId: '9920c8fe-5f3e-44af-8ef4-cd0b26cfbd03',
+          title: '해운대 해변 인증',
+          typeCode: 'PLACE_AUTH',
+          zone: { zoneId: 'HAEUNDAE_GIJANG' },
+        },
+        mediaUrl: 'https://example.com/photo.jpg',
+        visibility: 'PRIVATE',
+        completedAt: '2026-09-12T17:46:00.395592+09:00',
+      },
+      { userId: '66472ede-0e99-4470-a584-5c94ccfc5512', nickname: '김충훈' },
+    );
+
+    expect(post?.id).toBe('e658a5ef-4a3d-497a-8c10-35a7585b3dc2');
+    expect(post?.visibility).toBe('private');
+    expect(post?.isMine).toBe(true);
   });
 });
 

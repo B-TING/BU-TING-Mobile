@@ -234,6 +234,7 @@ export type ZoneEventAlbumItemResponse = {
   likedByMe?: boolean;
   commentCount?: number;
   isMine?: boolean;
+  visibility?: string | null;
   completedAt?: string | null;
 };
 
