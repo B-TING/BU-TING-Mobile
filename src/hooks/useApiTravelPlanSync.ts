@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { TRAVEL_PLAN_POLL_INTERVAL_MS } from '../constants/common/pollIntervals';
 import { trySyncTravelPlanFromApi } from '../services/travel/trySyncTravelPlanFromApi';
 import { unlockPlanSchedule } from '../utils/travel/scheduleApiLock';
 import type { TravelPlan } from '../types/travelPlan';
@@ -74,8 +76,19 @@ export function useApiTravelPlanSync({
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) {
+        return;
+      }
       void syncFromServer();
-    }, [syncFromServer]),
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === 'active') {
+          void syncFromServer();
+        }
+      }, TRAVEL_PLAN_POLL_INTERVAL_MS);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [enabled, syncFromServer]),
   );
 
   return { syncFromServer };

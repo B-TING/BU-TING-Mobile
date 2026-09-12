@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
+import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { TRAVEL_PLAN_POLL_INTERVAL_MS } from '../constants/common/pollIntervals';
 import { syncTravelMembersToPlan } from '../services/travel/syncTravelMembersToPlan';
 
 type UseTravelMembersSyncOptions = {
@@ -26,8 +28,19 @@ export function useTravelMembersSync({
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) {
+        return;
+      }
       void syncMembers();
-    }, [syncMembers]),
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === 'active') {
+          void syncMembers();
+        }
+      }, TRAVEL_PLAN_POLL_INTERVAL_MS);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [enabled, syncMembers]),
   );
 
   return { syncMembers };

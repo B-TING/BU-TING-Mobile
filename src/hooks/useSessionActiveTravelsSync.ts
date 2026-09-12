@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { SESSION_TRAVELS_POLL_INTERVAL_MS } from '../constants/common/pollIntervals';
 import { syncSessionActiveTravels } from '../services/travel/syncSessionActiveTravels';
 import { selectIsAuthenticated, useAuthStore } from '../stores/useAuthStore';
 
@@ -39,7 +40,7 @@ export function useSessionActiveTravelsSync() {
 }
 
 /** 화면 포커스 시 참여 중 여행 재동기화 (NavigationContainer 내부에서만 사용) */
-export function useSessionActiveTravelsSyncOnFocus() {
+export function useSessionActiveTravelsSyncOnFocus(enabled = true) {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
 
   const syncFromServer = useCallback(async () => {
@@ -51,7 +52,18 @@ export function useSessionActiveTravelsSyncOnFocus() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) {
+        return;
+      }
       void syncFromServer();
-    }, [syncFromServer]),
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === 'active') {
+          void syncFromServer();
+        }
+      }, SESSION_TRAVELS_POLL_INTERVAL_MS);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [enabled, syncFromServer]),
   );
 }

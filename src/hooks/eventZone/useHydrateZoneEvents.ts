@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { isAlphaFeatureBlocked } from '../../constants/common/alphaFeatureBlocks';
+import { ZONE_EVENT_POLL_INTERVAL_MS } from '../../constants/common/pollIntervals';
+import { useForegroundInterval } from '../useForegroundInterval';
 import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
 import {
   mapActiveZoneEvents,
@@ -31,7 +33,7 @@ async function hydrateActiveZoneEvents(
   accessToken?: string | null,
   force = false,
 ): Promise<void> {
-  if (!force && hydrateInflight) {
+  if (hydrateInflight) {
     return hydrateInflight;
   }
 
@@ -44,8 +46,11 @@ async function hydrateActiveZoneEvents(
     return;
   }
 
+  const showLoading = !force;
   hydrateInflight = (async () => {
-    store.setLoading(true);
+    if (showLoading) {
+      store.setLoading(true);
+    }
     try {
       const [round, ...lists] = await Promise.all([
         fetchCurrentZoneEventRound(accessToken).catch(() => undefined),
@@ -55,7 +60,9 @@ async function hydrateActiveZoneEvents(
       useZoneEventStore.getState().replaceActiveEvents(mapActiveZoneEvents(lists.flat()));
       useZoneEventStore.getState().markFetched();
     } finally {
-      useZoneEventStore.getState().setLoading(false);
+      if (showLoading) {
+        useZoneEventStore.getState().setLoading(false);
+      }
     }
   })();
 
@@ -80,12 +87,22 @@ export function useHydrateZoneEvents(enabled = true) {
     await hydrateActiveZoneEvents(accessTokenRef.current, force);
   }, []);
 
+  const pollEnabled = enabled && canQueryZoneEvents();
+
   useEffect(() => {
-    if (!enabled || !canQueryZoneEvents()) {
+    if (!pollEnabled) {
       return;
     }
     void refresh().catch(() => undefined);
-  }, [enabled, refresh, accessToken]);
+  }, [pollEnabled, refresh, accessToken]);
+
+  useForegroundInterval(
+    () => {
+      void refresh(true).catch(() => undefined);
+    },
+    ZONE_EVENT_POLL_INTERVAL_MS,
+    pollEnabled,
+  );
 
   return { refresh };
 }
@@ -93,8 +110,24 @@ export function useHydrateZoneEvents(enabled = true) {
 /** 상세 화면: GET /zone-events/{eventId} */
 export function useHydrateZoneEventDetail(eventId: string | undefined) {
   const accessToken = useAuthStore(selectReusableAccessToken);
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
   const upsert = useZoneEventStore(s => s.triggerEvent);
   const [loading, setLoading] = useState(() => Boolean(eventId) && canQueryZoneEvents());
+
+  const refreshDetail = useCallback(async () => {
+    if (!eventId || !canQueryZoneEvents()) {
+      return;
+    }
+    const dto = await fetchZoneEventDetail(eventId, accessTokenRef.current);
+    if (!dto) {
+      return;
+    }
+    const mapped = mapZoneEventDetail(dto);
+    if (mapped) {
+      upsert(mapped);
+    }
+  }, [eventId, upsert]);
 
   useEffect(() => {
     if (!eventId || !canQueryZoneEvents()) {
@@ -103,16 +136,7 @@ export function useHydrateZoneEventDetail(eventId: string | undefined) {
     }
     let cancelled = false;
     setLoading(true);
-    fetchZoneEventDetail(eventId, accessToken)
-      .then(dto => {
-        if (cancelled || !dto) {
-          return;
-        }
-        const mapped = mapZoneEventDetail(dto);
-        if (mapped) {
-          upsert(mapped);
-        }
-      })
+    refreshDetail()
       .catch(() => undefined)
       .finally(() => {
         if (!cancelled) {
@@ -122,7 +146,15 @@ export function useHydrateZoneEventDetail(eventId: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [accessToken, eventId, upsert]);
+  }, [eventId, refreshDetail]);
+
+  useForegroundInterval(
+    () => {
+      void refreshDetail().catch(() => undefined);
+    },
+    ZONE_EVENT_POLL_INTERVAL_MS,
+    Boolean(eventId) && canQueryZoneEvents(),
+  );
 
   return { loading };
 }
@@ -130,28 +162,37 @@ export function useHydrateZoneEventDetail(eventId: string | undefined) {
 /** 상세 화면: GET /zone-events/{eventId}/participations/me */
 export function useHydrateMyEventParticipations(eventId: string | undefined) {
   const accessToken = useAuthStore(selectReusableAccessToken);
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
   const upsertRecords = useEventParticipationStore(s => s.upsertRecords);
 
-  useEffect(() => {
-    if (!eventId || !accessToken) {
+  const refreshMine = useCallback(async () => {
+    const token = accessTokenRef.current;
+    if (!eventId || !token) {
       return;
     }
-    let cancelled = false;
-    fetchMyZoneEventParticipations(accessToken, eventId)
-      .then(list => {
-        if (cancelled) {
-          return;
-        }
-        const mapped = list
-          .map(mapParticipationToRecord)
-          .filter((item): item is NonNullable<typeof item> => item != null);
-        if (mapped.length > 0) {
-          upsertRecords(mapped);
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, eventId, upsertRecords]);
+    try {
+      const list = await fetchMyZoneEventParticipations(token, eventId);
+      const mapped = list
+        .map(mapParticipationToRecord)
+        .filter((item): item is NonNullable<typeof item> => item != null);
+      if (mapped.length > 0) {
+        upsertRecords(mapped);
+      }
+    } catch {
+      // 폴링 실패는 이전 스냅샷 유지
+    }
+  }, [eventId, upsertRecords]);
+
+  useEffect(() => {
+    void refreshMine();
+  }, [refreshMine]);
+
+  useForegroundInterval(
+    () => {
+      void refreshMine();
+    },
+    ZONE_EVENT_POLL_INTERVAL_MS,
+    Boolean(eventId && accessToken),
+  );
 }

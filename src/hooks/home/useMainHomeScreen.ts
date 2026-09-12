@@ -58,7 +58,7 @@ export function useMainHomeScreen({
 }: UseMainHomeScreenParams) {
   useLocationCache();
   const insets = useSafeAreaInsets();
-  const { goToTab } = useMainTabNavigation();
+  const { goToTab, activeTab } = useMainTabNavigation();
   const { alert } = useAppAlert();
   const { showUnavailable } = useFeatureUnavailableAlert();
   const scrollRef = useRef<ScrollView>(null);
@@ -96,7 +96,7 @@ export function useMainHomeScreen({
       enabled: showSyncStatus,
       message: planDetailCopy.offlineSyncNotice,
     });
-  useSessionActiveTravelsSyncOnFocus();
+  useSessionActiveTravelsSyncOnFocus(activeTab === 'home');
 
   const [latestTravelogue, setLatestTravelogue] = useState<TravelRecord | null>(null);
   const [loadingTravelogue, setLoadingTravelogue] = useState(true);

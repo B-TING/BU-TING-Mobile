@@ -28,6 +28,7 @@ import {
 import { selectIsPlanOfflineSync } from '../../stores/usePlanStore';
 import { selectReusableAccessToken } from '../../stores/useAuthStore';
 import { useApiTravelPlanSync } from '../useApiTravelPlanSync';
+import { useMainTabNavigationOptional } from '../../navigation/mainTabNavigation';
 import { usePlanOfflineSyncFeedback } from '../usePlanOfflineSyncFeedback';
 import { usePlanDetailBudget } from './usePlanDetailBudget';
 import { usePlanDetailMembers } from './usePlanDetailMembers';
@@ -104,16 +105,22 @@ export function usePlanDetailScreen({
     showToast(copy.offlineSyncNotice);
   }, [showToast, copy.offlineSyncNotice]);
 
+  const mainTabs = useMainTabNavigationOptional();
+  const syncEnabled =
+    isApiPlan &&
+    !offlineMode &&
+    (!embeddedInMainTabs || mainTabs?.activeTab === 'route');
+
   const { syncFromServer } = useApiTravelPlanSync({
     planId,
-    enabled: isApiPlan && !offlineMode,
+    enabled: syncEnabled,
     accessToken,
   });
   const { syncMembers } = useTravelMembersSync({
     planId,
     travelId,
     accessToken,
-    enabled: isApiPlan && !offlineMode,
+    enabled: syncEnabled,
   });
   const {
     syncExpenses,

@@ -1,5 +1,7 @@
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useIsFocused } from '@react-navigation/native';
+
 import { CompactBusanZoneMap } from '../../eventZone/CompactBusanZoneMap';
 import { EventChip } from '../../eventZone/EventChip';
 import { MapEdgeFadeOverlay } from '../../eventZone/MapEdgeFadeOverlay';
@@ -16,6 +18,7 @@ import { useZoneChatRoomSummary } from '../../../hooks/useZoneChatRoomSummary';
 import { useZoneEventStore } from '../../../stores';
 import type { EventZoneId } from '../../../types/eventZone';
 import { canQueryZoneEvents, useHydrateZoneEvents } from '../../../hooks/eventZone/useHydrateZoneEvents';
+import { useMainTabNavigationOptional } from '../../../navigation/mainTabNavigation';
 import { TEST_ID } from '../../../constants/e2e/testIds';
 import { GUIDE_TARGET } from '../../guide/guideTypes';
 import { GuideTarget } from '../../guide/GuideTarget';
@@ -58,7 +61,11 @@ export function HomeEventZoneSection({
   const { memberCount: liveMemberCount } = useZoneChatRoomSummary(chatZoneId);
   const landmarks = zone.landmarks.slice(0, 3);
 
-  useHydrateZoneEvents(canQueryZoneEvents());
+  const isScreenFocused = useIsFocused();
+  const activeTab = useMainTabNavigationOptional()?.activeTab;
+  const pollEvents =
+    canQueryZoneEvents() && isScreenFocused && (activeTab == null || activeTab === 'home');
+  useHydrateZoneEvents(pollEvents);
   const activeEventRaw = useZoneEventStore(s => s.activeEventsByZone[chatZoneId]);
   const activeEvent = canQueryZoneEvents() ? activeEventRaw : undefined;
 
