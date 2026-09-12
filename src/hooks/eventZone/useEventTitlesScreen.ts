@@ -12,6 +12,7 @@ import {
   fetchZoneTitleDefs,
   unequipZoneTitle,
 } from '../../services/eventZone/zoneTitleService';
+import { useEventAlbumStore } from '../../stores';
 import { selectAuthUser, selectReusableAccessToken, useAuthStore } from '../../stores/useAuthStore';
 import type { EventZoneId } from '../../types/eventZone';
 import type {
@@ -28,6 +29,7 @@ export type TitleRowStatus = 'equipped' | 'owned' | 'locked';
 
 export type TitleRowView = {
   key: string;
+  zoneId: EventZoneId;
   titleCode: string;
   titleName: string;
   tier: number;
@@ -46,7 +48,49 @@ export type TitleZoneSection = {
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'EventTitles'>;
 
 function asString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return '';
+}
+
+function isRowEquipped(
+  owned: ZoneTitleItemResponse | undefined,
+  equipped: EquippedTitleResponse | null | undefined,
+  titleCode: string,
+): boolean {
+  if (!owned) {
+    return false;
+  }
+  const item = owned as ZoneTitleItemResponse & { isEquipped?: boolean };
+  if (item.equipped === true || item.isEquipped === true) {
+    return true;
+  }
+  return Boolean(equipped && asString(equipped.titleCode) === titleCode);
+}
+
+function withEquipped(
+  mine: MyZoneTitlesResponse,
+  next: EquippedTitleResponse | null,
+): MyZoneTitlesResponse {
+  return {
+    ...mine,
+    equipped: next,
+    zones: (mine.zones ?? []).map(zone => ({
+      ...zone,
+      titles: (zone.titles ?? []).map(title => ({
+        ...title,
+        equipped: Boolean(
+          next &&
+            asString(title.titleCode) === next.titleCode &&
+            asString(zone.zoneId) === next.zoneId,
+        ),
+      })),
+    })),
+  };
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -107,9 +151,10 @@ function buildSections(
       .map(def => {
         const code = asString(def.titleCode) || `${zoneId}:${def.tier}`;
         const owned = ownedByCode.get(code);
-        const equipped = Boolean(owned?.equipped);
+        const equipped = isRowEquipped(owned, mine?.equipped, code);
         return {
           key: asString(owned?.userTitleId) || `${zoneId}:${code}`,
+          zoneId,
           titleCode: code,
           titleName: asString(def.titleName) || code,
           tier: asNumber(def.tier),
@@ -138,20 +183,30 @@ export function useEventTitlesScreen(navigation: Navigation) {
   const [refreshing, setRefreshing] = useState(false);
   const [busyTitleId, setBusyTitleId] = useState<string | null>(null);
   const busyRef = useRef(false);
+  const loadSeqRef = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     if (!canQueryZoneEvents()) {
-      setDefs([]);
-      setMine(null);
+      if (seq === loadSeqRef.current) {
+        setDefs([]);
+        setMine(null);
+      }
       return;
     }
     const nextDefs = await fetchZoneTitleDefs(accessToken);
+    if (seq !== loadSeqRef.current) {
+      return;
+    }
     setDefs(nextDefs);
     if (!accessToken) {
       setMine(null);
       return;
     }
-    setMine(await fetchMyZoneTitles(accessToken));
+    const nextMine = await fetchMyZoneTitles(accessToken);
+    if (seq === loadSeqRef.current) {
+      setMine(nextMine);
+    }
   }, [accessToken]);
 
   const refresh = useCallback(async () => {
@@ -209,59 +264,94 @@ export function useEventTitlesScreen(navigation: Navigation) {
   const highlightSuccess = sections.find(item => item.zoneId === highlightZoneId)?.successCount ?? 0;
 
   const applyEquipped = useCallback((next: EquippedTitleResponse | null) => {
-    setMine(prev => {
-      if (!prev) {
-        return prev;
-      }
-      return {
-        ...prev,
-        equipped: next,
-        zones: (prev.zones ?? []).map(zone => ({
-          ...zone,
-          titles: (zone.titles ?? []).map(title => ({
-            ...title,
-            equipped: Boolean(
-              next &&
-                asString(title.userTitleId) &&
-                asString(title.titleCode) === next.titleCode &&
-                asString(zone.zoneId) === next.zoneId,
-            ),
-          })),
-        })),
-      };
-    });
+    setMine(prev => (prev ? withEquipped(prev, next) : prev));
   }, []);
+
+  const syncAlbumTitle = useCallback((next: EquippedTitleResponse | null) => {
+    const authorId = authUser?.userId;
+    if (!authorId) {
+      return;
+    }
+    useEventAlbumStore.getState().setAuthorEquippedTitle(authorId, next ?? undefined);
+  }, [authUser?.userId]);
 
   const handlePressRow = useCallback(
     async (row: TitleRowView) => {
       if (row.status === 'locked' || busyRef.current) {
-        return;
+        return 'idle' as const;
       }
       if (!accessToken) {
         navigation.navigate('Login');
-        return;
+        return 'login' as const;
+      }
+      const userTitleId =
+        asString(row.userTitleId) ||
+        asString(
+          (mine?.zones ?? [])
+            .find(zone => asString(zone.zoneId) === row.zoneId)
+            ?.titles?.find(title => asString(title.titleCode) === row.titleCode)
+            ?.userTitleId,
+        );
+      if (row.status !== 'equipped' && !userTitleId) {
+        return 'failed' as const;
       }
       busyRef.current = true;
       setBusyTitleId(row.key);
+      const fromRow: EquippedTitleResponse = {
+        titleCode: row.titleCode,
+        titleName: row.titleName,
+        zoneId: row.zoneId,
+        tier: row.tier,
+      };
       try {
         if (row.status === 'equipped') {
-          await unequipZoneTitle(accessToken);
           applyEquipped(null);
-        } else if (row.userTitleId) {
-          const next = await equipZoneTitle(accessToken, row.userTitleId);
-          applyEquipped(next);
+          syncAlbumTitle(null);
+          loadSeqRef.current += 1;
+          await unequipZoneTitle(accessToken);
+        } else if (userTitleId) {
+          applyEquipped(fromRow);
+          syncAlbumTitle(fromRow);
+          loadSeqRef.current += 1;
+          // 다른 칭호가 장착 중이면 먼저 해제한다. 같은 요청에서 바꾸면
+          // 서버가 거절하는 경우가 있어, 해제를 별도 요청으로 끝낸 뒤 장착한다.
+          if (mine?.equipped && asString(mine.equipped.titleCode) !== row.titleCode) {
+            await unequipZoneTitle(accessToken);
+          }
+          const next = await equipZoneTitle(accessToken, userTitleId);
+          const confirmed =
+            next.titleCode && asString(next.titleCode) === row.titleCode ? next : fromRow;
+          applyEquipped(confirmed);
+          syncAlbumTitle(confirmed);
         }
-        setMine(await fetchMyZoneTitles(accessToken));
+        const refreshed = await fetchMyZoneTitles(accessToken);
+        const expectedCode = row.status === 'equipped' ? '' : row.titleCode;
+        const matches =
+          expectedCode === ''
+            ? !refreshed.equipped
+            : asString(refreshed.equipped?.titleCode) === expectedCode;
+        setMine(matches ? refreshed : withEquipped(refreshed, expectedCode ? fromRow : null));
+        if (!matches) {
+          syncAlbumTitle(expectedCode ? fromRow : null);
+        }
+        return 'ok' as const;
       } catch (error) {
+        try {
+          setMine(await fetchMyZoneTitles(accessToken));
+        } catch {
+          // keep optimistic until the next focus reload
+        }
         if (error instanceof ApiClientError && error.status === 401) {
           navigation.navigate('Login');
+          return 'login' as const;
         }
+        return 'failed' as const;
       } finally {
         busyRef.current = false;
         setBusyTitleId(null);
       }
     },
-    [accessToken, applyEquipped, navigation],
+    [accessToken, applyEquipped, mine, navigation, syncAlbumTitle],
   );
 
   return {

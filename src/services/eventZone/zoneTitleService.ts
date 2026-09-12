@@ -63,12 +63,22 @@ export async function equipZoneTitle(
 ): Promise<EquippedTitleResponse> {
   const data = await apiPatch<EquippedTitleResponse>(
     url(ZONE_TITLE_ENDPOINTS.equip(userTitleId)),
-    auth(accessToken),
+    {
+      ...auth(accessToken),
+      body: {},
+      allowEmptyBody: true,
+      timeoutMs: 15_000,
+    },
   );
-  if (!data?.titleCode) {
-    throw new ApiClientError('Zone title equip failed');
+  if (data?.titleCode) {
+    return data;
   }
-  return data;
+  return {
+    titleCode: '',
+    titleName: '',
+    zoneId: '',
+    tier: 0,
+  };
 }
 
 /** DELETE /api/v1/users/me/zone-titles/equipped — 로그인 필요 */
@@ -76,5 +86,6 @@ export async function unequipZoneTitle(accessToken: string): Promise<void> {
   await apiDelete(url(ZONE_TITLE_ENDPOINTS.unequip), {
     ...auth(accessToken),
     allowEmptyBody: true,
+    timeoutMs: 15_000,
   });
 }

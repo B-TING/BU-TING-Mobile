@@ -462,7 +462,6 @@ export function EventGameDetailScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               onPress={() =>
                 navigation.navigate('EventAlbum', {
-                  eventId: event.id,
                   zoneId: event.zoneId,
                 })
               }

@@ -1,4 +1,5 @@
 import { API_BASE_URL, ZONE_EVENT_ENDPOINTS } from '../../constants/api/apiConfig';
+import { EVENT_ZONES } from '../../constants/eventZone/eventZone';
 import type { EventZoneId } from '../../types/eventZone';
 import type {
   ZoneEventAlbumPageResponse,
@@ -308,6 +309,55 @@ export function fetchRoundAlbum(
   return fetchAlbumPage(ZONE_EVENT_ENDPOINTS.roundAlbum(roundId), query, accessToken);
 }
 
+export function mergeAlbumPages(
+  pages: ZoneEventAlbumPageResponse[],
+  sort: ZoneEventAlbumQuery['sort'] = 'LATEST',
+): ZoneEventAlbumPageResponse {
+  const byId = new Map<string, NonNullable<ZoneEventAlbumPageResponse['items']>[number]>();
+  for (const page of pages) {
+    for (const item of page.items ?? []) {
+      const id = typeof item.participationId === 'string' ? item.participationId.trim() : '';
+      if (!id || byId.has(id)) {
+        continue;
+      }
+      byId.set(id, item);
+    }
+  }
+  const items = [...byId.values()];
+  items.sort((a, b) => {
+    if (sort === 'MOST_LIKED') {
+      const likeDiff = (b.likeCount ?? 0) - (a.likeCount ?? 0);
+      if (likeDiff !== 0) {
+        return likeDiff;
+      }
+    }
+    return Date.parse(String(b.completedAt ?? '')) - Date.parse(String(a.completedAt ?? ''));
+  });
+  return {
+    items,
+    nextCursor: null,
+    hasNext: pages.some(page => Boolean(page.hasNext)),
+  };
+}
+
+/** 회차가 없거나 회차 앨범이 비었을 때 — 6구역 공개 피드를 모아 보여준다 */
+export async function fetchAllZoneAlbums(
+  query: ZoneEventAlbumQuery = {},
+  accessToken?: string | null,
+): Promise<ZoneEventAlbumPageResponse> {
+  const allQuery: ZoneEventAlbumQuery = {
+    ...query,
+    cursor: undefined,
+    size: 50,
+  };
+  const pages = await Promise.all(
+    EVENT_ZONES.map(zone =>
+      fetchZoneAlbum(zone.id, allQuery, accessToken).catch(() => normalizeAlbumPage(undefined)),
+    ),
+  );
+  return mergeAlbumPages(pages, query.sort);
+}
+
 /** PATCH /api/v1/zone-event-participations/{id}/visibility — 로그인 필요 */
 export async function updateZoneEventParticipationVisibility(
   accessToken: string,
@@ -331,7 +381,10 @@ export async function likeZoneEventParticipation(
 ): Promise<ZoneEventLikeResponse> {
   const data = await apiPost<ZoneEventLikeResponse>(
     url(ZONE_EVENT_ENDPOINTS.likes(participationId)),
-    auth(accessToken),
+    {
+      ...auth(accessToken),
+      body: {},
+    },
   );
   if (!data?.likeId && data?.likeCount == null) {
     throw new ZoneEventServiceError('Zone event like failed');

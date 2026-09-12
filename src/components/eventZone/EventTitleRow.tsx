@@ -32,8 +32,12 @@ export function EventTitleRow({
   const locked = status === 'locked';
 
   return (
-    <View
-      className="flex-row items-center gap-3 rounded-2xl border px-3.5 py-3"
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: locked || busy, selected: equipped }}
+      disabled={locked || busy || !onPress}
+      onPress={onPress}
+      className="flex-row items-center gap-3 rounded-2xl border px-3.5 py-3 active:opacity-80"
       style={{
         borderColor: equipped ? BRAND_PRIMARY : BRAND_BORDER,
         backgroundColor: equipped ? BRAND_SELECTED : locked ? '#F8FAFC' : '#FFFFFF',
@@ -49,12 +53,8 @@ export function EventTitleRow({
           {subtitle}
         </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: locked || busy, selected: equipped }}
-        disabled={locked || busy || !onPress}
-        onPress={onPress}
-        className="rounded-full px-3 py-1.5 active:opacity-80"
+      <View
+        className="rounded-full px-3 py-1.5"
         style={{
           backgroundColor: equipped ? BRAND_SELECTED : locked ? BRAND_SHEET : EVENT_PINK,
           borderWidth: equipped ? 1 : 0,
@@ -67,7 +67,7 @@ export function EventTitleRow({
           }}>
           {actionLabel}
         </Text>
-      </Pressable>
-    </View>
+      </View>
+    </Pressable>
   );
 }

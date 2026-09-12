@@ -9,6 +9,7 @@ import {
   addZoneEventComment,
   deleteZoneEventComment,
   editZoneEventComment,
+  fetchAllZoneAlbums,
   fetchEventAlbum,
   fetchRoundAlbum,
   fetchZoneAlbum,
@@ -36,6 +37,7 @@ type Params = {
   zoneId?: EventZoneId;
   eventId?: string;
   roundId?: string;
+  allZones?: boolean;
 };
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'EventAlbum'>;
@@ -79,7 +81,12 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const reportBusyRef = useRef(false);
   const scopeRef = useRef('');
 
-  const hasScope = Boolean(params.eventId || params.zoneId || params.roundId);
+  const loadAllZones =
+    Boolean(params.allZones) ||
+    (!params.eventId && !params.zoneId && !params.roundId);
+  const hasScope = Boolean(
+    params.eventId || params.zoneId || params.roundId || loadAllZones,
+  );
 
   const loadPage = useCallback(
     async (reset: boolean) => {
@@ -92,7 +99,7 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
         return;
       }
 
-      const scopeKey = `${params.eventId ?? ''}|${params.roundId ?? ''}|${params.zoneId ?? ''}|${sort}`;
+      const scopeKey = `${params.eventId ?? ''}|${params.roundId ?? ''}|${params.zoneId ?? ''}|${loadAllZones ? 'all' : ''}|${sort}`;
       if (reset && scopeRef.current !== scopeKey) {
         replacePosts([]);
         scopeRef.current = scopeKey;
@@ -104,11 +111,31 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
         size: PAGE_SIZE,
       };
 
-      const page = params.eventId
-        ? await fetchEventAlbum(params.eventId, query, accessToken)
-        : params.roundId
-          ? await fetchRoundAlbum(params.roundId, query, accessToken)
-          : await fetchZoneAlbum(params.zoneId as EventZoneId, query, accessToken);
+      let page;
+      let usedMergedZones = false;
+      try {
+        if (params.roundId) {
+          page = await fetchRoundAlbum(params.roundId, query, accessToken);
+          if ((page.items?.length ?? 0) === 0) {
+            page = await fetchAllZoneAlbums(query, accessToken);
+            usedMergedZones = true;
+          }
+        } else if (loadAllZones) {
+          page = await fetchAllZoneAlbums(query, accessToken);
+          usedMergedZones = true;
+        } else if (params.zoneId) {
+          page = await fetchZoneAlbum(params.zoneId, query, accessToken);
+        } else {
+          page = await fetchEventAlbum(params.eventId as string, query, accessToken);
+        }
+      } catch (error) {
+        if (params.roundId || loadAllZones) {
+          page = await fetchAllZoneAlbums(query, accessToken);
+          usedMergedZones = true;
+        } else {
+          throw error;
+        }
+      }
 
       const mapped = (page.items ?? [])
         .map(mapAlbumItemToPost)
@@ -139,12 +166,13 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
       } else {
         upsertPosts(mapped);
       }
-      cursorRef.current = page.nextCursor ?? null;
-      setHasNext(Boolean(page.hasNext && page.nextCursor));
+      cursorRef.current = usedMergedZones ? null : page.nextCursor ?? null;
+      setHasNext(!usedMergedZones && Boolean(page.hasNext && page.nextCursor));
     },
     [
       accessToken,
       hasScope,
+      loadAllZones,
       params.eventId,
       params.roundId,
       params.zoneId,
@@ -208,10 +236,13 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const visiblePosts = useMemo(
     () =>
       selectVisibleAlbumPosts(posts, userId, {
-        zoneId: params.eventId || params.roundId ? undefined : params.zoneId,
-        eventId: params.eventId,
+        zoneId: params.roundId || loadAllZones ? undefined : params.zoneId,
+        eventId:
+          params.zoneId || params.roundId || loadAllZones
+            ? undefined
+            : params.eventId,
       }),
-    [posts, userId, params.zoneId, params.eventId, params.roundId],
+    [loadAllZones, posts, userId, params.zoneId, params.eventId, params.roundId],
   );
 
   const sortedPosts = useMemo(
@@ -272,18 +303,18 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
   const handleToggleLike = useCallback(
     async (postId: string) => {
       if (likeBusyRef.current.has(postId)) {
-        return;
+        return 'busy' as const;
       }
       if (!accessToken) {
         navigation.navigate('Login');
-        return;
+        return 'login' as const;
       }
       const post = useEventAlbumStore.getState().posts.find(item => item.id === postId);
       if (!post) {
-        return;
+        return 'failed' as const;
       }
       if (post.isMine || (userId && post.authorId === userId)) {
-        return;
+        return 'own' as const;
       }
       const prevLiked = post.likedByMe;
       const prevCount = post.likeCount;
@@ -300,12 +331,20 @@ export function useEventAlbumScreen(navigation: Navigation, params: Params) {
         } else {
           await unlikeZoneEventParticipation(accessToken, postId);
         }
+        return 'ok' as const;
       } catch (error) {
-        if (error instanceof ZoneEventServiceError && error.status === 409 && nextLiked) {
-          setLike(postId, true, nextCount);
-          return;
+        if (error instanceof ZoneEventServiceError && nextLiked) {
+          if (error.status === 400) {
+            setLike(postId, prevLiked, prevCount);
+            return 'own' as const;
+          }
+          if (error.status === 409) {
+            setLike(postId, true, nextCount);
+            return 'ok' as const;
+          }
         }
         setLike(postId, prevLiked, prevCount);
+        return 'failed' as const;
       } finally {
         likeBusyRef.current.delete(postId);
       }

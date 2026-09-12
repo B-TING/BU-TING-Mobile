@@ -205,21 +205,23 @@ export function useEventZoneScreen({ navigation }: UseEventZoneScreenParams) {
     navigation.navigate('EventParticipationHistory');
   };
 
-  const handleOpenAlbum = () => {
-    const zoneId = focusZoneId ?? currentZoneId;
-    if (zoneId) {
-      navigation.navigate('EventAlbum', { zoneId });
-      return;
-    }
-    navigation.navigate('EventAlbum');
-  };
+  const handleOpenAlbum = useCallback(() => {
+    navigation.navigate('EventAlbum', {
+      allZones: true,
+      ...(currentRound?.roundId ? { roundId: currentRound.roundId } : {}),
+    });
+  }, [currentRound?.roundId, navigation]);
 
   const handleOpenRoundAlbum = useCallback(() => {
-    if (!currentRound?.roundId) {
+    if (currentRound?.roundId) {
+      navigation.navigate('EventAlbum', {
+        allZones: true,
+        roundId: currentRound.roundId,
+      });
       return;
     }
-    navigation.navigate('EventAlbum', { roundId: currentRound.roundId });
-  }, [currentRound?.roundId, navigation]);
+    handleOpenAlbum();
+  }, [currentRound?.roundId, handleOpenAlbum, navigation]);
 
   const handleRoundSlotPress = useCallback(
     (slot: EventRoundSlotItem) => {

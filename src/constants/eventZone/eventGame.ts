@@ -295,6 +295,7 @@ export const EVENT_GAME_COPY: Record<
     albumSortLatest: string;
     albumSortMostLiked: string;
     albumLike: string;
+    albumLikeOwn: string;
     albumComment: string;
     albumCommentCount: (n: number) => string;
     albumAddComment: string;
@@ -465,6 +466,7 @@ export const EVENT_GAME_COPY: Record<
     albumSortLatest: '최신',
     albumSortMostLiked: '좋아요',
     albumLike: '좋아요',
+    albumLikeOwn: '내 인증에는 좋아요를 누를 수 없어요.',
     albumComment: '댓글',
     albumCommentCount: n => `${n}`,
     albumAddComment: '댓글 작성',
@@ -633,6 +635,7 @@ export const EVENT_GAME_COPY: Record<
     albumSortLatest: 'Latest',
     albumSortMostLiked: 'Most liked',
     albumLike: 'Like',
+    albumLikeOwn: 'You can’t like your own check-in.',
     albumComment: 'Comment',
     albumCommentCount: n => `${n}`,
     albumAddComment: 'Add comment',
@@ -801,6 +804,7 @@ export const EVENT_GAME_COPY: Record<
     albumSortLatest: '新着',
     albumSortMostLiked: 'いいね',
     albumLike: 'いいね',
+    albumLikeOwn: '自分の認証にはいいねできません。',
     albumComment: 'コメント',
     albumCommentCount: n => `${n}`,
     albumAddComment: 'コメントする',
@@ -966,6 +970,7 @@ export const EVENT_GAME_COPY: Record<
     albumSortLatest: '最新',
     albumSortMostLiked: '最多赞',
     albumLike: '赞',
+    albumLikeOwn: '不能给自己的认证点赞。',
     albumComment: '评论',
     albumCommentCount: n => `${n}`,
     albumAddComment: '写评论',

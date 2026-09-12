@@ -7,6 +7,7 @@ import type {
   EventAlbumVisibility,
 } from '../types/eventAlbum';
 import type { EventZoneId } from '../types/eventZone';
+import type { EquippedTitleResponse } from '../types/zoneTitleApi';
 
 export const EMPTY_ALBUM_POSTS: EventAlbumPost[] = [];
 export const EMPTY_ALBUM_COMMENTS: EventAlbumComment[] = [];
@@ -17,6 +18,10 @@ type EventAlbumState = {
   upsertPosts: (posts: EventAlbumPost[]) => void;
   setVisibility: (postId: string, visibility: EventAlbumVisibility) => void;
   setLike: (postId: string, likedByMe: boolean, likeCount: number) => void;
+  setAuthorEquippedTitle: (
+    authorId: string,
+    equippedTitle: EquippedTitleResponse | undefined,
+  ) => void;
   setComments: (
     postId: string,
     comments: EventAlbumComment[],
@@ -105,6 +110,14 @@ export const useEventAlbumStore = create<EventAlbumState>()(set => ({
     set(state => ({
       posts: state.posts.map(post =>
         post.id === postId ? { ...post, likedByMe, likeCount } : post,
+      ),
+    })),
+  setAuthorEquippedTitle: (authorId, equippedTitle) =>
+    set(state => ({
+      posts: state.posts.map(post =>
+        post.authorId === authorId || post.isMine
+          ? { ...post, equippedTitle }
+          : post,
       ),
     })),
   setComments: (postId, comments, commentCount) =>

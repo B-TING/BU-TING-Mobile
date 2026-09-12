@@ -113,8 +113,7 @@ export function EventAlbumCard({
         <View className="flex-row flex-wrap items-center gap-2 pt-1">
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ selected: post.likedByMe, disabled: isMine }}
-            disabled={isMine}
+            accessibilityState={{ selected: post.likedByMe }}
             onPress={onToggleLike}
             className="flex-row items-center gap-1.5 rounded-full px-3 py-2 active:opacity-80"
             style={{

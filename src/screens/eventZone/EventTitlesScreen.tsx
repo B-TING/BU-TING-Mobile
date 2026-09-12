@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventChip } from '../../components/eventZone/EventChip';
 import { EventNavHeader } from '../../components/eventZone/EventNavHeader';
 import { EventTitleRow } from '../../components/eventZone/EventTitleRow';
+import { useAppAlert } from '../../components/shared/modals';
 import {
   BRAND_BORDER,
   BRAND_MUTED,
@@ -43,6 +44,7 @@ export function EventTitlesScreen({ navigation }: Props) {
     goBack,
     goLogin,
   } = useEventTitlesScreen(navigation);
+  const { alert } = useAppAlert();
 
   const highlightZone = highlightZoneId ? EVENT_ZONE_BY_ID[highlightZoneId] : undefined;
   const highlightZoneLabel = highlightZone
@@ -157,7 +159,18 @@ export function EventTitlesScreen({ navigation }: Props) {
                       }
                       busy={busyTitleId === row.key}
                       onPress={
-                        row.status === 'locked' ? undefined : () => void handlePressRow(row)
+                        row.status === 'locked'
+                          ? undefined
+                          : () => {
+                              void handlePressRow(row).then(result => {
+                                if (result === 'failed') {
+                                  alert({
+                                    title: copy.screenTitle,
+                                    message: copy.equipFailed,
+                                  });
+                                }
+                              });
+                            }
                       }
                     />
                   ))}

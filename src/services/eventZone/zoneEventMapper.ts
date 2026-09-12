@@ -447,18 +447,20 @@ export function mapAlbumItemToPost(
 ): EventAlbumPost | null {
   const participationId = asString(dto.participationId);
   const eventId = asString(dto.eventId);
-  const zoneId = dto.zoneId;
-  if (!participationId || !eventId || !isEventZoneId(zoneId)) {
+  const zoneId = asString(dto.zoneId);
+  if (!participationId || !eventId) {
     return null;
   }
-  const eventType: EventAlbumPost['eventType'] = 'PLACE_AUTH';
+  if (!isEventZoneId(zoneId)) {
+    return null;
+  }
   return {
     id: participationId,
     participationId,
     eventId,
     zoneId,
     eventTitleKo: asString(dto.eventTitle) || eventId,
-    eventType,
+    eventType: 'PLACE_AUTH',
     authorId: asString(dto.authorId),
     authorNickname: asString(dto.authorNickname) || '여행자',
     equippedTitle: mapEquippedTitle(dto.equippedTitle),

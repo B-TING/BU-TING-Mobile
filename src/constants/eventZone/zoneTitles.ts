@@ -19,6 +19,7 @@ export const ZONE_TITLES_COPY: Record<
     equipped: string;
     locked: string;
     loadError: string;
+    equipFailed: string;
     guestName: string;
   }
 > = {
@@ -38,6 +39,7 @@ export const ZONE_TITLES_COPY: Record<
     equipped: '장착 중',
     locked: '잠김',
     loadError: '칭호를 불러오지 못했어요.',
+    equipFailed: '칭호를 바꾸지 못했어요. 다시 시도해 주세요.',
     guestName: '여행자',
   },
   en: {
@@ -56,6 +58,7 @@ export const ZONE_TITLES_COPY: Record<
     equipped: 'Equipped',
     locked: 'Locked',
     loadError: 'Could not load titles.',
+    equipFailed: 'Could not change your title. Please try again.',
     guestName: 'Traveler',
   },
   ja: {
@@ -74,6 +77,7 @@ export const ZONE_TITLES_COPY: Record<
     equipped: '装備中',
     locked: 'ロック',
     loadError: '称号を読み込めませんでした。',
+    equipFailed: '称号を変更できませんでした。もう一度お試しください。',
     guestName: '旅行者',
   },
   zh: {
@@ -92,6 +96,7 @@ export const ZONE_TITLES_COPY: Record<
     equipped: '装备中',
     locked: '未解锁',
     loadError: '无法加载称号。',
+    equipFailed: '无法更换称号，请再试一次。',
     guestName: '旅行者',
   },
 };

@@ -250,8 +250,16 @@ export function EventAlbumScreen({ navigation, route }: Props) {
     <View className="flex-1 bg-[#F8FAFC]" style={{ paddingTop: insets.top }}>
       <View className="border-b border-[#E2E8F0] bg-white px-2">
         <EventNavHeader
-          title={route.params?.roundId ? copy.albumRoundTitle : copy.albumTitle}
-          subtitle={route.params?.roundId ? copy.albumRoundSubtitle : copy.albumSubtitle}
+          title={
+            route.params?.roundId && !route.params?.allZones && !route.params?.zoneId
+              ? copy.albumRoundTitle
+              : copy.albumTitle
+          }
+          subtitle={
+            route.params?.roundId && !route.params?.allZones && !route.params?.zoneId
+              ? copy.albumRoundSubtitle
+              : copy.albumSubtitle
+          }
           onBack={goBack}
           backAccessibilityLabel={language === 'ko' ? '뒤로' : 'Back'}
           rightAccessory={
@@ -322,7 +330,13 @@ export function EventAlbumScreen({ navigation, route }: Props) {
               language={language}
               copy={cardCopy}
               isMine={Boolean(item.isMine) || (Boolean(userId) && item.authorId === userId)}
-              onToggleLike={() => void toggleLike(item.id)}
+              onToggleLike={() => {
+                void toggleLike(item.id).then(result => {
+                  if (result === 'own') {
+                    alert({ title: copy.albumLike, message: copy.albumLikeOwn });
+                  }
+                });
+              }}
               onPressComment={() => openComment(item.id)}
               onToggleVisibility={() =>
                 void handleToggleVisibility(item.id, item.visibility === 'private')
